@@ -56,12 +56,12 @@ const ProductCard: React.FC<ProductProps> = ({
           />
         </div>
         
-        <div className="p-4 text-center">
-          <div className="text-xs text-gray-500 mb-1">{brand}</div>
-          <h3 className="font-medium text-sm sm:text-base line-clamp-2 h-12 mb-2">
+        <div className="p-6 text-center space-y-3">
+          <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 font-medium">{brand}</div>
+          <h3 className="font-medium text-sm sm:text-base line-clamp-2 min-h-[3rem] mb-3">
             {name}
           </h3>
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2 py-2">
             {discountedPrice ? (
               <>
                 <span className="font-semibold text-base sm:text-lg">{currency} {discountedPrice.toFixed(1)}</span>
