@@ -24,27 +24,43 @@ const ProductCard: React.FC<ProductProps> = ({
   brand
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   // Calculate discounted price if there's a discount
   const discountedPrice = discount ? price - (price * discount / 100) : null;
+
+  // Fallback image if the main image fails to load
+  const fallbackImage = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8';
   
   return (
     <Link to={`/product/${id}`} className="block h-full w-full">
       <div 
-        className="product-card group h-full flex flex-col relative overflow-hidden rounded-md"
+        className="product-card group h-full flex flex-col relative overflow-hidden rounded-md shadow-sm hover:shadow-md transition-shadow duration-300"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="product-card-img-container aspect-square bg-gray-50 flex-shrink-0 relative">
+          {!imageLoaded && !imageError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+              <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-400 rounded-full animate-spin"></div>
+            </div>
+          )}
+          
           <img 
-            src={image} 
+            src={imageError ? fallbackImage : image} 
             alt={name}
-            className="product-card-img object-contain w-full h-full p-4"
+            className={`product-card-img object-cover w-full h-full transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              setImageError(true);
+              setImageLoaded(true);
+            }}
           />
           
           {discount && (
-            <div className="absolute top-2 right-2 bg-sale text-white text-xs font-medium py-1 px-2 rounded-sm">
+            <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-medium py-1 px-2 rounded-sm">
               SAVE {discount}%
             </div>
           )}

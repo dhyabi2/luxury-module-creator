@@ -11,11 +11,11 @@ export const productsDb = {
       let query = supabase.from('products').select('*', { count: 'exact' });
       
       // Apply filters
-      if (filters.brand) {
+      if (filters.brand && filters.brand.trim() !== '') {
         query = query.ilike('brand', filters.brand);
       }
       
-      if (filters.category) {
+      if (filters.category && filters.category.trim() !== '') {
         query = query.eq('category', filters.category.toLowerCase());
       }
       
@@ -74,7 +74,7 @@ export const productsDb = {
         throw error;
       }
       
-      if (!products) {
+      if (!products || products.length === 0) {
         console.warn('No products returned from database');
         return {
           products: [],
@@ -87,8 +87,21 @@ export const productsDb = {
         };
       }
       
+      // Ensure all products have valid image URLs
+      const processedProducts = products.map(product => {
+        // Validate image URL
+        if (!product.image || !product.image.startsWith('http')) {
+          // Set fallback image if missing or invalid
+          return {
+            ...product,
+            image: 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8'
+          };
+        }
+        return product;
+      });
+      
       // Apply client-side sorting for price cases
-      let sortedProducts = [...products];
+      let sortedProducts = [...processedProducts];
       if (sorting.sortBy === 'price-low') {
         sortedProducts.sort((a: any, b: any) => {
           const priceA = a.discount ? a.price - (a.price * a.discount / 100) : a.price;
@@ -102,6 +115,8 @@ export const productsDb = {
           return priceB - priceA;
         });
       }
+      
+      console.log(`DB: Returned ${sortedProducts.length} products after processing`);
       
       return {
         products: sortedProducts,
@@ -131,6 +146,11 @@ export const productsDb = {
       if (error) {
         console.error('Error fetching product by ID:', error);
         throw error;
+      }
+      
+      // Validate image URL for single product
+      if (data && (!data.image || !data.image.startsWith('http'))) {
+        data.image = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8';
       }
       
       return data;
