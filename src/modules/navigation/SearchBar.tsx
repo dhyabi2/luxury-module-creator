@@ -28,7 +28,7 @@ const SearchBar = () => {
     <div className="relative w-full md:w-64 lg:w-72 my-2">
       <div 
         className={`flex items-center bg-white bg-opacity-90 rounded-sm overflow-hidden transition-all duration-300 ${
-          isFocused ? 'ring-2 ring-brand ring-opacity-50' : ''
+          isFocused ? 'ring-1 ring-white ring-opacity-50' : ''
         }`}
         ref={inputRef}
       >
@@ -43,7 +43,7 @@ const SearchBar = () => {
         />
         <button 
           className={`px-3 py-2 transition-colors duration-200 ${
-            isFocused ? 'text-brand' : 'text-gray-500'
+            isFocused ? 'text-black' : 'text-gray-500'
           }`}
         >
           <Search className="w-4 h-4" />

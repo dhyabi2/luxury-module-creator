@@ -18,14 +18,14 @@ const SecondaryNavigation = () => {
   ];
 
   return (
-    <nav className="overflow-x-auto w-full md:w-auto py-1">
-      <ul className="flex space-x-2 md:space-x-4 min-w-max">
+    <nav className="w-full py-1">
+      <ul className="flex space-x-4 md:space-x-6 min-w-max">
         {categories.map((category) => (
           <li key={category.id}>
             <Link
               to="/"
-              className={`category-item ${
-                category.highlight ? 'bg-sale text-white px-4 rounded-sm' : ''
+              className={`category-item whitespace-nowrap ${
+                category.highlight ? 'bg-black text-white px-4 py-1 rounded-sm' : ''
               } ${activeCategory === category.id ? 'font-medium' : ''}`}
               onClick={() => setActiveCategory(category.id)}
             >
