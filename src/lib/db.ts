@@ -3,6 +3,11 @@
 // For this implementation, we're using a simple in-memory database
 // In a real application, you would connect to a proper database like PostgreSQL
 
+// Import data directly instead of using require
+import { products } from '../api/products';
+import { navigationData } from '../api/navigation';
+import { filtersData } from '../api/filters';
+
 // In-memory storage (simulating a database)
 const db = {
   products: [],
@@ -13,11 +18,6 @@ const db = {
 // Initialize the database with seed data
 export const initializeDb = () => {
   console.log('Initializing in-memory database...');
-  
-  // Import the data from our API files
-  const { products } = require('../api/products');
-  const { navigationData } = require('../api/navigation');
-  const { filtersData } = require('../api/filters');
   
   // Seed the database
   db.products = products;
@@ -135,4 +135,3 @@ export const filtersDb = {
     return db.filters;
   }
 };
-
