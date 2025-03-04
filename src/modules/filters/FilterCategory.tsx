@@ -16,6 +16,8 @@ interface FilterCategoryProps {
   rangeMin?: number;
   rangeMax?: number;
   rangeUnit?: string;
+  currentMin?: number;
+  currentMax?: number;
   selectedOptions?: string[];
   onSelectionChange?: (selectedIds: string[]) => void;
   onRangeChange?: (min: number, max: number) => void;
@@ -29,14 +31,16 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
   rangeMin = 0,
   rangeMax = 100,
   rangeUnit = '',
+  currentMin,
+  currentMax,
   selectedOptions = [],
   onSelectionChange,
   onRangeChange
 }) => {
   const [isExpanded, setIsExpanded] = useState(initialExpanded);
   const [selected, setSelected] = useState<string[]>(selectedOptions);
-  const [currentMin, setCurrentMin] = useState(rangeMin);
-  const [currentMax, setCurrentMax] = useState(rangeMax);
+  const [minValue, setMinValue] = useState(currentMin ?? rangeMin);
+  const [maxValue, setMaxValue] = useState(currentMax ?? rangeMax);
   const [showAll, setShowAll] = useState(false);
   
   // Limit number of visible options when collapsed
@@ -68,14 +72,14 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
   // Handle range change
   const handleRangeChange = (value: number, isMin: boolean) => {
     if (isMin) {
-      setCurrentMin(value);
+      setMinValue(value);
       if (onRangeChange) {
-        onRangeChange(value, currentMax);
+        onRangeChange(value, maxValue);
       }
     } else {
-      setCurrentMax(value);
+      setMaxValue(value);
       if (onRangeChange) {
-        onRangeChange(currentMin, value);
+        onRangeChange(minValue, value);
       }
     }
   };
@@ -98,15 +102,15 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
           {type === 'range' ? (
             <div className="space-y-3">
               <div className="flex justify-between text-sm text-gray-600">
-                <span>{currentMin} {rangeUnit}</span>
-                <span>{currentMax} {rangeUnit}</span>
+                <span>{minValue} {rangeUnit}</span>
+                <span>{maxValue} {rangeUnit}</span>
               </div>
               
               <input
                 type="range"
                 min={rangeMin}
                 max={rangeMax}
-                value={currentMin}
+                value={minValue}
                 onChange={(e) => handleRangeChange(parseInt(e.target.value), true)}
                 className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
@@ -115,7 +119,7 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
                 type="range"
                 min={rangeMin}
                 max={rangeMax}
-                value={currentMax}
+                value={maxValue}
                 onChange={(e) => handleRangeChange(parseInt(e.target.value), false)}
                 className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />

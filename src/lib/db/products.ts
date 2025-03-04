@@ -10,13 +10,53 @@ export const productsDb = {
       // Start building the query
       let query = supabase.from('products').select('*', { count: 'exact' });
       
-      // Apply filters
+      // Apply brand filter - can be single brand or comma-separated list
       if (filters.brand && filters.brand.trim() !== '') {
-        query = query.ilike('brand', filters.brand);
+        if (filters.brand.includes(',')) {
+          const brands = filters.brand.split(',').map((b: string) => b.trim());
+          query = query.in('brand', brands);
+        } else {
+          query = query.ilike('brand', filters.brand);
+        }
       }
       
+      // Apply category filter - can be single category or comma-separated list
       if (filters.category && filters.category.trim() !== '') {
-        query = query.eq('category', filters.category.toLowerCase());
+        if (filters.category.includes(',')) {
+          const categories = filters.category.split(',').map((c: string) => c.trim().toLowerCase());
+          query = query.in('category', categories);
+        } else {
+          query = query.eq('category', filters.category.toLowerCase());
+        }
+      }
+      
+      // Apply price range filter if provided
+      if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
+        query = query.gte('price', filters.minPrice).lte('price', filters.maxPrice);
+      }
+      
+      // Apply case size filter - requires use of JSON query capabilities
+      if (filters.minCaseSize !== undefined && filters.maxCaseSize !== undefined) {
+        // Extract numeric value from caseSize and filter
+        query = query.or(`and(specifications->caseSize->isnot.null,specifications->caseSize.gte.${filters.minCaseSize}mm,specifications->caseSize.lte.${filters.maxCaseSize}mm)`);
+      }
+      
+      // Apply band filter
+      if (filters.band && filters.band.trim() !== '') {
+        const bands = filters.band.split(',').map((b: string) => b.trim());
+        query = query.or(`specifications->strapMaterial.in.(${bands.join(',')})`);
+      }
+      
+      // Apply case color filter
+      if (filters.caseColor && filters.caseColor.trim() !== '') {
+        const colors = filters.caseColor.split(',').map((c: string) => c.trim());
+        query = query.or(`specifications->caseMaterial.in.(${colors.join(',')})`);
+      }
+      
+      // Apply color filter
+      if (filters.color && filters.color.trim() !== '') {
+        const colors = filters.color.split(',').map((c: string) => c.trim());
+        query = query.or(`specifications->dialColor.in.(${colors.join(',')})`, `specifications->strapColor.in.(${colors.join(',')})`);
       }
       
       // Execute count query first

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import FilterCategory from './FilterCategory';
+import { toast } from 'sonner';
 
 interface FilterOption {
   id: string;
@@ -28,12 +29,20 @@ interface FiltersData {
   };
 }
 
-const FilterSidebar = () => {
+interface FilterSidebarProps {
+  onFilterChange?: (filters: Record<string, any>) => void;
+  initialFilters?: Record<string, any>;
+}
+
+const FilterSidebar: React.FC<FilterSidebarProps> = ({ 
+  onFilterChange,
+  initialFilters = { brands: ['aigner'] }
+}) => {
   const [filtersData, setFiltersData] = useState<FiltersData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string[] }>({
-    brands: ['aigner'] // Default selected brand
-  });
+  const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string[] }>(initialFilters);
+  const [priceRange, setPriceRange] = useState<{min: number, max: number}>({ min: 0, max: 1000 });
+  const [caseSizeRange, setCaseSizeRange] = useState<{min: number, max: number}>({ min: 20, max: 45 });
   
   // Fetch filters directly from the API
   const fetchFilters = async () => {
@@ -50,9 +59,24 @@ const FilterSidebar = () => {
       
       // Update state with fetched data
       setFiltersData(data);
+      
+      // Initialize ranges
+      if (data.priceRange) {
+        setPriceRange({
+          min: data.priceRange.min,
+          max: data.priceRange.max
+        });
+      }
+      
+      if (data.caseSizeRange) {
+        setCaseSizeRange({
+          min: data.caseSizeRange.min,
+          max: data.caseSizeRange.max
+        });
+      }
     } catch (error) {
-      // No error handling as per requirements - errors will throw themselves
       console.log('Error fetching filters:', error);
+      toast.error('Failed to load filters. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -63,9 +87,54 @@ const FilterSidebar = () => {
     fetchFilters();
   }, []);
   
+  // Notify parent when filters change
+  useEffect(() => {
+    if (onFilterChange) {
+      const filters = {
+        ...selectedOptions,
+        priceRange,
+        caseSizeRange
+      };
+      onFilterChange(filters);
+    }
+  }, [selectedOptions, priceRange, caseSizeRange, onFilterChange]);
+  
+  // Handle selection changes for checkboxes
+  const handleSelectionChange = (category: string, selected: string[]) => {
+    setSelectedOptions(prev => ({
+      ...prev,
+      [category]: selected
+    }));
+  };
+  
+  // Handle price range changes
+  const handlePriceRangeChange = (min: number, max: number) => {
+    setPriceRange({ min, max });
+  };
+  
+  // Handle case size range changes
+  const handleCaseSizeRangeChange = (min: number, max: number) => {
+    setCaseSizeRange({ min, max });
+  };
+  
   // Clear all filters
   const handleClearFilters = () => {
+    // Reset to initial values from API data
     setSelectedOptions({});
+    
+    if (filtersData) {
+      setPriceRange({
+        min: filtersData.priceRange.min,
+        max: filtersData.priceRange.max
+      });
+      
+      setCaseSizeRange({
+        min: filtersData.caseSizeRange.min,
+        max: filtersData.caseSizeRange.max
+      });
+    }
+    
+    toast.success('Filters cleared');
   };
 
   return (
@@ -107,6 +176,9 @@ const FilterSidebar = () => {
             rangeMin={filtersData.priceRange.min}
             rangeMax={filtersData.priceRange.max}
             rangeUnit={filtersData.priceRange.unit}
+            currentMin={priceRange.min}
+            currentMax={priceRange.max}
+            onRangeChange={handlePriceRangeChange}
           />
           
           <FilterCategory
@@ -114,6 +186,7 @@ const FilterSidebar = () => {
             options={filtersData.categories}
             type="checkbox"
             selectedOptions={selectedOptions.categories || []}
+            onSelectionChange={(selected) => handleSelectionChange('categories', selected)}
           />
           
           <FilterCategory
@@ -121,6 +194,7 @@ const FilterSidebar = () => {
             options={filtersData.brands}
             type="checkbox"
             selectedOptions={selectedOptions.brands || []}
+            onSelectionChange={(selected) => handleSelectionChange('brands', selected)}
           />
           
           <FilterCategory
@@ -128,6 +202,7 @@ const FilterSidebar = () => {
             options={filtersData.bands}
             type="checkbox"
             selectedOptions={selectedOptions.bands || []}
+            onSelectionChange={(selected) => handleSelectionChange('bands', selected)}
           />
           
           <FilterCategory
@@ -135,6 +210,7 @@ const FilterSidebar = () => {
             options={filtersData.caseColors}
             type="checkbox"
             selectedOptions={selectedOptions.caseColors || []}
+            onSelectionChange={(selected) => handleSelectionChange('caseColors', selected)}
           />
           
           <FilterCategory
@@ -142,6 +218,7 @@ const FilterSidebar = () => {
             options={filtersData.colors}
             type="checkbox"
             selectedOptions={selectedOptions.colors || []}
+            onSelectionChange={(selected) => handleSelectionChange('colors', selected)}
           />
           
           <FilterCategory
@@ -151,6 +228,9 @@ const FilterSidebar = () => {
             rangeMin={filtersData.caseSizeRange.min}
             rangeMax={filtersData.caseSizeRange.max}
             rangeUnit={filtersData.caseSizeRange.unit}
+            currentMin={caseSizeRange.min}
+            currentMax={caseSizeRange.max}
+            onRangeChange={handleCaseSizeRangeChange}
           />
         </>
       ) : null}

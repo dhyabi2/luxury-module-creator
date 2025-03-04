@@ -16,12 +16,31 @@ export default async (req: Request) => {
   const pageSize = parseInt(url.searchParams.get('pageSize') || '8');
   const sortBy = url.searchParams.get('sortBy') || 'featured';
   
-  console.log(`Processing request: brand=${brand}, category=${category}, page=${page}, pageSize=${pageSize}, sortBy=${sortBy}`);
+  // Additional filter parameters
+  const minPrice = url.searchParams.get('minPrice') ? parseFloat(url.searchParams.get('minPrice') || '0') : undefined;
+  const maxPrice = url.searchParams.get('maxPrice') ? parseFloat(url.searchParams.get('maxPrice') || '1000') : undefined;
+  const minCaseSize = url.searchParams.get('minCaseSize') ? parseFloat(url.searchParams.get('minCaseSize') || '0') : undefined;
+  const maxCaseSize = url.searchParams.get('maxCaseSize') ? parseFloat(url.searchParams.get('maxCaseSize') || '50') : undefined;
+  const band = url.searchParams.get('band') || '';
+  const caseColor = url.searchParams.get('caseColor') || '';
+  const color = url.searchParams.get('color') || '';
+  
+  console.log(`Processing request with filters: brand=${brand}, category=${category}, price=${minPrice}-${maxPrice}, caseSize=${minCaseSize}-${maxCaseSize}`);
   
   try {
     // Query the database
     const result = await productsDb.getAll(
-      { brand, category },
+      { 
+        brand, 
+        category,
+        minPrice,
+        maxPrice,
+        minCaseSize,
+        maxCaseSize,
+        band,
+        caseColor,
+        color
+      },
       { page, pageSize },
       { sortBy }
     );
@@ -41,7 +60,16 @@ export default async (req: Request) => {
   } catch (error) {
     console.error('Error in products API:', error);
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch products' }),
+      JSON.stringify({ 
+        error: 'Failed to fetch products',
+        products: [],
+        pagination: {
+          totalCount: 0,
+          totalPages: 0,
+          currentPage: page,
+          pageSize: pageSize
+        } 
+      }),
       {
         status: 500,
         headers: {

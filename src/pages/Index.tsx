@@ -1,10 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import MainLayout from '../modules/layout/MainLayout';
 import ProductGrid from '../modules/products/ProductGrid';
 import FilterSidebar from '../modules/filters/FilterSidebar';
 
 const Index = () => {
+  const [activeFilters, setActiveFilters] = useState<Record<string, any>>({
+    brands: ['AIGNER']
+  });
+  
+  const handleFilterChange = (filters: Record<string, any>) => {
+    console.log('Filters changed:', filters);
+    setActiveFilters(filters);
+  };
+  
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
@@ -45,12 +54,19 @@ const Index = () => {
         <div className="flex flex-col lg:flex-row gap-6 sm:gap-10">
           {/* Sidebar - Order first on mobile but last on desktop */}
           <div className="w-full lg:w-1/4 order-first">
-            <FilterSidebar />
+            <FilterSidebar 
+              initialFilters={activeFilters}
+              onFilterChange={handleFilterChange}
+            />
           </div>
           
           {/* Main Content */}
           <div className="w-full lg:w-3/4 order-last lg:order-first mt-6 lg:mt-0">
-            <ProductGrid title="AIGNER Watches" filteredBrand="AIGNER" pageSize={8} />
+            <ProductGrid 
+              title="AIGNER Watches" 
+              filters={activeFilters}
+              pageSize={8} 
+            />
           </div>
         </div>
       </div>
