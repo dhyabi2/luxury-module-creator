@@ -35,38 +35,85 @@ export const productsDb = {
         query = query.gte('price', filters.minPrice).lte('price', filters.maxPrice);
       }
       
-      // Apply case size filter - fixed to use proper Postgres syntax
-      if (filters.minCaseSize !== undefined && filters.maxCaseSize !== undefined) {
-        // Now using proper Postgres JSON filtering syntax
-        query = query.not('specifications', 'is', null); // First ensure specifications is not null
+      // Apply case size filter - fixed to use correct Postgres JSON syntax
+      if (filters.minCaseSize !== undefined || filters.maxCaseSize !== undefined) {
+        // First ensure specifications is not null
+        let caseSizeQuery = query.not('specifications', 'is', null);
         
-        // Then add the range conditions separately
+        // Create a new query to avoid TypeScript's excessive type instantiation depth error
         if (filters.minCaseSize !== undefined) {
-          query = query.gte('specifications->caseSize', `${filters.minCaseSize}mm`);
+          query = supabase.from('products')
+            .select('*', { count: 'exact' })
+            .not('specifications', 'is', null)
+            .gte('specifications->>caseSize', `${filters.minCaseSize}mm`);
+            
+          // Re-apply previous filters
+          if (filters.brand && filters.brand.trim() !== '') {
+            if (filters.brand.includes(',')) {
+              const brands = filters.brand.split(',').map((b: string) => b.trim());
+              query = query.in('brand', brands);
+            } else {
+              query = query.ilike('brand', filters.brand);
+            }
+          }
+          
+          if (filters.category && filters.category.trim() !== '') {
+            if (filters.category.includes(',')) {
+              const categories = filters.category.split(',').map((c: string) => c.trim().toLowerCase());
+              query = query.in('category', categories);
+            } else {
+              query = query.eq('category', filters.category.toLowerCase());
+            }
+          }
+          
+          if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
+            query = query.gte('price', filters.minPrice).lte('price', filters.maxPrice);
+          }
         }
         
         if (filters.maxCaseSize !== undefined) {
-          query = query.lte('specifications->caseSize', `${filters.maxCaseSize}mm`);
+          query = query.lte('specifications->>caseSize', `${filters.maxCaseSize}mm`);
         }
       }
       
       // Apply band filter
       if (filters.band && filters.band.trim() !== '') {
         const bands = filters.band.split(',').map((b: string) => b.trim());
-        query = query.in('specifications->strapMaterial', bands);
+        query = query.contains('specifications', { strapMaterial: bands[0] });
+        
+        // If more than one band material, use OR conditions for each additional one
+        if (bands.length > 1) {
+          for (let i = 1; i < bands.length; i++) {
+            query = query.or(`specifications->strapMaterial.eq.${bands[i]}`);
+          }
+        }
       }
       
       // Apply case color filter
       if (filters.caseColor && filters.caseColor.trim() !== '') {
         const colors = filters.caseColor.split(',').map((c: string) => c.trim());
-        query = query.in('specifications->caseMaterial', colors);
+        query = query.contains('specifications', { caseMaterial: colors[0] });
+        
+        // If more than one case color, use OR conditions for each additional one
+        if (colors.length > 1) {
+          for (let i = 1; i < colors.length; i++) {
+            query = query.or(`specifications->caseMaterial.eq.${colors[i]}`);
+          }
+        }
       }
       
-      // Apply color filter
+      // Apply color filter (for both dial and strap)
       if (filters.color && filters.color.trim() !== '') {
         const colors = filters.color.split(',').map((c: string) => c.trim());
-        // Handle multiple possible color fields
-        query = query.or(`specifications->dialColor.in.(${colors.join(',')}),specifications->strapColor.in.(${colors.join(',')})`);
+        let colorConditions = [];
+        
+        // Build conditions for each color and each field
+        for (const color of colors) {
+          colorConditions.push(`specifications->dialColor.eq.${color}`);
+          colorConditions.push(`specifications->strapColor.eq.${color}`);
+        }
+        
+        query = query.or(colorConditions.join(','));
       }
       
       // Execute count query first
