@@ -56,12 +56,12 @@ const ProductCard: React.FC<ProductProps> = ({
           />
         </div>
         
-        <div className="p-6 text-center space-y-4">
-          <div className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-2">{brand}</div>
-          <h3 className="font-medium text-sm sm:text-base line-clamp-2 min-h-[3rem]">
+        <div className="p-8 text-center space-y-6">
+          <div className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">{brand}</div>
+          <h3 className="font-medium text-sm sm:text-base line-clamp-2 min-h-[3rem] mb-4">
             {name}
           </h3>
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2 py-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-3 py-4">
             {discountedPrice ? (
               <>
                 <span className="font-semibold text-base sm:text-lg">{currency} {discountedPrice.toFixed(1)}</span>
@@ -74,7 +74,7 @@ const ProductCard: React.FC<ProductProps> = ({
         </div>
         
         <div 
-          className={`absolute bottom-0 left-0 right-0 bg-brand text-white text-center py-3 text-sm font-medium transform translate-y-full transition-transform duration-300 ${
+          className={`absolute bottom-0 left-0 right-0 bg-brand text-white text-center py-4 text-sm font-medium transform translate-y-full transition-transform duration-300 ${
             isHovered ? 'translate-y-0' : ''
           }`}
         >
