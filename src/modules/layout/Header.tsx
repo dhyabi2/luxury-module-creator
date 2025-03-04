@@ -26,16 +26,16 @@ const Header = () => {
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'glass-effect shadow-sm' : 'bg-black'}`}>
       {/* Top Bar */}
-      <div className="bg-black text-white py-2">
+      <div className="bg-black text-white py-3">
         <div className="container mx-auto px-4 md:px-6 flex items-center justify-between text-xs md:text-sm">
           <div className="flex items-center space-x-2">
             <span className="font-medium">OMAN</span>
             <span className="text-xs opacity-70">عمان</span>
           </div>
           
-          <Link to="/" className="absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center">
-            <div className="w-10 h-10 mb-1 flex items-center justify-center">
-              <img src="/logo.svg" alt="MNK Watches" className="w-full h-full" />
+          <Link to="/" className="absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center z-10">
+            <div className="w-14 h-14 md:w-16 md:h-16 mb-1 flex items-center justify-center bg-black rounded-full">
+              <img src="/logo.svg" alt="MNK Watches" className="w-10 h-10 md:w-12 md:h-12" />
             </div>
             <span className="font-serif tracking-wider text-base md:text-lg whitespace-nowrap">MNK Watches</span>
           </Link>

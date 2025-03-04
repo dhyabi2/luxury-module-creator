@@ -19,7 +19,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
-      <main className="flex-grow pt-[180px] md:pt-[165px]">
+      <main className="flex-grow pt-[200px] md:pt-[185px]">
         {children}
       </main>
       <Footer />
