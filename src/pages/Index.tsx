@@ -6,7 +6,7 @@ import FilterSidebar from '../modules/filters/FilterSidebar';
 
 const Index = () => {
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({
-    brands: ['AIGNER']
+    categories: ['accessories', 'bags', 'perfumes']
   });
   
   // Use a memoized callback to prevent unnecessary rerenders
@@ -32,10 +32,10 @@ const Index = () => {
               <div className="max-w-xl">
                 <p className="text-white/80 font-display text-xs sm:text-sm uppercase tracking-[0.15em] sm:tracking-[0.25em] mb-3 sm:mb-4">Exclusive Collection</p>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif text-white mb-4 sm:mb-6 leading-tight">
-                  Timeless <span className="italic font-light">Elegance</span>
+                  Luxury <span className="italic font-light">Lifestyle</span>
                 </h1>
                 <p className="text-white/90 mb-6 sm:mb-10 text-sm sm:text-base md:text-lg leading-relaxed">
-                  Discover our curated collection of luxury timepieces, where precision meets sophistication.
+                  Discover our curated collection of luxury accessories, bags, and perfumes for the discerning customer.
                 </p>
                 <button className="bg-white text-black hover:bg-gray-100 transition-colors px-6 sm:px-8 py-3 sm:py-3.5 rounded-sm font-medium tracking-wider group text-sm sm:text-base">
                   <span className="group-hover:mr-2 transition-all">SHOP NOW</span>
@@ -48,7 +48,7 @@ const Index = () => {
         
         {/* Breadcrumb */}
         <div className="text-xs sm:text-sm text-gray-600 mb-6 sm:mb-8 tracking-wider overflow-x-auto whitespace-nowrap pb-2">
-          <span className="hover:text-black cursor-pointer transition-colors">HOME</span> / <span className="hover:text-black cursor-pointer transition-colors">WOMEN</span> / <span className="font-medium text-gray-900">AIGNER</span>
+          <span className="hover:text-black cursor-pointer transition-colors">HOME</span> / <span className="hover:text-black cursor-pointer transition-colors">COLLECTIONS</span> / <span className="font-medium text-gray-900">LUXURY LIFESTYLE</span>
         </div>
         
         {/* Products with Sidebar - Mobile First Approach */}
@@ -64,7 +64,7 @@ const Index = () => {
           {/* Main Content */}
           <div className="w-full lg:w-3/4 order-last lg:order-first mt-6 lg:mt-0">
             <ProductGrid 
-              title="AIGNER Watches" 
+              title="Luxury Lifestyle" 
               filters={activeFilters}
               pageSize={8} 
             />
