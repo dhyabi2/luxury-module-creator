@@ -35,28 +35,38 @@ export const productsDb = {
         query = query.gte('price', filters.minPrice).lte('price', filters.maxPrice);
       }
       
-      // Apply case size filter - requires use of JSON query capabilities
+      // Apply case size filter - fixed to use proper Postgres syntax
       if (filters.minCaseSize !== undefined && filters.maxCaseSize !== undefined) {
-        // Extract numeric value from caseSize and filter
-        query = query.or(`and(specifications->caseSize->isnot.null,specifications->caseSize.gte.${filters.minCaseSize}mm,specifications->caseSize.lte.${filters.maxCaseSize}mm)`);
+        // Now using proper Postgres JSON filtering syntax
+        query = query.not('specifications', 'is', null); // First ensure specifications is not null
+        
+        // Then add the range conditions separately
+        if (filters.minCaseSize !== undefined) {
+          query = query.gte('specifications->caseSize', `${filters.minCaseSize}mm`);
+        }
+        
+        if (filters.maxCaseSize !== undefined) {
+          query = query.lte('specifications->caseSize', `${filters.maxCaseSize}mm`);
+        }
       }
       
       // Apply band filter
       if (filters.band && filters.band.trim() !== '') {
         const bands = filters.band.split(',').map((b: string) => b.trim());
-        query = query.or(`specifications->strapMaterial.in.(${bands.join(',')})`);
+        query = query.in('specifications->strapMaterial', bands);
       }
       
       // Apply case color filter
       if (filters.caseColor && filters.caseColor.trim() !== '') {
         const colors = filters.caseColor.split(',').map((c: string) => c.trim());
-        query = query.or(`specifications->caseMaterial.in.(${colors.join(',')})`);
+        query = query.in('specifications->caseMaterial', colors);
       }
       
       // Apply color filter
       if (filters.color && filters.color.trim() !== '') {
         const colors = filters.color.split(',').map((c: string) => c.trim());
-        query = query.or(`specifications->dialColor.in.(${colors.join(',')})`, `specifications->strapColor.in.(${colors.join(',')})`);
+        // Handle multiple possible color fields
+        query = query.or(`specifications->dialColor.in.(${colors.join(',')}),specifications->strapColor.in.(${colors.join(',')})`);
       }
       
       // Execute count query first
