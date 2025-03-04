@@ -202,7 +202,7 @@ const generateMoreProducts = (count = 32) => {
       price: Math.round((sourceProd.price * (0.9 + Math.random() * 0.3)) * 10) / 10,
       discount: Math.random() > 0.7 ? Math.floor(Math.random() * 30) + 5 : undefined,
       stock: Math.floor(Math.random() * 20) + 1,
-      rating: (Math.random() * (5 - 3.8) + 3.8).toFixed(1),
+      rating: Number((Math.random() * (5 - 3.8) + 3.8).toFixed(1)),
       reviews: Math.floor(Math.random() * 30) + 5
     });
   }
