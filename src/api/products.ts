@@ -39,8 +39,16 @@ export default async (req: Request) => {
       }
     );
   } catch (error) {
-    // Log the error but don't handle it - let it throw itself
     console.error('Error in products API:', error);
-    throw error;
+    return new Response(
+      JSON.stringify({ error: 'Failed to fetch products' }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      }
+    );
   }
 };

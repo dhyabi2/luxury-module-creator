@@ -16,10 +16,17 @@ import NavigationAPI from "./api/navigation";
 // Import database initialization
 import { getDb } from "./lib/db";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Mock fetch for development environment when not using Supabase
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development' && !import.meta.env.VITE_USE_SUPABASE) {
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   const originalFetch = window.fetch;
   
   window.fetch = async (input, init) => {
@@ -55,6 +62,7 @@ const App = () => {
     const initDatabase = async () => {
       try {
         await getDb();
+        console.log('Database initialized successfully');
         setIsInitialized(true);
       } catch (err) {
         console.error('Failed to initialize database:', err);

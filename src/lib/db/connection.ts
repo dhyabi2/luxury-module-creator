@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Database connection utility
@@ -5,12 +6,16 @@ export const initializeDb = async () => {
   console.log('Initializing Supabase database connection...');
   
   try {
-    // Test the connection - using correct count syntax
-    const { count } = await supabase
+    // Test the connection by querying the products table
+    const { data, count, error } = await supabase
       .from('products')
       .select('*', { count: 'exact' });
     
-    console.log('Connected to Supabase database successfully');
+    if (error) {
+      throw error;
+    }
+    
+    console.log(`Connected to Supabase database successfully, found ${count} products`);
     return {}; // Empty object as we don't need to store data in memory anymore
   } catch (error) {
     console.error('Failed to initialize Supabase database:', error);

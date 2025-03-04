@@ -11,11 +11,19 @@ export const navigationDb = {
         .from('navigation')
         .select('*')
         .eq('type', 'all')
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching navigation data:', error);
         throw error;
+      }
+      
+      if (!data) {
+        console.warn('No navigation data found');
+        return {
+          mainCategories: [],
+          secondaryCategories: []
+        };
       }
       
       return data.data;

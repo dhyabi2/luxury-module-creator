@@ -20,10 +20,24 @@ export const productsDb = {
       }
       
       // Execute count query first
-      const { count } = await query;
+      const { count, error: countError } = await query;
+      
+      if (countError) {
+        console.error('Error getting product count:', countError);
+        throw countError;
+      }
       
       if (!count) {
-        throw new Error('Failed to get products count');
+        console.warn('No products found matching the criteria');
+        return {
+          products: [],
+          pagination: {
+            totalCount: 0,
+            totalPages: 0,
+            currentPage: pagination.page || 1,
+            pageSize: pagination.pageSize || 8
+          }
+        };
       }
       
       // Apply sorting
@@ -32,12 +46,10 @@ export const productsDb = {
         
         switch (sorting.sortBy) {
           case 'price-low':
-            // For discounted items, we can't sort directly in the DB
-            // We'll sort after fetching the data
+            // For discounted items, we'll sort after fetching
             break;
           case 'price-high':
-            // For discounted items, we can't sort directly in the DB
-            // We'll sort after fetching the data
+            // For discounted items, we'll sort after fetching
             break;
           case 'newest':
             query = query.order('id', { ascending: false });
@@ -63,18 +75,28 @@ export const productsDb = {
       }
       
       if (!products) {
-        throw new Error('No products returned from database');
+        console.warn('No products returned from database');
+        return {
+          products: [],
+          pagination: {
+            totalCount: count,
+            totalPages: Math.ceil(count / (pagination.pageSize || 8)),
+            currentPage: pagination.page || 1,
+            pageSize: pagination.pageSize || 8
+          }
+        };
       }
       
       // Apply client-side sorting for price cases
+      let sortedProducts = [...products];
       if (sorting.sortBy === 'price-low') {
-        products.sort((a: any, b: any) => {
+        sortedProducts.sort((a: any, b: any) => {
           const priceA = a.discount ? a.price - (a.price * a.discount / 100) : a.price;
           const priceB = b.discount ? b.price - (b.price * b.discount / 100) : b.price;
           return priceA - priceB;
         });
       } else if (sorting.sortBy === 'price-high') {
-        products.sort((a: any, b: any) => {
+        sortedProducts.sort((a: any, b: any) => {
           const priceA = a.discount ? a.price - (a.price * a.discount / 100) : a.price;
           const priceB = b.discount ? b.price - (b.price * b.discount / 100) : b.price;
           return priceB - priceA;
@@ -82,7 +104,7 @@ export const productsDb = {
       }
       
       return {
-        products,
+        products: sortedProducts,
         pagination: {
           totalCount: count,
           totalPages: Math.ceil(count / (pagination.pageSize || 8)),

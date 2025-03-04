@@ -10,11 +10,24 @@ export const filtersDb = {
       const { data, error } = await supabase
         .from('filters')
         .select('*')
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching filters data:', error);
         throw error;
+      }
+      
+      if (!data) {
+        console.warn('No filters data found');
+        return {
+          priceRange: { min: 0, max: 1000, unit: 'OMR' },
+          categories: [],
+          brands: [],
+          bands: [],
+          caseColors: [],
+          colors: [],
+          caseSizeRange: { min: 20, max: 45, unit: 'mm' }
+        };
       }
       
       return data.data;
