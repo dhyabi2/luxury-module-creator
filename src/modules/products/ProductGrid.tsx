@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ProductCard, { ProductProps } from './ProductCard';
 import { toast } from 'sonner';
+import { debounce } from 'lodash';
 
 interface PaginationData {
   totalCount: number;
@@ -33,9 +34,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     currentPage: 1,
     pageSize: pageSize
   });
+  const [lastFetchParams, setLastFetchParams] = useState('');
   
-  // Fetch products directly from the API
-  const fetchProducts = async () => {
+  // Create a memoized fetchProducts function that won't change on every render
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     
     try {
@@ -83,10 +85,19 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       urlParams.append('pageSize', pageSize.toString());
       urlParams.append('sortBy', sortOption);
       
-      console.log(`Fetching products: /api/products?${urlParams.toString()}`);
+      const queryString = urlParams.toString();
+      
+      // Prevent duplicate fetch requests with the same parameters
+      if (queryString === lastFetchParams && products.length > 0) {
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log(`Fetching products: /api/products?${queryString}`);
+      setLastFetchParams(queryString);
       
       // Direct API call without hooks or middleware
-      const response = await fetch(`/api/products?${urlParams.toString()}`);
+      const response = await fetch(`/api/products?${queryString}`);
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -112,21 +123,33 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, filters, filteredBrand, pageSize, sortOption, lastFetchParams, products.length]);
   
-  // Fetch products when component mounts or dependencies change
+  // Add a debounced version of fetchProducts to avoid rapid-fire API calls
+  const debouncedFetchProducts = useCallback(
+    debounce(() => {
+      fetchProducts();
+    }, 300),
+    [fetchProducts]
+  );
+  
+  // Fetch products when component mounts or filters change
   useEffect(() => {
-    fetchProducts();
-    // Reset to page 1 when filters change
+    // Reset to page 1 when filters or sorting change
     if (currentPage !== 1) {
       setCurrentPage(1);
+      return; // The page change will trigger another fetch
     }
-  }, [filters, pageSize, sortOption]);
+    debouncedFetchProducts();
+    return () => {
+      debouncedFetchProducts.cancel();
+    };
+  }, [filters, sortOption, pageSize, debouncedFetchProducts]);
   
   // Fetch when page changes (separate dependency to avoid double-fetching)
   useEffect(() => {
     fetchProducts();
-  }, [currentPage]);
+  }, [currentPage, fetchProducts]);
 
   const handleSort = (option: string) => {
     setSortOption(option);

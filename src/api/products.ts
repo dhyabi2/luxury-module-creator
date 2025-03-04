@@ -1,8 +1,10 @@
 
 // Edge API for products data
 // Now uses Supabase database instead of in-memory data
-
 import { productsDb } from '../lib/db';
+
+// Add cache support to reduce duplicate calls
+const CACHE_TIME = 60; // 60 seconds
 
 // Edge function handler
 export default async (req: Request) => {
@@ -47,13 +49,15 @@ export default async (req: Request) => {
     
     console.log(`Returning ${result.products.length} products (page ${result.pagination.currentPage}/${result.pagination.totalPages})`);
     
-    // Return the response
+    // Return the response with caching headers
     return new Response(
       JSON.stringify(result),
       {
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': `public, max-age=${CACHE_TIME}`,
+          'ETag': generateETag(result)
         }
       }
     );
@@ -80,3 +84,16 @@ export default async (req: Request) => {
     );
   }
 };
+
+// Helper to generate a simple ETag for caching
+function generateETag(data: any): string {
+  // Simple hash function for objects
+  const str = JSON.stringify(data);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return `"${hash.toString(16)}"`;
+}

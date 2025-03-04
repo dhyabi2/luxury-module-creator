@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import MainLayout from '../modules/layout/MainLayout';
 import ProductGrid from '../modules/products/ProductGrid';
 import FilterSidebar from '../modules/filters/FilterSidebar';
@@ -9,10 +9,11 @@ const Index = () => {
     brands: ['AIGNER']
   });
   
-  const handleFilterChange = (filters: Record<string, any>) => {
+  // Use a memoized callback to prevent unnecessary rerenders
+  const handleFilterChange = useCallback((filters: Record<string, any>) => {
     console.log('Filters changed:', filters);
     setActiveFilters(filters);
-  };
+  }, []);
   
   return (
     <MainLayout>

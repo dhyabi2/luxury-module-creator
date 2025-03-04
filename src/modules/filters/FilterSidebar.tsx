@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FilterCategory from './FilterCategory';
 import { toast } from 'sonner';
+import { debounce } from 'lodash';
 
 interface FilterOption {
   id: string;
@@ -43,9 +44,12 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string[] }>(initialFilters);
   const [priceRange, setPriceRange] = useState<{min: number, max: number}>({ min: 0, max: 1000 });
   const [caseSizeRange, setCaseSizeRange] = useState<{min: number, max: number}>({ min: 20, max: 45 });
+  const [pendingFilters, setPendingFilters] = useState<boolean>(false);
   
   // Fetch filters directly from the API
   const fetchFilters = async () => {
+    if (isLoading === false && filtersData !== null) return;
+    
     setIsLoading(true);
     
     try {
@@ -82,22 +86,39 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     }
   };
   
-  // Fetch filters when component mounts
+  // Fetch filters when component mounts (only once)
   useEffect(() => {
     fetchFilters();
   }, []);
   
+  // Debounced function to notify parent of filter changes
+  const debouncedFilterChange = useCallback(
+    debounce((filters: Record<string, any>) => {
+      if (onFilterChange) {
+        console.log('Applying debounced filters:', filters);
+        onFilterChange(filters);
+        setPendingFilters(false);
+      }
+    }, 500),
+    [onFilterChange]
+  );
+  
   // Notify parent when filters change
   useEffect(() => {
-    if (onFilterChange) {
-      const filters = {
-        ...selectedOptions,
-        priceRange,
-        caseSizeRange
-      };
-      onFilterChange(filters);
-    }
-  }, [selectedOptions, priceRange, caseSizeRange, onFilterChange]);
+    setPendingFilters(true);
+    
+    const filters = {
+      ...selectedOptions,
+      priceRange,
+      caseSizeRange
+    };
+    
+    debouncedFilterChange(filters);
+    
+    return () => {
+      debouncedFilterChange.cancel();
+    };
+  }, [selectedOptions, priceRange, caseSizeRange, debouncedFilterChange]);
   
   // Handle selection changes for checkboxes
   const handleSelectionChange = (category: string, selected: string[]) => {
