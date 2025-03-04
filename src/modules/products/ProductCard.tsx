@@ -29,13 +29,13 @@ const ProductCard: React.FC<ProductProps> = ({
   const discountedPrice = discount ? price - (price * discount / 100) : null;
   
   return (
-    <Link to={`/product/${id}`}>
+    <Link to={`/product/${id}`} className="block h-full">
       <div 
-        className="product-card group h-full"
+        className="product-card group h-full flex flex-col relative"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="product-card-img-container aspect-square bg-gray-50">
+        <div className="product-card-img-container aspect-square bg-gray-50 flex-shrink-0">
           <img 
             src={image} 
             alt={name}
@@ -56,12 +56,15 @@ const ProductCard: React.FC<ProductProps> = ({
           />
         </div>
         
-        <div className="p-8 text-center space-y-6">
-          <div className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">{brand}</div>
-          <h3 className="font-medium text-sm sm:text-base line-clamp-2 min-h-[3rem] mb-4">
-            {name}
-          </h3>
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-3 py-4">
+        <div className="p-6 text-center space-y-4 flex-grow flex flex-col justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">{brand}</div>
+            <h3 className="font-medium text-sm sm:text-base line-clamp-2 mb-4">
+              {name}
+            </h3>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-3 py-3 mt-auto">
             {discountedPrice ? (
               <>
                 <span className="font-semibold text-base sm:text-lg">{currency} {discountedPrice.toFixed(1)}</span>
@@ -74,7 +77,7 @@ const ProductCard: React.FC<ProductProps> = ({
         </div>
         
         <div 
-          className={`absolute bottom-0 left-0 right-0 bg-brand text-white text-center py-4 text-sm font-medium transform translate-y-full transition-transform duration-300 ${
+          className={`absolute bottom-0 left-0 right-0 bg-brand text-white text-center py-3 text-sm font-medium transform translate-y-full transition-transform duration-300 ${
             isHovered ? 'translate-y-0' : ''
           }`}
         >
