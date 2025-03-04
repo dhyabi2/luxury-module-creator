@@ -1,3 +1,4 @@
+
 // Database connection utility
 // Using Supabase as the database backend
 
@@ -8,13 +9,10 @@ export const initializeDb = async () => {
   console.log('Initializing Supabase database connection...');
   
   try {
-    // Test the connection
-    const { error } = await supabase.from('products').select('count', { count: 'exact', head: true });
-    
-    if (error) {
-      console.error('Error connecting to Supabase:', error);
-      throw error;
-    }
+    // Test the connection - using correct count syntax
+    const { count } = await supabase
+      .from('products')
+      .select('*', { count: 'exact' });
     
     console.log('Connected to Supabase database successfully');
     return {}; // Empty object as we don't need to store data in memory anymore
@@ -42,7 +40,7 @@ export const productsDb = {
     
     try {
       // Start building the query
-      let query = supabase.from('products').select('*');
+      let query = supabase.from('products').select('*', { count: 'exact' });
       
       // Apply filters
       if (filters.brand) {
@@ -53,12 +51,11 @@ export const productsDb = {
         query = query.eq('category', filters.category.toLowerCase());
       }
       
-      // First get the total count
-      const { count, error: countError } = await query.count();
+      // Execute count query first
+      const { count } = await query;
       
-      if (countError) {
-        console.error('Error counting products:', countError);
-        throw countError;
+      if (!count) {
+        throw new Error('Failed to get products count');
       }
       
       // Apply sorting
@@ -75,7 +72,6 @@ export const productsDb = {
             // We'll sort after fetching the data
             break;
           case 'newest':
-            // Using random for "newest" as per original implementation
             query = query.order('id', { ascending: false });
             break;
           default:
@@ -90,7 +86,7 @@ export const productsDb = {
         query = query.range(startIndex, startIndex + pagination.pageSize - 1);
       }
       
-      // Execute the query
+      // Execute the data query
       const { data: products, error } = await query;
       
       if (error) {
@@ -98,7 +94,11 @@ export const productsDb = {
         throw error;
       }
       
-      // Apply client-side sorting for price cases (since we need to calculate discounted prices)
+      if (!products) {
+        throw new Error('No products returned from database');
+      }
+      
+      // Apply client-side sorting for price cases
       if (sorting.sortBy === 'price-low') {
         products.sort((a: any, b: any) => {
           const priceA = a.discount ? a.price - (a.price * a.discount / 100) : a.price;
@@ -168,7 +168,7 @@ export const navigationDb = {
         throw error;
       }
       
-      return data.data; // Return the JSONB data field from the navigation table
+      return data.data;
     } catch (error) {
       console.error('Error in navigationDb.getAll:', error);
       throw error;
@@ -192,7 +192,7 @@ export const filtersDb = {
         throw error;
       }
       
-      return data.data; // Return the JSONB data field from the filters table
+      return data.data;
     } catch (error) {
       console.error('Error in filtersDb.getAll:', error);
       throw error;
