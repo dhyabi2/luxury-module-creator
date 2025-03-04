@@ -10,7 +10,7 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="mb-12 overflow-hidden rounded-lg relative">
-          <div className="h-[400px] bg-gradient-to-r from-brand/90 to-brand-dark/90 relative flex items-center">
+          <div className="h-[400px] bg-gradient-to-r from-black/90 to-gray-800/90 relative flex items-center">
             <div className="absolute inset-0 opacity-10">
               <img 
                 src="https://via.placeholder.com/1920x400?text=Luxury+Watches" 
@@ -25,7 +25,7 @@ const Index = () => {
                 <p className="text-white/90 mb-8 text-lg">
                   Discover our curated collection of luxury timepieces, where precision meets sophistication.
                 </p>
-                <button className="bg-white text-brand hover:bg-gray-100 transition-colors px-8 py-3 rounded-sm font-medium">
+                <button className="bg-white text-black hover:bg-gray-100 transition-colors px-8 py-3 rounded-sm font-medium">
                   Shop Now
                 </button>
               </div>
@@ -35,7 +35,7 @@ const Index = () => {
         
         {/* Breadcrumb */}
         <div className="text-sm text-gray-600 mb-6">
-          <span className="hover:text-brand cursor-pointer">HOME</span> / <span className="hover:text-brand cursor-pointer">WOMEN</span> / <span className="font-medium text-gray-900">AIGNER</span>
+          <span className="hover:text-black cursor-pointer">HOME</span> / <span className="hover:text-black cursor-pointer">WOMEN</span> / <span className="font-medium text-gray-900">AIGNER</span>
         </div>
         
         {/* Products with Sidebar */}
