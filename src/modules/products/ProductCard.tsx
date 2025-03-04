@@ -29,13 +29,13 @@ const ProductCard: React.FC<ProductProps> = ({
   const discountedPrice = discount ? price - (price * discount / 100) : null;
   
   return (
-    <Link to={`/product/${id}`} className="block h-full">
+    <Link to={`/product/${id}`} className="block h-full w-full">
       <div 
-        className="product-card group h-full flex flex-col relative"
+        className="product-card group h-full flex flex-col relative overflow-hidden rounded-md"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="product-card-img-container aspect-square bg-gray-50 flex-shrink-0">
+        <div className="product-card-img-container aspect-square bg-gray-50 flex-shrink-0 relative">
           <img 
             src={image} 
             alt={name}
@@ -56,30 +56,40 @@ const ProductCard: React.FC<ProductProps> = ({
           />
         </div>
         
-        <div className="p-6 text-center space-y-4 flex-grow flex flex-col justify-between">
+        <div className="p-4 sm:p-6 text-center space-y-3 sm:space-y-4 flex-grow flex flex-col justify-between">
           <div>
-            <div className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-3">{brand}</div>
-            <h3 className="font-medium text-sm sm:text-base line-clamp-2 mb-4">
+            <div className="text-xs uppercase tracking-wider text-gray-500 font-medium mb-2 sm:mb-3">{brand}</div>
+            <h3 className="font-medium text-xs sm:text-sm md:text-base line-clamp-2 mb-2 sm:mb-4">
               {name}
             </h3>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-3 py-3 mt-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-3 py-2 sm:py-3 mt-auto">
             {discountedPrice ? (
               <>
-                <span className="font-semibold text-base sm:text-lg">{currency} {discountedPrice.toFixed(1)}</span>
-                <span className="text-gray-500 text-sm line-through">{currency} {price.toFixed(1)}</span>
+                <span className="font-semibold text-sm sm:text-base md:text-lg">{currency} {discountedPrice.toFixed(1)}</span>
+                <span className="text-gray-500 text-xs sm:text-sm line-through">{currency} {price.toFixed(1)}</span>
               </>
             ) : (
-              <span className="font-semibold text-base sm:text-lg">{currency} {price.toFixed(1)}</span>
+              <span className="font-semibold text-sm sm:text-base md:text-lg">{currency} {price.toFixed(1)}</span>
             )}
           </div>
         </div>
         
+        {/* Mobile-friendly view details button - always visible on touch devices */}
+        <div 
+          className={`absolute bottom-0 left-0 right-0 bg-brand text-white text-center py-2 sm:py-3 text-xs sm:text-sm font-medium transform translate-y-full transition-transform duration-300 ${
+            isHovered ? 'translate-y-0' : ''
+          } md:hidden`}
+        >
+          View Details
+        </div>
+        
+        {/* Desktop view details button */}
         <div 
           className={`absolute bottom-0 left-0 right-0 bg-brand text-white text-center py-3 text-sm font-medium transform translate-y-full transition-transform duration-300 ${
             isHovered ? 'translate-y-0' : ''
-          }`}
+          } hidden md:block`}
         >
           View Details
         </div>
