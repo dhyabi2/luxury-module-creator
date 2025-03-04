@@ -12,7 +12,13 @@ import ProductsAPI from "./api/products";
 import FiltersAPI from "./api/filters";
 import NavigationAPI from "./api/navigation";
 
+// Import and initialize database
+import { getDb } from "./lib/db";
+
 const queryClient = new QueryClient();
+
+// Initialize the database
+getDb();
 
 // Mock fetch for development environment
 if (typeof window !== 'undefined') {

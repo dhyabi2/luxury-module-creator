@@ -2,7 +2,9 @@
 // Edge API for filters data
 // No authentication, RLS, or middleware
 
-// Sample filter data
+import { filtersDb } from '../lib/db';
+
+// Sample filter data (used for database seeding)
 export const filtersData = {
   priceRange: { min: 16, max: 1225, unit: 'OMR' },
   
@@ -60,29 +62,29 @@ export const filtersData = {
 export default async (req: Request) => {
   console.log('Filters API request received:', req.url);
   
-  // Parse URL and query parameters
-  const url = new URL(req.url);
-  const category = url.searchParams.get('category') || '';
-  
-  // Return specific filters based on category or return all filters
-  let responseData = { ...filtersData };
-  
-  if (category) {
-    console.log(`Filtering options for category: ${category}`);
-    // In a real API, we might adjust filters based on category
-    // Here we'll just return the full set for simplicity
-  }
-  
-  console.log('Returning filters data');
-  
-  // Return the response
-  return new Response(
-    JSON.stringify(responseData),
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+  try {
+    // Parse URL and query parameters
+    const url = new URL(req.url);
+    const category = url.searchParams.get('category') || '';
+    
+    // Query the database
+    const responseData = filtersDb.getAll(category);
+    
+    console.log('Returning filters data');
+    
+    // Return the response
+    return new Response(
+      JSON.stringify(responseData),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       }
-    }
-  );
+    );
+  } catch (error) {
+    // Log the error but don't handle it - let it throw itself
+    console.error('Error in filters API:', error);
+    throw error;
+  }
 };

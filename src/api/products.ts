@@ -1,8 +1,9 @@
-
 // Edge API for products data
 // No authentication, RLS, or middleware
 
-// Sample product data
+import { productsDb } from '../lib/db';
+
+// Sample product data (used for database seeding)
 export const products = [
   {
     id: '1',
@@ -222,72 +223,31 @@ export default async (req: Request) => {
   const pageSize = parseInt(url.searchParams.get('pageSize') || '8');
   const sortBy = url.searchParams.get('sortBy') || 'featured';
   
-  // Generate all products
-  const allProducts = generateMoreProducts();
+  console.log(`Processing request: brand=${brand}, category=${category}, page=${page}, pageSize=${pageSize}, sortBy=${sortBy}`);
   
-  // Apply filters
-  let filteredProducts = allProducts;
-  
-  if (brand) {
-    console.log(`Filtering by brand: ${brand}`);
-    filteredProducts = filteredProducts.filter(p => p.brand.toUpperCase() === brand.toUpperCase());
-  }
-  
-  if (category) {
-    console.log(`Filtering by category: ${category}`);
-    filteredProducts = filteredProducts.filter(p => p.category.toLowerCase() === category.toLowerCase());
-  }
-  
-  // Apply sorting
-  console.log(`Sorting by: ${sortBy}`);
-  switch (sortBy) {
-    case 'price-low':
-      filteredProducts.sort((a, b) => {
-        const priceA = a.discount ? a.price - (a.price * a.discount / 100) : a.price;
-        const priceB = b.discount ? b.price - (b.price * b.discount / 100) : b.price;
-        return priceA - priceB;
-      });
-      break;
-    case 'price-high':
-      filteredProducts.sort((a, b) => {
-        const priceA = a.discount ? a.price - (a.price * a.discount / 100) : a.price;
-        const priceB = b.discount ? b.price - (b.price * b.discount / 100) : b.price;
-        return priceB - priceA;
-      });
-      break;
-    case 'newest':
-      // For this demo, we'll just randomize the sort order for "newest"
-      filteredProducts.sort(() => Math.random() - 0.5);
-      break;
-    default:
-      // 'featured' - no special sorting, use the default order
-      break;
-  }
-  
-  // Apply pagination
-  const totalCount = filteredProducts.length;
-  const totalPages = Math.ceil(totalCount / pageSize);
-  const startIndex = (page - 1) * pageSize;
-  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + pageSize);
-  
-  console.log(`Returning ${paginatedProducts.length} products (page ${page}/${totalPages})`);
-  
-  // Return the response
-  return new Response(
-    JSON.stringify({
-      products: paginatedProducts,
-      pagination: {
-        totalCount,
-        totalPages,
-        currentPage: page,
-        pageSize
+  try {
+    // Query the database
+    const result = productsDb.getAll(
+      { brand, category },
+      { page, pageSize },
+      { sortBy }
+    );
+    
+    console.log(`Returning ${result.products.length} products (page ${result.pagination.currentPage}/${result.pagination.totalPages})`);
+    
+    // Return the response
+    return new Response(
+      JSON.stringify(result),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       }
-    }),
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    }
-  );
+    );
+  } catch (error) {
+    // Log the error but don't handle it - let it throw itself
+    console.error('Error in products API:', error);
+    throw error;
+  }
 };
