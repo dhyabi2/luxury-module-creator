@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ProductCard, { ProductProps } from './ProductCard';
 import { toast } from 'sonner';
 import { debounce } from 'lodash';
@@ -35,69 +34,74 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     pageSize: pageSize
   });
   const [lastFetchParams, setLastFetchParams] = useState('');
+  const isInitialRender = useRef(true);
+  const pendingRequest = useRef<AbortController | null>(null);
   
-  // Create a memoized fetchProducts function that won't change on every render
+  const buildQueryParams = useCallback((page: number, sort: string, filterValues: Record<string, any>) => {
+    const urlParams = new URLSearchParams();
+    
+    if (filteredBrand) {
+      console.log(`[ProductGrid] Using filteredBrand: ${filteredBrand}`);
+      urlParams.append('brand', filteredBrand);
+    } else if (filterValues.brands && filterValues.brands.length > 0) {
+      console.log(`[ProductGrid] Using brands filter: ${filterValues.brands.join(',')}`);
+      urlParams.append('brand', filterValues.brands.join(','));
+    }
+    
+    if (filterValues.categories && filterValues.categories.length > 0) {
+      console.log(`[ProductGrid] Using categories filter: ${filterValues.categories.join(',')}`);
+      urlParams.append('category', filterValues.categories.join(','));
+    }
+    
+    if (filterValues.bands && filterValues.bands.length > 0) {
+      console.log(`[ProductGrid] Using bands filter: ${filterValues.bands.join(',')}`);
+      urlParams.append('band', filterValues.bands.join(','));
+    }
+    
+    if (filterValues.caseColors && filterValues.caseColors.length > 0) {
+      console.log(`[ProductGrid] Using caseColors filter: ${filterValues.caseColors.join(',')}`);
+      urlParams.append('caseColor', filterValues.caseColors.join(','));
+    }
+    
+    if (filterValues.colors && filterValues.colors.length > 0) {
+      console.log(`[ProductGrid] Using colors filter: ${filterValues.colors.join(',')}`);
+      urlParams.append('color', filterValues.colors.join(','));
+    }
+    
+    if (filterValues.priceRange) {
+      console.log(`[ProductGrid] Using price range: ${filterValues.priceRange.min}-${filterValues.priceRange.max}`);
+      urlParams.append('minPrice', filterValues.priceRange.min.toString());
+      urlParams.append('maxPrice', filterValues.priceRange.max.toString());
+    }
+    
+    if (filterValues.caseSizeRange) {
+      console.log(`[ProductGrid] Using case size range: ${filterValues.caseSizeRange.min}-${filterValues.caseSizeRange.max}`);
+      urlParams.append('minCaseSize', filterValues.caseSizeRange.min.toString());
+      urlParams.append('maxCaseSize', filterValues.caseSizeRange.max.toString());
+    }
+    
+    urlParams.append('page', page.toString());
+    urlParams.append('pageSize', pageSize.toString());
+    urlParams.append('sortBy', sort);
+    
+    return urlParams.toString();
+  }, [filteredBrand, pageSize]);
+  
   const fetchProducts = useCallback(async () => {
     console.log('[ProductGrid] Starting products fetch');
+    
+    if (pendingRequest.current) {
+      pendingRequest.current.abort();
+      console.log('[ProductGrid] Cancelled previous fetch request');
+    }
+    
+    pendingRequest.current = new AbortController();
     setIsLoading(true);
     
     try {
-      // Build API URL with query parameters
-      const urlParams = new URLSearchParams();
+      const queryString = buildQueryParams(currentPage, sortOption, filters);
       
-      // Priority to filteredBrand prop for backward compatibility
-      if (filteredBrand) {
-        console.log(`[ProductGrid] Using filteredBrand: ${filteredBrand}`);
-        urlParams.append('brand', filteredBrand);
-      } else if (filters.brands && filters.brands.length > 0) {
-        console.log(`[ProductGrid] Using brands filter: ${filters.brands.join(',')}`);
-        urlParams.append('brand', filters.brands.join(','));
-      }
-      
-      // Add other filters
-      if (filters.categories && filters.categories.length > 0) {
-        console.log(`[ProductGrid] Using categories filter: ${filters.categories.join(',')}`);
-        urlParams.append('category', filters.categories.join(','));
-      }
-      
-      if (filters.bands && filters.bands.length > 0) {
-        console.log(`[ProductGrid] Using bands filter: ${filters.bands.join(',')}`);
-        urlParams.append('band', filters.bands.join(','));
-      }
-      
-      if (filters.caseColors && filters.caseColors.length > 0) {
-        console.log(`[ProductGrid] Using caseColors filter: ${filters.caseColors.join(',')}`);
-        urlParams.append('caseColor', filters.caseColors.join(','));
-      }
-      
-      if (filters.colors && filters.colors.length > 0) {
-        console.log(`[ProductGrid] Using colors filter: ${filters.colors.join(',')}`);
-        urlParams.append('color', filters.colors.join(','));
-      }
-      
-      // Add price range if present
-      if (filters.priceRange) {
-        console.log(`[ProductGrid] Using price range: ${filters.priceRange.min}-${filters.priceRange.max}`);
-        urlParams.append('minPrice', filters.priceRange.min.toString());
-        urlParams.append('maxPrice', filters.priceRange.max.toString());
-      }
-      
-      // Add case size range if present
-      if (filters.caseSizeRange) {
-        console.log(`[ProductGrid] Using case size range: ${filters.caseSizeRange.min}-${filters.caseSizeRange.max}`);
-        urlParams.append('minCaseSize', filters.caseSizeRange.min.toString());
-        urlParams.append('maxCaseSize', filters.caseSizeRange.max.toString());
-      }
-      
-      // Add pagination and sorting
-      urlParams.append('page', currentPage.toString());
-      urlParams.append('pageSize', pageSize.toString());
-      urlParams.append('sortBy', sortOption);
-      
-      const queryString = urlParams.toString();
-      
-      // Prevent duplicate fetch requests with the same parameters
-      if (queryString === lastFetchParams && products.length > 0) {
+      if (queryString === lastFetchParams && products.length > 0 && !isInitialRender.current) {
         console.log('[ProductGrid] Skipping fetch - parameters unchanged and products exist');
         setIsLoading(false);
         return;
@@ -106,8 +110,9 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       console.log(`[ProductGrid] Fetching products: /api/products?${queryString}`);
       setLastFetchParams(queryString);
       
-      // Direct API call without hooks or middleware
-      const response = await fetch(`/api/products?${queryString}`);
+      const response = await fetch(`/api/products?${queryString}`, {
+        signal: pendingRequest.current.signal
+      });
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -117,26 +122,28 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       
       console.log(`[ProductGrid] Products data received: ${data.products.length} products, total: ${data.pagination.totalCount}`);
       
-      // Update state with fetched data
       setProducts(data.products);
       setPagination(data.pagination);
+      isInitialRender.current = false;
     } catch (error) {
-      console.error('[ProductGrid] Error fetching products:', error);
-      toast.error('Failed to load products. Please try again.');
-      setProducts([]);
-      setPagination({
-        totalCount: 0,
-        totalPages: 0,
-        currentPage: 1,
-        pageSize: pageSize
-      });
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('[ProductGrid] Error fetching products:', error);
+        toast.error('Failed to load products. Please try again.');
+        setProducts([]);
+        setPagination({
+          totalCount: 0,
+          totalPages: 0,
+          currentPage: 1,
+          pageSize: pageSize
+        });
+      }
     } finally {
       console.log('[ProductGrid] Products fetch completed');
       setIsLoading(false);
+      pendingRequest.current = null;
     }
-  }, [currentPage, filters, filteredBrand, pageSize, sortOption, lastFetchParams, products.length]);
+  }, [currentPage, filters, buildQueryParams, sortOption, lastFetchParams, products.length, pageSize]);
   
-  // Add a debounced version of fetchProducts to avoid rapid-fire API calls
   const debouncedFetchProducts = useCallback(
     debounce(() => {
       console.log('[ProductGrid] Executing debounced fetch');
@@ -145,33 +152,39 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     [fetchProducts]
   );
   
-  // Fetch products when component mounts or filters change
   useEffect(() => {
     console.log('[ProductGrid] Filters or sort options changed');
-    // Reset to page 1 when filters or sorting change
     if (currentPage !== 1) {
       console.log('[ProductGrid] Resetting to page 1 due to filter/sort change');
       setCurrentPage(1);
-      return; // The page change will trigger another fetch
+      return;
     }
     console.log('[ProductGrid] Initiating debounced fetch due to filter/sort change');
     debouncedFetchProducts();
     return () => {
       console.log('[ProductGrid] Cleanup - cancelling debounced fetch');
       debouncedFetchProducts.cancel();
+      
+      if (pendingRequest.current) {
+        pendingRequest.current.abort();
+      }
     };
-  }, [filters, sortOption, pageSize, debouncedFetchProducts]);
+  }, [filters, sortOption, pageSize, debouncedFetchProducts, currentPage]);
   
-  // Fetch when page changes (separate dependency to avoid double-fetching)
   useEffect(() => {
     console.log(`[ProductGrid] Page changed to ${currentPage}, initiating fetch`);
     fetchProducts();
+    
+    return () => {
+      if (pendingRequest.current) {
+        pendingRequest.current.abort();
+      }
+    };
   }, [currentPage, fetchProducts]);
 
   const handleSort = (option: string) => {
     console.log(`[ProductGrid] Sort option changed to: ${option}`);
     setSortOption(option);
-    // Products will be fetched with the new sort option via the useEffect
   };
   
   return (
@@ -245,7 +258,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         </div>
       )}
       
-      {/* Pagination - only show if we have products */}
       {pagination.totalPages > 0 && (
         <div className="mt-8 flex justify-center">
           <div className="flex items-center space-x-1 text-sm">
