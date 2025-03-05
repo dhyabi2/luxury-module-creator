@@ -1,5 +1,22 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
+
+type SpecificationsType = {
+  strapMaterial?: string;
+  caseMaterial?: string;
+  dialColor?: string;
+  strapColor?: string;
+  caseSize?: string;
+  [key: string]: string | undefined;
+};
+
+type ProductType = {
+  category: string;
+  brand: string;
+  price: number;
+  specifications?: SpecificationsType;
+};
 
 // Database operations for filters
 export const filtersDb = {
@@ -49,15 +66,18 @@ export const filtersDb = {
         throw error;
       }
       
+      // Type safety for products
+      const typedProducts = products as unknown as ProductType[];
+      
       // Extract and count unique categories
-      const categories = products.reduce((acc, product) => {
+      const categories = typedProducts.reduce((acc, product) => {
         // Skip if category is already in the accumulator
         if (acc.some(cat => cat.id === product.category.toLowerCase())) {
           return acc;
         }
         
         // Count products in this category
-        const count = products.filter(p => 
+        const count = typedProducts.filter(p => 
           p.category.toLowerCase() === product.category.toLowerCase()
         ).length;
         
@@ -69,17 +89,17 @@ export const filtersDb = {
         });
         
         return acc;
-      }, []);
+      }, [] as Array<{id: string, name: string, count: number}>);
       
       // Extract and count unique brands
-      const brands = products.reduce((acc, product) => {
+      const brands = typedProducts.reduce((acc, product) => {
         // Skip if brand is already in the accumulator
         if (acc.some(brand => brand.id === product.brand)) {
           return acc;
         }
         
         // Count products with this brand
-        const count = products.filter(p => p.brand === product.brand).length;
+        const count = typedProducts.filter(p => p.brand === product.brand).length;
         
         // Add brand with count
         acc.push({
@@ -89,15 +109,15 @@ export const filtersDb = {
         });
         
         return acc;
-      }, []);
+      }, [] as Array<{id: string, name: string, count: number}>);
       
       // Group brands by category for category-specific brand filtering
-      const categoryBrands = products.reduce((acc, product) => {
+      const categoryBrands = typedProducts.reduce((acc, product) => {
         const category = product.category.toLowerCase();
         const brand = {
           id: product.brand,
           name: product.brand.charAt(0).toUpperCase() + product.brand.slice(1).replace(/([A-Z])/g, ' $1').trim(),
-          count: products.filter(p => p.brand === product.brand && p.category.toLowerCase() === category).length
+          count: typedProducts.filter(p => p.brand === product.brand && p.category.toLowerCase() === category).length
         };
         
         // Initialize category array if it doesn't exist
@@ -111,12 +131,12 @@ export const filtersDb = {
         }
         
         return acc;
-      }, {});
+      }, {} as Record<string, Array<{id: string, name: string, count: number}>>);
       
       // Special logic for watch-specific filters
       
       // Get watch products to extract watch-specific filters
-      const watches = products.filter(product => 
+      const watches = typedProducts.filter(product => 
         product.category.toLowerCase() === 'watches'
       );
       
@@ -148,7 +168,7 @@ export const filtersDb = {
         });
         
         return acc;
-      }, []);
+      }, [] as Array<{id: string, name: string, count: number}>);
       
       // Extract and count unique case colors (case materials)
       const caseColors = watches.reduce((acc, watch) => {
@@ -178,7 +198,7 @@ export const filtersDb = {
         });
         
         return acc;
-      }, []);
+      }, [] as Array<{id: string, name: string, count: number}>);
       
       // Extract and count unique colors (combining dial and strap colors)
       const colors = watches.reduce((acc, watch) => {
@@ -186,7 +206,7 @@ export const filtersDb = {
           return acc;
         }
         
-        const processColor = (color) => {
+        const processColor = (color: string | undefined) => {
           if (!color) return acc;
           
           // Skip if color is already in the accumulator
@@ -221,10 +241,10 @@ export const filtersDb = {
         }
         
         return acc;
-      }, []);
+      }, [] as Array<{id: string, name: string, count: number}>);
       
       // Find min and max price across all products
-      const prices = products.map(product => product.price);
+      const prices = typedProducts.map(product => product.price);
       const minPrice = Math.floor(Math.min(...prices));
       const maxPrice = Math.ceil(Math.max(...prices));
       
@@ -233,7 +253,7 @@ export const filtersDb = {
         .filter(watch => watch.specifications && watch.specifications.caseSize)
         .map(watch => {
           const sizeStr = watch.specifications.caseSize;
-          return parseInt(sizeStr, 10);
+          return sizeStr ? parseInt(sizeStr, 10) : NaN;
         })
         .filter(size => !isNaN(size));
       

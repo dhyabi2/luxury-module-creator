@@ -19,25 +19,29 @@ export default async (req: Request) => {
     });
     
     console.log('[API:filters] Calling filtersDb.getAll');
-    // Query the database
-    const responseData = await filtersDb.getAll(category);
+    // Query the database - don't pass category as getAll doesn't accept parameters
+    const responseData = await filtersDb.getAll();
     
     console.log('[API:filters] Filters data retrieved successfully');
     
-    // Since filtersDb.getAll already returns FiltersResponse, we can be confident in the type
+    // Make sure we're dealing with the right type of data
+    const filtersData = typeof responseData === 'string' 
+      ? JSON.parse(responseData) as FiltersResponse
+      : responseData as FiltersResponse;
+      
     console.log('[API:filters] Response data summary:', {
-      categories: responseData.categories?.length || 0,
-      brands: responseData.brands?.length || 0,
-      bands: responseData.bands?.length || 0,
-      caseColors: responseData.caseColors?.length || 0,
-      colors: responseData.colors?.length || 0,
-      priceRange: responseData.priceRange ? `${responseData.priceRange.min}-${responseData.priceRange.max}` : 'not available',
-      caseSizeRange: responseData.caseSizeRange ? `${responseData.caseSizeRange.min}-${responseData.caseSizeRange.max}` : 'not available'
+      categories: filtersData.categories?.length || 0,
+      brands: filtersData.brands?.length || 0,
+      bands: filtersData.bands?.length || 0,
+      caseColors: filtersData.caseColors?.length || 0,
+      colors: filtersData.colors?.length || 0,
+      priceRange: filtersData.priceRange ? `${filtersData.priceRange.min}-${filtersData.priceRange.max}` : 'not available',
+      caseSizeRange: filtersData.caseSizeRange ? `${filtersData.caseSizeRange.min}-${filtersData.caseSizeRange.max}` : 'not available'
     });
     
     // Return the response
     return new Response(
-      JSON.stringify(responseData),
+      JSON.stringify(filtersData),
       {
         headers: {
           'Content-Type': 'application/json',
