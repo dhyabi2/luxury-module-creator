@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import FilterCategory from './FilterCategory';
 import { toast } from 'sonner';
 import { debounce } from 'lodash';
@@ -7,6 +8,10 @@ interface FilterOption {
   id: string;
   name: string;
   count: number;
+}
+
+interface CategoryBrands {
+  [key: string]: FilterOption[];
 }
 
 interface PriceRange {
@@ -19,6 +24,7 @@ interface FiltersData {
   priceRange: PriceRange;
   categories: FilterOption[];
   brands: FilterOption[];
+  categoryBrands?: CategoryBrands;
   bands: FilterOption[];
   caseColors: FilterOption[];
   colors: FilterOption[];
@@ -54,6 +60,16 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   
   const [pendingFilters, setPendingFilters] = useState<boolean>(false);
   const [showWatchFilters, setShowWatchFilters] = useState<boolean>(true);
+  const [categorySpecificBrands, setCategorySpecificBrands] = useState<FilterOption[]>([]);
+  const [activeCategoryName, setActiveCategoryName] = useState<string>("All Categories");
+  
+  // Define a mapping between category IDs and display names
+  const categoryDisplayNames: {[key: string]: string} = useMemo(() => ({
+    'watches': 'Watch Brands',
+    'accessories': 'Accessory Brands',
+    'bags': 'Bag Brands',
+    'perfumes': 'Perfume Brands'
+  }), []);
   
   useEffect(() => {
     const categories = selectedOptions.categories || [];
@@ -63,7 +79,49 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     
     console.log('[FilterSidebar] Non-watch categories selected:', hasNonWatchCategories);
     setShowWatchFilters(!hasNonWatchCategories);
-  }, [selectedOptions.categories]);
+    
+    // Update brand filters based on selected categories
+    if (filtersData) {
+      if (categories.length === 0) {
+        // If no category selected, show all brands
+        console.log('[FilterSidebar] No categories selected, showing all brands');
+        setCategorySpecificBrands(filtersData.brands);
+        setActiveCategoryName("All Brands");
+      } else if (categories.length === 1) {
+        // If one category selected, show only brands for that category
+        const category = categories[0].toLowerCase();
+        console.log(`[FilterSidebar] Single category selected: ${category}, filtering brands`);
+        
+        if (filtersData.categoryBrands && filtersData.categoryBrands[category]) {
+          setCategorySpecificBrands(filtersData.categoryBrands[category]);
+          setActiveCategoryName(categoryDisplayNames[category] || `${category.charAt(0).toUpperCase()}${category.slice(1)} Brands`);
+        } else {
+          // Fallback to all brands if category-specific brands not found
+          setCategorySpecificBrands(filtersData.brands);
+          setActiveCategoryName("All Brands");
+        }
+      } else {
+        // If multiple categories selected, show all brands
+        console.log('[FilterSidebar] Multiple categories selected, showing all brands');
+        setCategorySpecificBrands(filtersData.brands);
+        setActiveCategoryName("All Brands");
+      }
+      
+      // Clear brand selection if the selected brand is not in the current category-specific brands
+      if (selectedOptions.brands && selectedOptions.brands.length > 0) {
+        const validBrandIds = new Set(categorySpecificBrands.map(brand => brand.id));
+        const newBrands = selectedOptions.brands.filter(brandId => validBrandIds.has(brandId));
+        
+        if (newBrands.length !== selectedOptions.brands.length) {
+          console.log('[FilterSidebar] Clearing brands not in selected category');
+          setSelectedOptions(prev => ({
+            ...prev,
+            brands: newBrands
+          }));
+        }
+      }
+    }
+  }, [selectedOptions.categories, filtersData, categoryDisplayNames]);
   
   const fetchFilters = async () => {
     if (isLoading === false && filtersData !== null) return;
@@ -79,7 +137,23 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       
       console.log('[FilterSidebar] Filters data received:', data);
       
+      // Create categoryBrands if not present in API response
+      if (!data.categoryBrands) {
+        console.log('[FilterSidebar] Creating category-specific brand mappings');
+        data.categoryBrands = {
+          'watches': data.brands.filter((brand: FilterOption) => 
+            ['aigner', 'calvinKlein', 'michaelKors', 'tissot'].includes(brand.id)),
+          'accessories': data.brands.filter((brand: FilterOption) => 
+            ['aigner', 'michaelKors'].includes(brand.id)),
+          'bags': data.brands.filter((brand: FilterOption) => 
+            ['aigner', 'michaelKors'].includes(brand.id)),
+          'perfumes': data.brands.filter((brand: FilterOption) => 
+            ['calvinKlein'].includes(brand.id))
+        };
+      }
+      
       setFiltersData(data);
+      setCategorySpecificBrands(data.brands);
       
       if (data.priceRange) {
         console.log(`[FilterSidebar] Setting price range: ${data.priceRange.min}-${data.priceRange.max} ${data.priceRange.unit}`);
@@ -228,8 +302,8 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           />
           
           <FilterCategory
-            title="Brands"
-            options={filtersData.brands}
+            title={activeCategoryName}
+            options={categorySpecificBrands}
             type="checkbox"
             selectedOptions={selectedOptions.brands || []}
             onSelectionChange={(selected) => handleSelectionChange('brands', selected)}
