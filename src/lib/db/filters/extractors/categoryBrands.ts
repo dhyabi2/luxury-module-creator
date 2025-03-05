@@ -118,6 +118,8 @@ export function getCombinedBrands(categoryBrands: CategoryBrands, categories: st
   
   categories.forEach(categoryId => {
     const brandsForCategory = categoryBrands[categoryId] || [];
+    console.log(`[getCombinedBrands] Category ${categoryId} has ${brandsForCategory.length} brands`);
+    
     brandsForCategory.forEach(brand => {
       if (!uniqueBrands.has(brand.id)) {
         uniqueBrands.set(brand.id, { ...brand });
@@ -132,5 +134,8 @@ export function getCombinedBrands(categoryBrands: CategoryBrands, categories: st
     });
   });
   
-  return Array.from(uniqueBrands.values());
+  const result = Array.from(uniqueBrands.values());
+  console.log(`[getCombinedBrands] Combined ${result.length} unique brands from ${categories.length} categories`);
+  
+  return result;
 }

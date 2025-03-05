@@ -25,8 +25,13 @@ const ProductCategory = () => {
   // Use a memoized callback to prevent unnecessary rerenders
   const handleFilterChange = useCallback((filters: Record<string, any>) => {
     console.log('Filters changed:', filters);
-    setActiveFilters(filters);
-  }, []);
+    // Make sure to preserve the category from the URL
+    const updatedFilters = {
+      ...filters,
+      categories: category ? [category] : filters.categories || []
+    };
+    setActiveFilters(updatedFilters);
+  }, [category]);
 
   // Format category name for display (capitalize first letter, remove hyphens)
   const formatCategoryName = (categorySlug: string) => {
@@ -63,10 +68,7 @@ const ProductCategory = () => {
           <div className="w-full lg:w-3/4 order-last lg:order-first mt-6 lg:mt-0">
             <ProductGrid 
               title={displayName} 
-              filters={{
-                ...activeFilters,
-                categories: category ? [category] : []
-              }}
+              filters={activeFilters}
               pageSize={8} 
             />
           </div>

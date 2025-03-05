@@ -30,10 +30,11 @@ export const useCategoryBrands = ({ selectedCategories, filtersData }: UseCatego
     if (selectedCategories.length === 1) {
       const categoryId = selectedCategories[0];
       console.log(`[useCategoryBrands] Single category selected: ${categoryId}, filtering brands`);
+      // Make sure to check if the category exists in categoryBrands before returning
       return filtersData.categoryBrands[categoryId] || [];
     } else {
       console.log(`[useCategoryBrands] Multiple categories selected, showing combined brands`);
-      // Use the new utility function to get combined unique brands
+      // Use the utility function to get combined unique brands
       const combinedBrands = getCombinedBrands(filtersData.categoryBrands, selectedCategories);
       console.log(`[useCategoryBrands] Combined ${combinedBrands.length} brands from ${selectedCategories.length} categories`);
       return combinedBrands;
