@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import FilterCategory from './FilterCategory';
 import { toast } from 'sonner';
@@ -63,7 +62,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [categorySpecificBrands, setCategorySpecificBrands] = useState<FilterOption[]>([]);
   const [activeCategoryName, setActiveCategoryName] = useState<string>("All Brands");
   
-  // Define a mapping between category IDs and display names
   const categoryDisplayNames: {[key: string]: string} = useMemo(() => ({
     'watches': 'Watch Brands',
     'accessories': 'Accessory Brands',
@@ -80,15 +78,12 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     console.log('[FilterSidebar] Non-watch categories selected:', hasNonWatchCategories);
     setShowWatchFilters(!hasNonWatchCategories);
     
-    // Update brand filters based on selected categories
     if (filtersData?.categoryBrands) {
       if (categories.length === 0) {
-        // If no category selected, show all brands
         console.log('[FilterSidebar] No categories selected, showing all brands');
         setCategorySpecificBrands(filtersData.brands);
         setActiveCategoryName("All Brands");
       } else if (categories.length === 1) {
-        // If one category selected, show only brands for that category
         const category = categories[0].toLowerCase();
         console.log(`[FilterSidebar] Single category selected: ${category}, filtering brands`);
         
@@ -96,42 +91,40 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           setCategorySpecificBrands(filtersData.categoryBrands[category]);
           setActiveCategoryName(categoryDisplayNames[category] || `${category.charAt(0).toUpperCase()}${category.slice(1)} Brands`);
         } else {
-          // Fallback to all brands if category-specific brands not found
           setCategorySpecificBrands(filtersData.brands);
           setActiveCategoryName("All Brands");
         }
       } else {
-        // If multiple categories selected, show combined brands from selected categories
         console.log('[FilterSidebar] Multiple categories selected, showing combined brands');
         
-        // Create a combined list of brands from all selected categories
         const combinedBrands: FilterOption[] = [];
         const seenBrandIds = new Set<string>();
         
-        // For each selected category, add its brands to the combined list
         categories.forEach(category => {
           const categoryLower = category.toLowerCase();
-          const categoryBrands = filtersData.categoryBrands?.[categoryLower] || [];
-          
-          categoryBrands.forEach(brand => {
-            if (!seenBrandIds.has(brand.id)) {
-              combinedBrands.push(brand);
-              seenBrandIds.add(brand.id);
-            }
-          });
+          if (filtersData.categoryBrands && filtersData.categoryBrands[categoryLower]) {
+            const categoryBrands = filtersData.categoryBrands[categoryLower];
+            
+            categoryBrands.forEach(brand => {
+              if (!seenBrandIds.has(brand.id)) {
+                combinedBrands.push(brand);
+                seenBrandIds.add(brand.id);
+              }
+            });
+          }
         });
+        
+        console.log(`[FilterSidebar] Combined ${combinedBrands.length} brands from ${categories.length} categories`);
         
         if (combinedBrands.length > 0) {
           setCategorySpecificBrands(combinedBrands);
           setActiveCategoryName("Mixed Category Brands");
         } else {
-          // Fallback to all brands if no combined brands found
           setCategorySpecificBrands(filtersData.brands);
           setActiveCategoryName("All Brands");
         }
       }
       
-      // Clear brand selection if the selected brand is not in the current category-specific brands
       if (selectedOptions.brands && selectedOptions.brands.length > 0) {
         const validBrandIds = new Set(categorySpecificBrands.map(brand => brand.id));
         const newBrands = selectedOptions.brands.filter(brandId => validBrandIds.has(brandId));
@@ -145,7 +138,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         }
       }
     }
-  }, [selectedOptions.categories, filtersData, categoryDisplayNames, categorySpecificBrands]);
+  }, [selectedOptions.categories, filtersData, categoryDisplayNames]);
   
   const fetchFilters = async () => {
     if (isLoading === false && filtersData !== null) return;
@@ -166,7 +159,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       
       console.log('[FilterSidebar] Filters data received:', data);
       
-      // Create categoryBrands if not present in API response
       if (!data.categoryBrands) {
         console.log('[FilterSidebar] Creating category-specific brand mappings');
         data.categoryBrands = {

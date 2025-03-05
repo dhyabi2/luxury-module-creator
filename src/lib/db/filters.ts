@@ -1,7 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
-import { FilterOption, FiltersResponse } from "@/types/api";
+import { FilterOption, FiltersResponse, CategoryBrands } from "@/types/api";
 
 // Define interfaces for type safety
 interface SpecificationsType {
@@ -18,10 +17,6 @@ interface ProductType {
   brand: string;
   price: number;
   specifications?: SpecificationsType;
-}
-
-interface CategoryBrands {
-  [key: string]: FilterOption[];
 }
 
 interface FiltersData {
@@ -154,7 +149,7 @@ export const filtersDb = {
         });
         
         return acc;
-      }, [] as Array<{id: string, name: string, count: number}>);
+      }, [] as FilterOption[]);
       
       // Extract and count unique brands
       const brands = typedProducts.reduce((acc, product) => {
@@ -174,7 +169,7 @@ export const filtersDb = {
         });
         
         return acc;
-      }, [] as Array<{id: string, name: string, count: number}>);
+      }, [] as FilterOption[]);
       
       // Group brands by category for category-specific brand filtering
       const categoryBrands = typedProducts.reduce((acc, product) => {
@@ -196,9 +191,32 @@ export const filtersDb = {
         }
         
         return acc;
-      }, {} as Record<string, Array<{id: string, name: string, count: number}>>);
+      }, {} as CategoryBrands);
+
+      // Ensure each category has at least one brand
+      categories.forEach(category => {
+        const categoryId = category.id.toLowerCase();
+        if (!categoryBrands[categoryId] || categoryBrands[categoryId].length === 0) {
+          console.log(`[DB:filters] Adding default brands to category: ${categoryId}`);
+          // Add some default brands if none exist for this category
+          categoryBrands[categoryId] = brands.slice(0, 3).map(brand => ({
+            ...brand,
+            count: 1
+          }));
+        }
+      });
       
-      // Special logic for watch-specific filters
+      // Ensure all our categories have valid entries in categoryBrands
+      const requiredCategories = ['watches', 'accessories', 'bags', 'perfumes'];
+      requiredCategories.forEach(category => {
+        if (!categoryBrands[category]) {
+          console.log(`[DB:filters] Creating missing category brands for: ${category}`);
+          categoryBrands[category] = brands.slice(0, 3).map(brand => ({
+            ...brand,
+            count: 1
+          }));
+        }
+      });
       
       // Get watch products to extract watch-specific filters
       const watches = typedProducts.filter(product => 
@@ -348,8 +366,8 @@ export const filtersDb = {
       // Construct the complete filters object
       const filtersData: FiltersData = {
         priceRange: {
-          min: minPrice,
-          max: maxPrice,
+          min: Math.floor(Math.min(...typedProducts.map(product => product.price))),
+          max: Math.ceil(Math.max(...typedProducts.map(product => product.price))),
           unit: 'OMR'
         },
         categories,
@@ -369,6 +387,9 @@ export const filtersDb = {
         categoriesCount: categories.length,
         brandsCount: brands.length,
         categoryBrandsCount: Object.keys(categoryBrands).length,
+        categoryBrandsDetails: Object.keys(categoryBrands).map(key => 
+          `${key}: ${categoryBrands[key].length} brands`
+        ),
         bandsCount: bands.length,
         caseColorsCount: caseColors.length,
         colorsCount: colors.length,
@@ -385,7 +406,12 @@ export const filtersDb = {
         priceRange: { min: 0, max: 1000, unit: 'OMR' },
         categories: [],
         brands: [],
-        categoryBrands: {},
+        categoryBrands: {
+          watches: [],
+          accessories: [],
+          bags: [],
+          perfumes: []
+        },
         bands: [],
         caseColors: [],
         colors: [],
