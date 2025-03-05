@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface SecondaryCategory {
   id: string;
@@ -9,8 +10,11 @@ interface SecondaryCategory {
 
 const SecondaryNavigation = () => {
   const [categories, setCategories] = useState<SecondaryCategory[]>([]);
-  const [activeCategory, setActiveCategory] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+  
+  // Determine which category is active based on current path
+  const activeCategory = location.pathname.split('/')[1] || '';
   
   const fetchNavigationData = async () => {
     setIsLoading(true);
@@ -23,7 +27,13 @@ const SecondaryNavigation = () => {
       
       console.log('Secondary navigation data received:', data);
       
-      setCategories(data.secondaryCategories);
+      // Filter out any categories that are not part of the main content
+      const indexPageCategories = data.secondaryCategories.filter((category: SecondaryCategory) => {
+        return ['sale', 'new-in', 'brands', 'watches', 'jewellery', 
+                'accessories', 'bags', 'perfumes', 'store-locator'].includes(category.id);
+      });
+      
+      setCategories(indexPageCategories);
     } catch (error) {
       console.log('Error fetching secondary navigation data:', error);
     } finally {
@@ -67,8 +77,7 @@ const SecondaryNavigation = () => {
                 to={getCategoryRoutePath(category.id)}
                 className={`category-item whitespace-nowrap tracking-wider ${
                   category.highlight ? 'bg-black text-white px-4 py-1.5 rounded-sm' : ''
-                } ${activeCategory === category.id ? 'font-medium' : ''}`}
-                onClick={() => setActiveCategory(category.id)}
+                } ${activeCategory === category.id ? 'font-medium underline' : ''}`}
               >
                 {category.name}
               </Link>
