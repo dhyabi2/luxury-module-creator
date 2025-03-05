@@ -15,5 +15,6 @@ export const defaultFilters: DefaultFilters = {
   bands: [],
   caseColors: [],
   colors: [],
+  genders: [],
   caseSizeRange: { min: 20, max: 45, unit: 'mm' }
 };

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { FiltersData, ProductType, SpecificationsType } from "./types";
 import { FilterOption, CategoryBrands } from "@/types/api";
@@ -42,6 +41,7 @@ export async function generateFilters(): Promise<FiltersData> {
     const bands = extractBands(watches);
     const caseColors = extractCaseColors(watches);
     const colors = extractColors(watches);
+    const genders = extractGenders(watches);
     
     // Find min and max prices
     const prices = typedProducts.map(product => product.price);
@@ -64,6 +64,7 @@ export async function generateFilters(): Promise<FiltersData> {
       bands,
       caseColors,
       colors,
+      genders,
       caseSizeRange: {
         min: minCaseSize,
         max: maxCaseSize,
@@ -81,6 +82,7 @@ export async function generateFilters(): Promise<FiltersData> {
       bandsCount: bands.length,
       caseColorsCount: caseColors.length,
       colorsCount: colors.length,
+      gendersCount: genders.length,
       priceRange: `${minPrice}-${maxPrice}`,
       caseSizeRange: `${minCaseSize}-${maxCaseSize}`
     });
@@ -352,4 +354,36 @@ function extractCaseSizeRange(watches: ProductType[]): { minCaseSize: number, ma
   const maxCaseSize = caseSizes.length > 0 ? Math.max(...caseSizes) : 45;
   
   return { minCaseSize, maxCaseSize };
+}
+
+/**
+ * Extract genders from watches
+ */
+function extractGenders(watches: ProductType[]): FilterOption[] {
+  return watches.reduce((acc, watch) => {
+    if (!watch.gender) {
+      return acc;
+    }
+    
+    const gender = watch.gender.toLowerCase();
+    
+    // Skip if gender is already in the accumulator
+    if (acc.some(g => g.id === gender)) {
+      return acc;
+    }
+    
+    // Count watches with this gender
+    const count = watches.filter(w => 
+      w.gender && w.gender.toLowerCase() === gender
+    ).length;
+    
+    // Add gender with count
+    acc.push({
+      id: gender,
+      name: gender.charAt(0).toUpperCase() + gender.slice(1),
+      count
+    });
+    
+    return acc;
+  }, [] as FilterOption[]);
 }
