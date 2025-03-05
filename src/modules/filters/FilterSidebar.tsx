@@ -50,14 +50,16 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   React.useEffect(() => {
     if (filtersData && categorySpecificBrands.length > 0 && selectedOptions.brands && selectedOptions.brands.length > 0) {
       const validBrandIds = new Set(categorySpecificBrands.map(brand => brand.id));
-      const newBrands = selectedOptions.brands.filter(brandId => validBrandIds.has(brandId));
+      const invalidBrands = selectedOptions.brands.filter(brandId => !validBrandIds.has(brandId));
       
-      if (newBrands.length !== selectedOptions.brands.length) {
-        console.log('[FilterSidebar] Clearing brands not in selected category');
+      // Only modify the brands if there are invalid ones to remove
+      if (invalidBrands.length > 0) {
+        console.log('[FilterSidebar] Removing brands not in selected categories:', invalidBrands);
+        const newBrands = selectedOptions.brands.filter(brandId => validBrandIds.has(brandId));
         handleSelectionChange('brands', newBrands);
       }
     }
-  }, [categorySpecificBrands, selectedOptions.brands]);
+  }, [categorySpecificBrands, selectedOptions.brands, filtersData, handleSelectionChange]);
 
   const onClearFiltersWithToast = () => {
     handleClearFilters();

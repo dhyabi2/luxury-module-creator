@@ -1,99 +1,56 @@
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { FilterOption } from '@/types/api';
+import { useMemo } from 'react';
 import { FiltersData } from '@/lib/db/filters/types';
+import { FilterOption } from '@/types/api';
+import { getCombinedBrands } from '@/lib/db/filters/extractors/categoryBrands';
 
 interface UseCategoryBrandsProps {
   selectedCategories: string[];
   filtersData: FiltersData | null;
 }
 
-export const useCategoryBrands = ({ 
-  selectedCategories, 
-  filtersData 
-}: UseCategoryBrandsProps) => {
-  const [showWatchFilters, setShowWatchFilters] = useState<boolean>(true);
-  const [categorySpecificBrands, setCategorySpecificBrands] = useState<FilterOption[]>([]);
-  const [activeCategoryName, setActiveCategoryName] = useState<string>("All Brands");
-  const previousCategoriesRef = useRef<string[]>([]);
+export const useCategoryBrands = ({ selectedCategories, filtersData }: UseCategoryBrandsProps) => {
+  // Determine if watch-specific filters should be shown
+  const showWatchFilters = useMemo(() => {
+    return selectedCategories.includes('watches') && selectedCategories.length === 1;
+  }, [selectedCategories]);
   
-  // Memoize display names to prevent recreation on each render
-  const categoryDisplayNames: {[key: string]: string} = useMemo(() => ({
-    'watches': 'Watch Brands',
-    'accessories': 'Accessory Brands',
-    'bags': 'Bag Brands',
-    'perfumes': 'Perfume Brands'
-  }), []);
-  
-  useEffect(() => {
-    // Skip processing if categories haven't changed
-    if (JSON.stringify(previousCategoriesRef.current) === JSON.stringify(selectedCategories) &&
-        categorySpecificBrands.length > 0) {
-      console.log('[useCategoryBrands] Categories unchanged, skipping update');
-      return;
+  // Get brands for the selected category/categories
+  const categorySpecificBrands = useMemo(() => {
+    if (!filtersData || !filtersData.categoryBrands || selectedCategories.length === 0) {
+      return [];
     }
     
-    previousCategoriesRef.current = [...selectedCategories];
-    
-    const categories = selectedCategories || [];
-    const hasNonWatchCategories = categories.some(cat => 
-      ['accessories', 'bags', 'perfumes'].includes(cat.toLowerCase())
+    // Check if we have non-watch categories selected
+    const hasNonWatchCategories = selectedCategories.some(
+      category => category !== 'watches'
     );
+    console.log(`[useCategoryBrands] Non-watch categories selected: ${hasNonWatchCategories}`);
     
-    console.log('[useCategoryBrands] Non-watch categories selected:', hasNonWatchCategories);
-    setShowWatchFilters(!hasNonWatchCategories);
-    
-    if (!filtersData?.categoryBrands) {
-      console.log('[useCategoryBrands] No filters data available yet');
-      return;
-    }
-    
-    if (categories.length === 0) {
-      console.log('[useCategoryBrands] No categories selected, showing all brands');
-      setCategorySpecificBrands(filtersData.brands);
-      setActiveCategoryName("All Brands");
-    } else if (categories.length === 1) {
-      const category = categories[0].toLowerCase();
-      console.log(`[useCategoryBrands] Single category selected: ${category}, filtering brands`);
-      
-      if (filtersData.categoryBrands && filtersData.categoryBrands[category]) {
-        setCategorySpecificBrands(filtersData.categoryBrands[category]);
-        setActiveCategoryName(categoryDisplayNames[category] || `${category.charAt(0).toUpperCase()}${category.slice(1)} Brands`);
-      } else {
-        setCategorySpecificBrands(filtersData.brands);
-        setActiveCategoryName("All Brands");
-      }
+    if (selectedCategories.length === 1) {
+      const categoryId = selectedCategories[0];
+      console.log(`[useCategoryBrands] Single category selected: ${categoryId}, filtering brands`);
+      return filtersData.categoryBrands[categoryId] || [];
     } else {
-      console.log('[useCategoryBrands] Multiple categories selected, showing combined brands');
-      
-      const combinedBrands: FilterOption[] = [];
-      const seenBrandIds = new Set<string>();
-      
-      categories.forEach(category => {
-        const categoryLower = category.toLowerCase();
-        if (filtersData.categoryBrands && filtersData.categoryBrands[categoryLower]) {
-          const categoryBrands = filtersData.categoryBrands[categoryLower];
-          
-          categoryBrands.forEach(brand => {
-            if (!seenBrandIds.has(brand.id)) {
-              combinedBrands.push(brand);
-              seenBrandIds.add(brand.id);
-            }
-          });
-        }
-      });
-      
-      console.log(`[useCategoryBrands] Combined ${combinedBrands.length} brands from ${categories.length} categories`);
-      
-      if (combinedBrands.length > 0) {
-        setCategorySpecificBrands(combinedBrands);
-        setActiveCategoryName("Mixed Category Brands");
-      } else {
-        setCategorySpecificBrands(filtersData.brands);
-        setActiveCategoryName("All Brands");
-      }
+      console.log(`[useCategoryBrands] Multiple categories selected, showing combined brands`);
+      // Use the new utility function to get combined unique brands
+      const combinedBrands = getCombinedBrands(filtersData.categoryBrands, selectedCategories);
+      console.log(`[useCategoryBrands] Combined ${combinedBrands.length} brands from ${selectedCategories.length} categories`);
+      return combinedBrands;
     }
-  }, [selectedCategories, filtersData, categoryDisplayNames]);
+  }, [filtersData, selectedCategories]);
+  
+  // Choose an appropriate title for the brands section based on selected categories
+  const activeCategoryName = useMemo(() => {
+    if (selectedCategories.length === 0) {
+      return 'Shop by Brand';
+    } else if (selectedCategories.length === 1) {
+      const category = selectedCategories[0];
+      return `${category.charAt(0).toUpperCase() + category.slice(1)} Brands`;
+    } else {
+      return 'Brands';
+    }
+  }, [selectedCategories]);
   
   return {
     showWatchFilters,

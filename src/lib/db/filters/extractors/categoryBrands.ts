@@ -105,3 +105,32 @@ export function groupBrandsByCategory(products: ProductType[], allBrands: Filter
   
   return categoryBrands;
 }
+
+/**
+ * Get combined brands from multiple categories
+ */
+export function getCombinedBrands(categoryBrands: CategoryBrands, categories: string[]): FilterOption[] {
+  if (!categories || categories.length === 0) {
+    return [];
+  }
+  
+  const uniqueBrands = new Map<string, FilterOption>();
+  
+  categories.forEach(categoryId => {
+    const brandsForCategory = categoryBrands[categoryId] || [];
+    brandsForCategory.forEach(brand => {
+      if (!uniqueBrands.has(brand.id)) {
+        uniqueBrands.set(brand.id, { ...brand });
+      } else {
+        // If brand already exists, update the count
+        const existingBrand = uniqueBrands.get(brand.id)!;
+        uniqueBrands.set(brand.id, {
+          ...existingBrand,
+          count: (existingBrand.count || 0) + (brand.count || 0)
+        });
+      }
+    });
+  });
+  
+  return Array.from(uniqueBrands.values());
+}
