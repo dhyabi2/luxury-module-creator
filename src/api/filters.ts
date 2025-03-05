@@ -24,17 +24,15 @@ export default async (req: Request) => {
     
     console.log('[API:filters] Filters data retrieved successfully');
     
-    // Type assertion to ensure we're working with the correct type
-    const typedData = responseData as FiltersResponse;
-    
+    // Since filtersDb.getAll already returns FiltersResponse, we can be confident in the type
     console.log('[API:filters] Response data summary:', {
-      categories: typedData?.categories?.length || 0,
-      brands: typedData?.brands?.length || 0,
-      bands: typedData?.bands?.length || 0,
-      caseColors: typedData?.caseColors?.length || 0,
-      colors: typedData?.colors?.length || 0,
-      priceRange: typedData?.priceRange ? `${typedData.priceRange.min}-${typedData.priceRange.max}` : 'not available',
-      caseSizeRange: typedData?.caseSizeRange ? `${typedData.caseSizeRange.min}-${typedData.caseSizeRange.max}` : 'not available'
+      categories: responseData.categories?.length || 0,
+      brands: responseData.brands?.length || 0,
+      bands: responseData.bands?.length || 0,
+      caseColors: responseData.caseColors?.length || 0,
+      colors: responseData.colors?.length || 0,
+      priceRange: responseData.priceRange ? `${responseData.priceRange.min}-${responseData.priceRange.max}` : 'not available',
+      caseSizeRange: responseData.caseSizeRange ? `${responseData.caseSizeRange.min}-${responseData.caseSizeRange.max}` : 'not available'
     });
     
     // Return the response

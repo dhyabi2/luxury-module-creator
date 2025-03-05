@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { FiltersResponse } from "@/types/api";
+import { Json } from "@/integrations/supabase/types";
 
 // Default filter data if none exists in database
 const defaultFilters: FiltersResponse = {
@@ -59,10 +60,10 @@ export const filtersDb = {
         console.warn('No filters data found, using defaults');
         
         try {
-          // Try to insert default filters
+          // Try to insert default filters - We need to safely convert our typed object to Json
           const { error: insertError } = await supabase
             .from('filters')
-            .insert({ data: defaultFilters });
+            .insert({ data: defaultFilters as unknown as Json });
             
           if (insertError) {
             console.error('Error inserting default filters:', insertError);
@@ -76,8 +77,27 @@ export const filtersDb = {
         return defaultFilters;
       }
       
-      // Return filters data from database - ensure proper typing
-      return data.data as FiltersResponse || defaultFilters;
+      // Return filters data from database - ensure proper typing with safe conversion
+      const filtersData = data.data;
+      
+      // Validate the structure before returning
+      if (
+        filtersData && 
+        typeof filtersData === 'object' && 
+        'priceRange' in filtersData &&
+        'categories' in filtersData &&
+        'brands' in filtersData &&
+        'bands' in filtersData &&
+        'caseColors' in filtersData &&
+        'colors' in filtersData &&
+        'caseSizeRange' in filtersData
+      ) {
+        // Now we're confident in the shape of the data
+        return filtersData as unknown as FiltersResponse;
+      } else {
+        console.error('Filters data from database is not in the expected format:', filtersData);
+        return defaultFilters;
+      }
     } catch (error) {
       console.error('Error in filtersDb.getAll:', error);
       // In case of error, return default filters to ensure UI works
