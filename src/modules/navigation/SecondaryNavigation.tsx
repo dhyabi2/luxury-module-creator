@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 interface SecondaryCategory {
   id: string;
@@ -12,6 +12,7 @@ const SecondaryNavigation = () => {
   const [categories, setCategories] = useState<SecondaryCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Determine which category is active based on current path
   const activeCategory = location.pathname.split('/')[1] || '';
@@ -61,6 +62,13 @@ const SecondaryNavigation = () => {
     return routeMap[categoryId] || '/';
   };
 
+  const handleCategoryClick = (categoryId: string, event: React.MouseEvent<HTMLAnchorElement>) => {
+    // Allow normal navigation to occur as well
+    // This ensures the URL changes, which will trigger the correct page to load
+    // with the appropriate filter
+    console.log(`Navigation: Category ${categoryId} clicked`);
+  };
+
   return (
     <nav className="w-full py-2">
       {isLoading ? (
@@ -78,6 +86,7 @@ const SecondaryNavigation = () => {
                 className={`category-item whitespace-nowrap tracking-wider ${
                   category.highlight ? 'bg-black text-white px-4 py-1.5 rounded-sm' : ''
                 } ${activeCategory === category.id ? 'font-medium underline' : ''}`}
+                onClick={(e) => handleCategoryClick(category.id, e)}
               >
                 {category.name}
               </Link>

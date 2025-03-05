@@ -1,16 +1,26 @@
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import MainLayout from '../modules/layout/MainLayout';
 import ProductGrid from '../modules/products/ProductGrid';
 import FilterSidebar from '../modules/filters/FilterSidebar';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 const ProductCategory = () => {
   const { category } = useParams();
+  const location = useLocation();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({
     priceRange: { min: 0, max: 1225 }
   });
+  
+  // Reset filters when category changes
+  useEffect(() => {
+    console.log(`ProductCategory: Category changed to ${category}, resetting filters`);
+    setActiveFilters({
+      priceRange: { min: 0, max: 1225 },
+      categories: category ? [category] : []
+    });
+  }, [category]);
   
   // Use a memoized callback to prevent unnecessary rerenders
   const handleFilterChange = useCallback((filters: Record<string, any>) => {
@@ -42,7 +52,8 @@ const ProductCategory = () => {
           <div className="w-full lg:w-1/4 order-first">
             <FilterSidebar 
               initialFilters={{
-                priceRange: { min: 0, max: 1225 }
+                priceRange: { min: 0, max: 1225 },
+                categories: category ? [category] : []
               }}
               onFilterChange={handleFilterChange}
             />
@@ -54,7 +65,7 @@ const ProductCategory = () => {
               title={displayName} 
               filters={{
                 ...activeFilters,
-                category: category
+                categories: category ? [category] : []
               }}
               pageSize={8} 
             />
