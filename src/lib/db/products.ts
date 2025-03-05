@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Database operations for products
@@ -56,6 +57,27 @@ export const productsDb = {
         } else {
           console.log(`[DB:products] Applying single category filter: ${filters.category}`);
           query = query.ilike('category', `%${filters.category}%`);
+        }
+      }
+      
+      // Apply gender filter for watches
+      if (filters.gender && filters.gender.trim() !== '') {
+        console.log(`[DB:products] Applying gender filter: ${filters.gender}`);
+        
+        if (filters.gender.includes(',')) {
+          const genders = filters.gender.split(',').map((g: string) => g.trim());
+          console.log(`[DB:products] Applying multiple gender filters: ${genders.join(', ')}`);
+          
+          // For multiple genders, build OR conditions
+          const genderConditions = genders.map(gender => 
+            `specifications->gender.eq.${gender}`
+          ).join(',');
+          
+          console.log(`[DB:products] Gender filter conditions: ${genderConditions}`);
+          query = query.or(genderConditions);
+        } else {
+          console.log(`[DB:products] Applying single gender filter: ${filters.gender}`);
+          query = query.eq('specifications->>gender', filters.gender);
         }
       }
       

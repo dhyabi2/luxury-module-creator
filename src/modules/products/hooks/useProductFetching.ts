@@ -59,6 +59,11 @@ export const useProductFetching = ({
       urlParams.append('category', filterValues.categories.join(','));
     }
     
+    if (filterValues.genders && filterValues.genders.length > 0) {
+      console.log(`[ProductGrid] Using genders filter: ${filterValues.genders.join(',')}`);
+      urlParams.append('gender', filterValues.genders.join(','));
+    }
+    
     if (filterValues.bands && filterValues.bands.length > 0) {
       console.log(`[ProductGrid] Using bands filter: ${filterValues.bands.join(',')}`);
       urlParams.append('band', filterValues.bands.join(','));

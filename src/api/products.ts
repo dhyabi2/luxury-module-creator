@@ -14,6 +14,7 @@ export default async (req: Request) => {
   const url = new URL(req.url);
   const brand = url.searchParams.get('brand') || '';
   const category = url.searchParams.get('category') || '';
+  const gender = url.searchParams.get('gender') || '';
   const page = parseInt(url.searchParams.get('page') || '1');
   const pageSize = parseInt(url.searchParams.get('pageSize') || '8');
   const sortBy = url.searchParams.get('sortBy') || 'featured';
@@ -30,6 +31,7 @@ export default async (req: Request) => {
   console.log('[API:products] Request parameters:', {
     brand,
     category,
+    gender,
     page,
     pageSize,
     sortBy,
@@ -47,6 +49,7 @@ export default async (req: Request) => {
       { 
         brand, 
         category,
+        gender,
         minPrice,
         maxPrice,
         minCaseSize,

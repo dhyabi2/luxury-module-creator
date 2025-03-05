@@ -8,6 +8,7 @@ export interface SpecificationsType {
   dialColor?: string;
   strapColor?: string;
   caseSize?: string;
+  gender?: string;
   [key: string]: string | undefined;
 }
 
@@ -15,6 +16,7 @@ export interface ProductType {
   category: string;
   brand: string;
   price: number;
+  gender?: string;
   specifications?: SpecificationsType;
 }
 
@@ -30,6 +32,7 @@ export interface FiltersData {
   bands: FilterOption[];
   caseColors: FilterOption[];
   colors: FilterOption[];
+  genders: FilterOption[];
   caseSizeRange: {
     min: number;
     max: number;
@@ -46,5 +49,6 @@ export interface DefaultFilters {
   bands: FilterOption[];
   caseColors: FilterOption[];
   colors: FilterOption[];
+  genders: FilterOption[];
   caseSizeRange: { min: number; max: number; unit: string };
 }
