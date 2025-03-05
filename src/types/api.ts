@@ -54,6 +54,11 @@ export interface Range {
   unit: string;
 }
 
+// Category Brands mapping
+export interface CategoryBrands {
+  [key: string]: FilterOption[];
+}
+
 // Filters Response
 export interface FiltersResponse {
   priceRange: Range;
@@ -63,6 +68,7 @@ export interface FiltersResponse {
   caseColors: FilterOption[];
   colors: FilterOption[];
   caseSizeRange: Range;
+  categoryBrands: CategoryBrands;
 }
 
 // Main Category

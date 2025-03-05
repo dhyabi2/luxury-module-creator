@@ -25,9 +25,7 @@ export default async (req: Request) => {
     console.log('[API:filters] Filters data retrieved successfully');
     
     // Make sure we're dealing with the right type of data
-    const filtersData = typeof responseData === 'string' 
-      ? JSON.parse(responseData) as FiltersResponse
-      : responseData as FiltersResponse;
+    const filtersData: FiltersResponse = responseData as FiltersResponse;
       
     // Ensure filtersData has all expected properties
     if (!filtersData || typeof filtersData !== 'object') {

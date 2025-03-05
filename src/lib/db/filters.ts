@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
+import { FilterOption, FiltersResponse } from "@/types/api";
 
 // Define interfaces for type safety
 interface SpecificationsType {
@@ -17,12 +18,6 @@ interface ProductType {
   brand: string;
   price: number;
   specifications?: SpecificationsType;
-}
-
-interface FilterOption {
-  id: string;
-  name: string;
-  count: number;
 }
 
 interface CategoryBrands {
@@ -74,10 +69,44 @@ export const filtersDb = {
       
       console.log('[DB:filters] Filters data retrieved successfully');
       
-      // Parse the data if it's a string, otherwise assume it's already the right format
-      const parsedData = typeof data.data === 'string' 
-        ? JSON.parse(data.data) as FiltersData
-        : data.data as FiltersData;
+      // Parse the data with proper type handling
+      let parsedData: FiltersData;
+      
+      if (typeof data.data === 'string') {
+        // If it's a string, parse it and validate structure
+        try {
+          const parsed = JSON.parse(data.data);
+          // Validate that parsed data has the necessary structure before casting
+          if (parsed && 
+              typeof parsed === 'object' && 
+              parsed.priceRange && 
+              Array.isArray(parsed.categories) && 
+              Array.isArray(parsed.brands) && 
+              parsed.categoryBrands) {
+            parsedData = parsed as FiltersData;
+          } else {
+            throw new Error('Invalid data structure in parsed JSON');
+          }
+        } catch (parseError) {
+          console.error('[DB:filters] Error parsing filters data:', parseError);
+          return filtersDb.generateFilters();
+        }
+      } else if (data.data && typeof data.data === 'object') {
+        // If it's already an object, validate its structure
+        const jsonData = data.data as Record<string, unknown>;
+        if (jsonData.priceRange && 
+            Array.isArray(jsonData.categories) && 
+            Array.isArray(jsonData.brands) && 
+            jsonData.categoryBrands) {
+          parsedData = jsonData as unknown as FiltersData;
+        } else {
+          console.error('[DB:filters] Invalid data structure in database');
+          return filtersDb.generateFilters();
+        }
+      } else {
+        console.error('[DB:filters] Unexpected data format');
+        return filtersDb.generateFilters();
+      }
         
       return parsedData;
     } catch (error) {
