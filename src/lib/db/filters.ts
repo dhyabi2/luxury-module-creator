@@ -1,8 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { FiltersResponse } from "@/types/api";
 
 // Default filter data if none exists in database
-const defaultFilters = {
+const defaultFilters: FiltersResponse = {
   priceRange: { min: 0, max: 1000, unit: 'OMR' },
   categories: [
     { id: 'watches', name: 'Watches', count: 32 },
@@ -38,7 +39,7 @@ const defaultFilters = {
 
 // Database operations for filters
 export const filtersDb = {
-  getAll: async (category: string = '') => {
+  getAll: async (category: string = ''): Promise<FiltersResponse> => {
     console.log(`DB: Getting filters${category ? ` for category: ${category}` : ''}`);
     
     try {
@@ -75,8 +76,8 @@ export const filtersDb = {
         return defaultFilters;
       }
       
-      // Return filters data from database
-      return data.data || defaultFilters;
+      // Return filters data from database - ensure proper typing
+      return data.data as FiltersResponse || defaultFilters;
     } catch (error) {
       console.error('Error in filtersDb.getAll:', error);
       // In case of error, return default filters to ensure UI works
