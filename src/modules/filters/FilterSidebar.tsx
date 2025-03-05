@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import FilterCategory from './FilterCategory';
 import { toast } from 'sonner';
@@ -43,7 +42,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string[] }>(initialFilters);
   
-  // Initialize price range with values from initialFilters if available
   const [priceRange, setPriceRange] = useState<{min: number, max: number}>({ 
     min: initialFilters.priceRange?.min || 0, 
     max: initialFilters.priceRange?.max || 1225 
@@ -55,6 +53,17 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   });
   
   const [pendingFilters, setPendingFilters] = useState<boolean>(false);
+  const [showWatchFilters, setShowWatchFilters] = useState<boolean>(true);
+  
+  useEffect(() => {
+    const categories = selectedOptions.categories || [];
+    const hasNonWatchCategories = categories.some(cat => 
+      ['accessories', 'bags', 'perfumes'].includes(cat.toLowerCase())
+    );
+    
+    console.log('[FilterSidebar] Non-watch categories selected:', hasNonWatchCategories);
+    setShowWatchFilters(!hasNonWatchCategories);
+  }, [selectedOptions.categories]);
   
   const fetchFilters = async () => {
     if (isLoading === false && filtersData !== null) return;
@@ -226,41 +235,45 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
             onSelectionChange={(selected) => handleSelectionChange('brands', selected)}
           />
           
-          <FilterCategory
-            title="Band"
-            options={filtersData.bands}
-            type="checkbox"
-            selectedOptions={selectedOptions.bands || []}
-            onSelectionChange={(selected) => handleSelectionChange('bands', selected)}
-          />
-          
-          <FilterCategory
-            title="Case Colour"
-            options={filtersData.caseColors}
-            type="checkbox"
-            selectedOptions={selectedOptions.caseColors || []}
-            onSelectionChange={(selected) => handleSelectionChange('caseColors', selected)}
-          />
-          
-          <FilterCategory
-            title="Colour"
-            options={filtersData.colors}
-            type="checkbox"
-            selectedOptions={selectedOptions.colors || []}
-            onSelectionChange={(selected) => handleSelectionChange('colors', selected)}
-          />
-          
-          <FilterCategory
-            title="Case Size"
-            options={[]}
-            type="range"
-            rangeMin={filtersData.caseSizeRange.min}
-            rangeMax={filtersData.caseSizeRange.max}
-            rangeUnit={filtersData.caseSizeRange.unit}
-            currentMin={caseSizeRange.min}
-            currentMax={caseSizeRange.max}
-            onRangeChange={handleCaseSizeRangeChange}
-          />
+          {showWatchFilters && (
+            <>
+              <FilterCategory
+                title="Band"
+                options={filtersData.bands}
+                type="checkbox"
+                selectedOptions={selectedOptions.bands || []}
+                onSelectionChange={(selected) => handleSelectionChange('bands', selected)}
+              />
+              
+              <FilterCategory
+                title="Case Colour"
+                options={filtersData.caseColors}
+                type="checkbox"
+                selectedOptions={selectedOptions.caseColors || []}
+                onSelectionChange={(selected) => handleSelectionChange('caseColors', selected)}
+              />
+              
+              <FilterCategory
+                title="Colour"
+                options={filtersData.colors}
+                type="checkbox"
+                selectedOptions={selectedOptions.colors || []}
+                onSelectionChange={(selected) => handleSelectionChange('colors', selected)}
+              />
+              
+              <FilterCategory
+                title="Case Size"
+                options={[]}
+                type="range"
+                rangeMin={filtersData.caseSizeRange.min}
+                rangeMax={filtersData.caseSizeRange.max}
+                rangeUnit={filtersData.caseSizeRange.unit}
+                currentMin={caseSizeRange.min}
+                currentMax={caseSizeRange.max}
+                onRangeChange={handleCaseSizeRangeChange}
+              />
+            </>
+          )}
         </>
       ) : null}
     </div>

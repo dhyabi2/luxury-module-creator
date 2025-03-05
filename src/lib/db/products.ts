@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Database operations for products
@@ -11,6 +12,18 @@ export const productsDb = {
       // Start building the query
       let query = supabase.from('products').select('*', { count: 'exact' });
       console.log('[DB:products] Starting Supabase query build');
+      
+      // Extract categories for smart filtering
+      const categories = filters.category && filters.category.trim() !== '' 
+        ? filters.category.split(',').map((c: string) => c.trim().toLowerCase())
+        : [];
+      
+      // Check if filtering includes non-watch categories
+      const hasNonWatchCategories = categories.some(cat => 
+        ['accessories', 'bags', 'perfumes'].includes(cat.toLowerCase())
+      );
+      
+      console.log(`[DB:products] Has non-watch categories: ${hasNonWatchCategories}`);
       
       // Apply brand filter - can be single brand or comma-separated list
       if (filters.brand && filters.brand.trim() !== '') {
@@ -57,104 +70,111 @@ export const productsDb = {
         query = query.gte('price', filters.minPrice).lte('price', filters.maxPrice);
       }
       
-      // Apply case size filter - fixed to use correct Postgres JSON syntax
-      if (filters.minCaseSize !== undefined || filters.maxCaseSize !== undefined) {
-        console.log(`[DB:products] Applying case size filter: ${filters.minCaseSize || 'min'}-${filters.maxCaseSize || 'max'}`);
-        // First ensure specifications is not null
-        let caseSizeQuery = query.not('specifications', 'is', null);
+      // Skip watch-specific filters for non-watch categories
+      if (!hasNonWatchCategories) {
+        console.log('[DB:products] Applying watch-specific filters');
         
-        // Create a new query to avoid TypeScript's excessive type instantiation depth error
-        if (filters.minCaseSize !== undefined) {
-          console.log(`[DB:products] Building minimum case size query: >= ${filters.minCaseSize}mm`);
-          query = supabase.from('products')
-            .select('*', { count: 'exact' })
-            .not('specifications', 'is', null)
-            .gte('specifications->>caseSize', `${filters.minCaseSize}mm`);
-            
-          // Re-apply previous filters
-          if (filters.brand && filters.brand.trim() !== '') {
-            if (filters.brand.includes(',')) {
-              const brands = filters.brand.split(',').map((b: string) => b.trim());
-              query = query.in('brand', brands);
-            } else {
-              query = query.ilike('brand', filters.brand);
-            }
-          }
+        // Apply case size filter - fixed to use correct Postgres JSON syntax
+        if (filters.minCaseSize !== undefined || filters.maxCaseSize !== undefined) {
+          console.log(`[DB:products] Applying case size filter: ${filters.minCaseSize || 'min'}-${filters.maxCaseSize || 'max'}`);
+          // First ensure specifications is not null
+          let caseSizeQuery = query.not('specifications', 'is', null);
           
-          if (filters.category && filters.category.trim() !== '') {
-            if (filters.category.includes(',')) {
-              const categories = filters.category.split(',').map((c: string) => c.trim().toLowerCase());
-              // Use ilike for multiple categories
-              let categoryQuery = query.ilike('category', `%${categories[0]}%`);
-              if (categories.length > 1) {
-                for (let i = 1; i < categories.length; i++) {
-                  categoryQuery = categoryQuery.or(`category.ilike.%${categories[i]}%`);
-                }
-                query = categoryQuery;
+          // Create a new query to avoid TypeScript's excessive type instantiation depth error
+          if (filters.minCaseSize !== undefined) {
+            console.log(`[DB:products] Building minimum case size query: >= ${filters.minCaseSize}mm`);
+            query = supabase.from('products')
+              .select('*', { count: 'exact' })
+              .not('specifications', 'is', null)
+              .gte('specifications->>caseSize', `${filters.minCaseSize}mm`);
+              
+            // Re-apply previous filters
+            if (filters.brand && filters.brand.trim() !== '') {
+              if (filters.brand.includes(',')) {
+                const brands = filters.brand.split(',').map((b: string) => b.trim());
+                query = query.in('brand', brands);
               } else {
-                query = categoryQuery;
+                query = query.ilike('brand', `%${filters.brand}%`);
               }
-            } else {
-              // Use ilike for single category
-              query = query.ilike('category', `%${filters.category}%`);
+            }
+            
+            if (filters.category && filters.category.trim() !== '') {
+              if (filters.category.includes(',')) {
+                const categories = filters.category.split(',').map((c: string) => c.trim().toLowerCase());
+                // Use ilike for multiple categories
+                let categoryQuery = query.ilike('category', `%${categories[0]}%`);
+                if (categories.length > 1) {
+                  for (let i = 1; i < categories.length; i++) {
+                    categoryQuery = categoryQuery.or(`category.ilike.%${categories[i]}%`);
+                  }
+                  query = categoryQuery;
+                } else {
+                  query = categoryQuery;
+                }
+              } else {
+                // Use ilike for single category
+                query = query.ilike('category', `%${filters.category}%`);
+              }
+            }
+            
+            if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
+              query = query.gte('price', filters.minPrice).lte('price', filters.maxPrice);
             }
           }
           
-          if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
-            query = query.gte('price', filters.minPrice).lte('price', filters.maxPrice);
+          if (filters.maxCaseSize !== undefined) {
+            console.log(`[DB:products] Applying maximum case size filter: <= ${filters.maxCaseSize}mm`);
+            query = query.lte('specifications->>caseSize', `${filters.maxCaseSize}mm`);
           }
         }
         
-        if (filters.maxCaseSize !== undefined) {
-          console.log(`[DB:products] Applying maximum case size filter: <= ${filters.maxCaseSize}mm`);
-          query = query.lte('specifications->>caseSize', `${filters.maxCaseSize}mm`);
-        }
-      }
-      
-      // Apply band filter
-      if (filters.band && filters.band.trim() !== '') {
-        const bands = filters.band.split(',').map((b: string) => b.trim());
-        console.log(`[DB:products] Applying band material filter: ${bands.join(', ')}`);
-        query = query.contains('specifications', { strapMaterial: bands[0] });
-        
-        // If more than one band material, use OR conditions for each additional one
-        if (bands.length > 1) {
-          console.log(`[DB:products] Applying multiple band material conditions`);
-          for (let i = 1; i < bands.length; i++) {
-            query = query.or(`specifications->strapMaterial.eq.${bands[i]}`);
+        // Apply band filter
+        if (filters.band && filters.band.trim() !== '') {
+          const bands = filters.band.split(',').map((b: string) => b.trim());
+          console.log(`[DB:products] Applying band material filter: ${bands.join(', ')}`);
+          query = query.contains('specifications', { strapMaterial: bands[0] });
+          
+          // If more than one band material, use OR conditions for each additional one
+          if (bands.length > 1) {
+            console.log(`[DB:products] Applying multiple band material conditions`);
+            for (let i = 1; i < bands.length; i++) {
+              query = query.or(`specifications->strapMaterial.eq.${bands[i]}`);
+            }
           }
         }
-      }
-      
-      // Apply case color filter
-      if (filters.caseColor && filters.caseColor.trim() !== '') {
-        const colors = filters.caseColor.split(',').map((c: string) => c.trim());
-        console.log(`[DB:products] Applying case material filter: ${colors.join(', ')}`);
-        query = query.contains('specifications', { caseMaterial: colors[0] });
         
-        // If more than one case color, use OR conditions for each additional one
-        if (colors.length > 1) {
-          console.log(`[DB:products] Applying multiple case material conditions`);
-          for (let i = 1; i < colors.length; i++) {
-            query = query.or(`specifications->caseMaterial.eq.${colors[i]}`);
+        // Apply case color filter
+        if (filters.caseColor && filters.caseColor.trim() !== '') {
+          const colors = filters.caseColor.split(',').map((c: string) => c.trim());
+          console.log(`[DB:products] Applying case material filter: ${colors.join(', ')}`);
+          query = query.contains('specifications', { caseMaterial: colors[0] });
+          
+          // If more than one case color, use OR conditions for each additional one
+          if (colors.length > 1) {
+            console.log(`[DB:products] Applying multiple case material conditions`);
+            for (let i = 1; i < colors.length; i++) {
+              query = query.or(`specifications->caseMaterial.eq.${colors[i]}`);
+            }
           }
         }
-      }
-      
-      // Apply color filter (for both dial and strap)
-      if (filters.color && filters.color.trim() !== '') {
-        const colors = filters.color.split(',').map((c: string) => c.trim());
-        let colorConditions = [];
-        console.log(`[DB:products] Applying color filter: ${colors.join(', ')}`);
         
-        // Build conditions for each color and each field
-        for (const color of colors) {
-          colorConditions.push(`specifications->dialColor.eq.${color}`);
-          colorConditions.push(`specifications->strapColor.eq.${color}`);
+        // Apply color filter (for both dial and strap)
+        if (filters.color && filters.color.trim() !== '') {
+          const colors = filters.color.split(',').map((c: string) => c.trim());
+          let colorConditions = [];
+          console.log(`[DB:products] Applying color filter: ${colors.join(', ')}`);
+          
+          // Build conditions for each color and each field
+          for (const color of colors) {
+            colorConditions.push(`specifications->dialColor.eq.${color}`);
+            colorConditions.push(`specifications->strapColor.eq.${color}`);
+          }
+          
+          console.log(`[DB:products] Color filter conditions: ${colorConditions.join(' OR ')}`);
+          query = query.or(colorConditions.join(','));
         }
-        
-        console.log(`[DB:products] Color filter conditions: ${colorConditions.join(' OR ')}`);
-        query = query.or(colorConditions.join(','));
+      } else {
+        console.log('[DB:products] Skipping watch-specific filters for non-watch categories');
       }
       
       // Execute count query first
