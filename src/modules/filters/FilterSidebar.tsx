@@ -81,7 +81,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     setShowWatchFilters(!hasNonWatchCategories);
     
     // Update brand filters based on selected categories
-    if (filtersData) {
+    if (filtersData?.categoryBrands) {
       if (categories.length === 0) {
         // If no category selected, show all brands
         console.log('[FilterSidebar] No categories selected, showing all brands');
@@ -101,10 +101,34 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           setActiveCategoryName("All Brands");
         }
       } else {
-        // If multiple categories selected, show all brands
-        console.log('[FilterSidebar] Multiple categories selected, showing all brands');
-        setCategorySpecificBrands(filtersData.brands);
-        setActiveCategoryName("All Brands");
+        // If multiple categories selected, show combined brands from selected categories
+        console.log('[FilterSidebar] Multiple categories selected, showing combined brands');
+        
+        // Create a combined list of brands from all selected categories
+        const combinedBrands: FilterOption[] = [];
+        const seenBrandIds = new Set<string>();
+        
+        // For each selected category, add its brands to the combined list
+        categories.forEach(category => {
+          const categoryLower = category.toLowerCase();
+          const categoryBrands = filtersData.categoryBrands?.[categoryLower] || [];
+          
+          categoryBrands.forEach(brand => {
+            if (!seenBrandIds.has(brand.id)) {
+              combinedBrands.push(brand);
+              seenBrandIds.add(brand.id);
+            }
+          });
+        });
+        
+        if (combinedBrands.length > 0) {
+          setCategorySpecificBrands(combinedBrands);
+          setActiveCategoryName("Mixed Category Brands");
+        } else {
+          // Fallback to all brands if no combined brands found
+          setCategorySpecificBrands(filtersData.brands);
+          setActiveCategoryName("All Brands");
+        }
       }
       
       // Clear brand selection if the selected brand is not in the current category-specific brands
@@ -133,6 +157,11 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       console.log('[FilterSidebar] Sending request to /api/filters');
       
       const response = await fetch('/api/filters');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch filters: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       console.log('[FilterSidebar] Filters data received:', data);

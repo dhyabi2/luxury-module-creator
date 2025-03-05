@@ -2,25 +2,55 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 
-type SpecificationsType = {
+// Define interfaces for type safety
+interface SpecificationsType {
   strapMaterial?: string;
   caseMaterial?: string;
   dialColor?: string;
   strapColor?: string;
   caseSize?: string;
   [key: string]: string | undefined;
-};
+}
 
-type ProductType = {
+interface ProductType {
   category: string;
   brand: string;
   price: number;
   specifications?: SpecificationsType;
-};
+}
+
+interface FilterOption {
+  id: string;
+  name: string;
+  count: number;
+}
+
+interface CategoryBrands {
+  [key: string]: FilterOption[];
+}
+
+interface FiltersData {
+  priceRange: {
+    min: number;
+    max: number;
+    unit: string;
+  };
+  categories: FilterOption[];
+  brands: FilterOption[];
+  categoryBrands: CategoryBrands;
+  bands: FilterOption[];
+  caseColors: FilterOption[];
+  colors: FilterOption[];
+  caseSizeRange: {
+    min: number;
+    max: number;
+    unit: string;
+  };
+}
 
 // Database operations for filters
 export const filtersDb = {
-  getAll: async () => {
+  getAll: async (): Promise<FiltersData> => {
     console.log('[DB:filters] Getting all filters');
     
     try {
@@ -43,7 +73,13 @@ export const filtersDb = {
       }
       
       console.log('[DB:filters] Filters data retrieved successfully');
-      return data.data;
+      
+      // Parse the data if it's a string, otherwise assume it's already the right format
+      const parsedData = typeof data.data === 'string' 
+        ? JSON.parse(data.data) as FiltersData
+        : data.data as FiltersData;
+        
+      return parsedData;
     } catch (error) {
       console.error('[DB:filters] Unexpected error in filtersDb.getAll:', error);
       
@@ -52,7 +88,7 @@ export const filtersDb = {
     }
   },
   
-  generateFilters: async () => {
+  generateFilters: async (): Promise<FiltersData> => {
     console.log('[DB:filters] Generating filters from products data');
     
     try {
@@ -142,11 +178,16 @@ export const filtersDb = {
       
       // Extract and count unique bands (strap materials)
       const bands = watches.reduce((acc, watch) => {
-        if (!watch.specifications || !watch.specifications.strapMaterial) {
+        if (!watch.specifications) {
           return acc;
         }
         
-        const material = watch.specifications.strapMaterial;
+        const specifications = watch.specifications as SpecificationsType;
+        const material = specifications.strapMaterial;
+        
+        if (!material) {
+          return acc;
+        }
         
         // Skip if material is already in the accumulator
         if (acc.some(band => band.id === material.toLowerCase())) {
@@ -154,11 +195,12 @@ export const filtersDb = {
         }
         
         // Count watches with this material
-        const count = watches.filter(w => 
-          w.specifications && 
-          w.specifications.strapMaterial && 
-          w.specifications.strapMaterial.toLowerCase() === material.toLowerCase()
-        ).length;
+        const count = watches.filter(w => {
+          if (!w.specifications) return false;
+          const specs = w.specifications as SpecificationsType;
+          return specs.strapMaterial && 
+                 specs.strapMaterial.toLowerCase() === material.toLowerCase();
+        }).length;
         
         // Add material with count
         acc.push({
@@ -172,11 +214,16 @@ export const filtersDb = {
       
       // Extract and count unique case colors (case materials)
       const caseColors = watches.reduce((acc, watch) => {
-        if (!watch.specifications || !watch.specifications.caseMaterial) {
+        if (!watch.specifications) {
           return acc;
         }
         
-        const material = watch.specifications.caseMaterial;
+        const specifications = watch.specifications as SpecificationsType;
+        const material = specifications.caseMaterial;
+        
+        if (!material) {
+          return acc;
+        }
         
         // Skip if material is already in the accumulator
         if (acc.some(color => color.id === material.toLowerCase())) {
@@ -184,11 +231,12 @@ export const filtersDb = {
         }
         
         // Count watches with this material
-        const count = watches.filter(w => 
-          w.specifications && 
-          w.specifications.caseMaterial && 
-          w.specifications.caseMaterial.toLowerCase() === material.toLowerCase()
-        ).length;
+        const count = watches.filter(w => {
+          if (!w.specifications) return false;
+          const specs = w.specifications as SpecificationsType;
+          return specs.caseMaterial && 
+                 specs.caseMaterial.toLowerCase() === material.toLowerCase();
+        }).length;
         
         // Add material with count
         acc.push({
@@ -206,6 +254,8 @@ export const filtersDb = {
           return acc;
         }
         
+        const specifications = watch.specifications as SpecificationsType;
+        
         const processColor = (color: string | undefined) => {
           if (!color) return acc;
           
@@ -215,11 +265,12 @@ export const filtersDb = {
           }
           
           // Count watches with this color (in either dial or strap)
-          const count = watches.filter(w => 
-            w.specifications && 
-            ((w.specifications.dialColor && w.specifications.dialColor.toLowerCase() === color.toLowerCase()) ||
-             (w.specifications.strapColor && w.specifications.strapColor.toLowerCase() === color.toLowerCase()))
-          ).length;
+          const count = watches.filter(w => {
+            if (!w.specifications) return false;
+            const specs = w.specifications as SpecificationsType;
+            return (specs.dialColor && specs.dialColor.toLowerCase() === color.toLowerCase()) ||
+                   (specs.strapColor && specs.strapColor.toLowerCase() === color.toLowerCase());
+          }).length;
           
           // Add color with count
           acc.push({
@@ -232,12 +283,12 @@ export const filtersDb = {
         };
         
         // Process both dial and strap colors
-        if (watch.specifications.dialColor) {
-          acc = processColor(watch.specifications.dialColor);
+        if (specifications.dialColor) {
+          acc = processColor(specifications.dialColor);
         }
         
-        if (watch.specifications.strapColor) {
-          acc = processColor(watch.specifications.strapColor);
+        if (specifications.strapColor) {
+          acc = processColor(specifications.strapColor);
         }
         
         return acc;
@@ -250,9 +301,14 @@ export const filtersDb = {
       
       // Find min and max case size for watches
       const caseSizes = watches
-        .filter(watch => watch.specifications && watch.specifications.caseSize)
+        .filter(watch => {
+          if (!watch.specifications) return false;
+          const specs = watch.specifications as SpecificationsType;
+          return !!specs.caseSize;
+        })
         .map(watch => {
-          const sizeStr = watch.specifications.caseSize;
+          const specs = watch.specifications as SpecificationsType;
+          const sizeStr = specs.caseSize;
           return sizeStr ? parseInt(sizeStr, 10) : NaN;
         })
         .filter(size => !isNaN(size));
@@ -261,7 +317,7 @@ export const filtersDb = {
       const maxCaseSize = caseSizes.length > 0 ? Math.max(...caseSizes) : 45;
       
       // Construct the complete filters object
-      const filtersData = {
+      const filtersData: FiltersData = {
         priceRange: {
           min: minPrice,
           max: maxPrice,

@@ -29,14 +29,20 @@ export default async (req: Request) => {
       ? JSON.parse(responseData) as FiltersResponse
       : responseData as FiltersResponse;
       
+    // Ensure filtersData has all expected properties
+    if (!filtersData || typeof filtersData !== 'object') {
+      throw new Error('Invalid filters data format');
+    }
+    
     console.log('[API:filters] Response data summary:', {
-      categories: filtersData.categories?.length || 0,
-      brands: filtersData.brands?.length || 0,
-      bands: filtersData.bands?.length || 0,
-      caseColors: filtersData.caseColors?.length || 0,
-      colors: filtersData.colors?.length || 0,
+      categories: Array.isArray(filtersData.categories) ? filtersData.categories.length : 0,
+      brands: Array.isArray(filtersData.brands) ? filtersData.brands.length : 0,
+      bands: Array.isArray(filtersData.bands) ? filtersData.bands.length : 0,
+      caseColors: Array.isArray(filtersData.caseColors) ? filtersData.caseColors.length : 0,
+      colors: Array.isArray(filtersData.colors) ? filtersData.colors.length : 0,
       priceRange: filtersData.priceRange ? `${filtersData.priceRange.min}-${filtersData.priceRange.max}` : 'not available',
-      caseSizeRange: filtersData.caseSizeRange ? `${filtersData.caseSizeRange.min}-${filtersData.caseSizeRange.max}` : 'not available'
+      caseSizeRange: filtersData.caseSizeRange ? `${filtersData.caseSizeRange.min}-${filtersData.caseSizeRange.max}` : 'not available',
+      categoryBrands: filtersData.categoryBrands ? Object.keys(filtersData.categoryBrands).length : 0
     });
     
     // Return the response
