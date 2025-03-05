@@ -37,7 +37,12 @@ export const useProductFetching = ({
   const [lastFetchParams, setLastFetchParams] = useState('');
   const isInitialRender = useRef(true);
   const pendingRequest = useRef<AbortController | null>(null);
+  const lastFilters = useRef(filters);
+  const lastSort = useRef(sortOption);
+  const lastPage = useRef(currentPage);
+  const lastPageSize = useRef(pageSize);
 
+  // Memoize the buildQueryParams function to prevent recreation on each render
   const buildQueryParams = useCallback((page: number, sort: string, filterValues: Record<string, any>) => {
     const urlParams = new URLSearchParams();
     
@@ -88,8 +93,39 @@ export const useProductFetching = ({
     return urlParams.toString();
   }, [filteredBrand, pageSize]);
   
+  // Skip fetch if filters haven't changed
+  const shouldFetch = useCallback(() => {
+    // Always fetch on initial render
+    if (isInitialRender.current) return true;
+    
+    // Check if any major params have changed
+    if (
+      lastPage.current !== currentPage ||
+      lastSort.current !== sortOption ||
+      lastPageSize.current !== pageSize ||
+      JSON.stringify(lastFilters.current) !== JSON.stringify(filters)
+    ) {
+      return true;
+    }
+    
+    return false;
+  }, [currentPage, filters, sortOption, pageSize]);
+  
   const fetchProducts = useCallback(async () => {
+    // Skip fetch if nothing has changed
+    if (!shouldFetch()) {
+      console.log('[ProductGrid] Skipping fetch - no relevant parameters changed');
+      setIsLoading(false);
+      return;
+    }
+    
     console.log('[ProductGrid] Starting products fetch');
+    
+    // Store current values in refs for future comparison
+    lastFilters.current = filters;
+    lastSort.current = sortOption;
+    lastPage.current = currentPage;
+    lastPageSize.current = pageSize;
     
     if (pendingRequest.current) {
       pendingRequest.current.abort();
@@ -143,8 +179,10 @@ export const useProductFetching = ({
       setIsLoading(false);
       pendingRequest.current = null;
     }
-  }, [currentPage, filters, buildQueryParams, sortOption, lastFetchParams, products.length, pageSize]);
+  }, [currentPage, filters, buildQueryParams, sortOption, lastFetchParams, products.length, pageSize, shouldFetch]);
   
+  // Use a properly memoized debounce that won't recreate on every render
+  // This helps prevent multiple requests when filters change frequently
   const debouncedFetchProducts = useCallback(
     debounce(() => {
       console.log('[ProductGrid] Executing debounced fetch');
@@ -168,10 +206,12 @@ export const useProductFetching = ({
     };
   }, [filters, sortOption, pageSize, debouncedFetchProducts]);
   
-  // Effect for page changes
+  // Only use immediate fetch for page changes (not debounced)
   useEffect(() => {
-    console.log(`[ProductGrid] Page changed to ${currentPage}, initiating fetch`);
-    fetchProducts();
+    if (currentPage !== lastPage.current) {
+      console.log(`[ProductGrid] Page changed to ${currentPage}, initiating fetch`);
+      fetchProducts();
+    }
     
     return () => {
       if (pendingRequest.current) {

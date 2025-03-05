@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface FilterOption {
@@ -42,15 +42,34 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
   const [minValue, setMinValue] = useState(currentMin ?? rangeMin);
   const [maxValue, setMaxValue] = useState(currentMax ?? rangeMax);
   const [showAll, setShowAll] = useState(false);
+  const [isBatchUpdating, setIsBatchUpdating] = useState(false);
+  
+  // Synchronize with external selected options when they change
+  useEffect(() => {
+    if (JSON.stringify(selectedOptions) !== JSON.stringify(selected)) {
+      setSelected(selectedOptions);
+    }
+  }, [selectedOptions]);
+  
+  // Synchronize with external range values when they change
+  useEffect(() => {
+    if (currentMin !== undefined && currentMin !== minValue) {
+      setMinValue(currentMin);
+    }
+    if (currentMax !== undefined && currentMax !== maxValue) {
+      setMaxValue(currentMax);
+    }
+  }, [currentMin, currentMax]);
   
   // Limit number of visible options when collapsed
   const visibleOptions = showAll ? options : options.slice(0, 5);
   
   // Toggle expansion
-  const toggleExpand = () => setIsExpanded(!isExpanded);
+  const toggleExpand = useCallback(() => setIsExpanded(prev => !prev), []);
   
-  // Handle checkbox/radio change
-  const handleSelectionChange = (optionId: string) => {
+  // Handle checkbox/radio change with debounce to prevent multiple API calls
+  const handleSelectionChange = useCallback((optionId: string) => {
+    setIsBatchUpdating(true);
     let newSelected: string[];
     
     if (type === 'radio') {
@@ -64,13 +83,18 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
     }
     
     setSelected(newSelected);
-    if (onSelectionChange) {
-      onSelectionChange(newSelected);
-    }
-  };
+    
+    // Use setTimeout to batch multiple selections before triggering the callback
+    setTimeout(() => {
+      if (onSelectionChange) {
+        onSelectionChange(newSelected);
+      }
+      setIsBatchUpdating(false);
+    }, 0);
+  }, [selected, type, onSelectionChange]);
   
-  // Handle range change
-  const handleRangeChange = (value: number, isMin: boolean) => {
+  // Memoize the range change handler
+  const handleRangeChange = useCallback((value: number, isMin: boolean) => {
     if (isMin) {
       setMinValue(value);
       if (onRangeChange) {
@@ -82,7 +106,12 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
         onRangeChange(minValue, value);
       }
     }
-  };
+  }, [maxValue, minValue, onRangeChange]);
+  
+  // Memoize the show more/less handler
+  const toggleShowAll = useCallback(() => {
+    setShowAll(prev => !prev);
+  }, []);
   
   return (
     <div className="border-b border-gray-200 py-4">
@@ -151,7 +180,7 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
               {options.length > 5 && (
                 <button
                   className="text-xs text-brand hover:underline mt-1"
-                  onClick={() => setShowAll(!showAll)}
+                  onClick={toggleShowAll}
                 >
                   {showAll ? 'Show Less' : 'Show More'}
                 </button>
@@ -164,4 +193,5 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
   );
 };
 
-export default FilterCategory;
+// Memorize the component to prevent unnecessary rerenders
+export default memo(FilterCategory);

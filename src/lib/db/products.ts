@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Database operations for products
@@ -30,7 +29,7 @@ export const productsDb = {
         if (filters.brand.includes(',')) {
           const brands = filters.brand.split(',').map((b: string) => b.trim());
           console.log(`[DB:products] Applying multiple brands filter: ${brands.join(', ')}`);
-          query = query.in('brand', brands);
+          query = query.in('brand', brands); // Use 'in' operator for multiple brands
         } else {
           console.log(`[DB:products] Applying single brand filter: ${filters.brand}`);
           query = query.ilike('brand', `%${filters.brand}%`);
@@ -40,26 +39,22 @@ export const productsDb = {
       // Apply category filter - can be single category or comma-separated list
       if (filters.category && filters.category.trim() !== '') {
         console.log(`[DB:products] Raw category value: "${filters.category}"`);
+        
+        // Optimize for multiple categories - use proper SQL syntax for "IN" or "OR" conditions
         if (filters.category.includes(',')) {
-          const categories = filters.category.split(',').map((c: string) => c.trim());
-          console.log(`[DB:products] Applying multiple categories filter: ${categories.join(', ')}`);
+          const categoryValues = filters.category.split(',').map((c: string) => c.trim());
+          console.log(`[DB:products] Applying multiple categories filter: ${categoryValues.join(', ')}`);
           
-          // For the first category
-          let categoryQuery = query.ilike('category', `%${categories[0]}%`);
-          
-          // Add OR conditions for additional categories
-          if (categories.length > 1) {
-            console.log('[DB:products] Building OR conditions for multiple categories');
-            for (let i = 1; i < categories.length; i++) {
-              categoryQuery = categoryQuery.or(`category.ilike.%${categories[i]}%`);
-            }
-            query = categoryQuery;
+          if (categoryValues.length === 1) {
+            // Simple case for a single category
+            query = query.ilike('category', `%${categoryValues[0]}%`);
           } else {
-            query = categoryQuery;
+            // For multiple categories, use Supabase's OR syntax properly
+            const firstCategory = categoryValues[0];
+            query = query.or(categoryValues.map(cat => `category.ilike.%${cat}%`).join(','));
           }
         } else {
           console.log(`[DB:products] Applying single category filter: ${filters.category}`);
-          // Use ilike for case-insensitive matching with wildcards
           query = query.ilike('category', `%${filters.category}%`);
         }
       }
@@ -74,52 +69,16 @@ export const productsDb = {
       if (!hasNonWatchCategories) {
         console.log('[DB:products] Applying watch-specific filters');
         
-        // Apply case size filter - fixed to use correct Postgres JSON syntax
+        // Apply case size filter if provided
         if (filters.minCaseSize !== undefined || filters.maxCaseSize !== undefined) {
           console.log(`[DB:products] Applying case size filter: ${filters.minCaseSize || 'min'}-${filters.maxCaseSize || 'max'}`);
-          // First ensure specifications is not null
-          let caseSizeQuery = query.not('specifications', 'is', null);
           
-          // Create a new query to avoid TypeScript's excessive type instantiation depth error
+          // Ensure specifications is not null
+          query = query.not('specifications', 'is', null);
+          
           if (filters.minCaseSize !== undefined) {
             console.log(`[DB:products] Building minimum case size query: >= ${filters.minCaseSize}mm`);
-            query = supabase.from('products')
-              .select('*', { count: 'exact' })
-              .not('specifications', 'is', null)
-              .gte('specifications->>caseSize', `${filters.minCaseSize}mm`);
-              
-            // Re-apply previous filters
-            if (filters.brand && filters.brand.trim() !== '') {
-              if (filters.brand.includes(',')) {
-                const brands = filters.brand.split(',').map((b: string) => b.trim());
-                query = query.in('brand', brands);
-              } else {
-                query = query.ilike('brand', `%${filters.brand}%`);
-              }
-            }
-            
-            if (filters.category && filters.category.trim() !== '') {
-              if (filters.category.includes(',')) {
-                const categories = filters.category.split(',').map((c: string) => c.trim().toLowerCase());
-                // Use ilike for multiple categories
-                let categoryQuery = query.ilike('category', `%${categories[0]}%`);
-                if (categories.length > 1) {
-                  for (let i = 1; i < categories.length; i++) {
-                    categoryQuery = categoryQuery.or(`category.ilike.%${categories[i]}%`);
-                  }
-                  query = categoryQuery;
-                } else {
-                  query = categoryQuery;
-                }
-              } else {
-                // Use ilike for single category
-                query = query.ilike('category', `%${filters.category}%`);
-              }
-            }
-            
-            if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
-              query = query.gte('price', filters.minPrice).lte('price', filters.maxPrice);
-            }
+            query = query.gte('specifications->>caseSize', `${filters.minCaseSize}mm`);
           }
           
           if (filters.maxCaseSize !== undefined) {
@@ -132,14 +91,18 @@ export const productsDb = {
         if (filters.band && filters.band.trim() !== '') {
           const bands = filters.band.split(',').map((b: string) => b.trim());
           console.log(`[DB:products] Applying band material filter: ${bands.join(', ')}`);
+          
+          // Use contains for first value
           query = query.contains('specifications', { strapMaterial: bands[0] });
           
-          // If more than one band material, use OR conditions for each additional one
+          // For multiple band materials, use proper OR syntax
           if (bands.length > 1) {
-            console.log(`[DB:products] Applying multiple band material conditions`);
-            for (let i = 1; i < bands.length; i++) {
-              query = query.or(`specifications->strapMaterial.eq.${bands[i]}`);
-            }
+            const orConditions = bands.slice(1).map(band => 
+              `specifications->strapMaterial.eq.${band}`
+            ).join(',');
+            
+            console.log(`[DB:products] Applying additional band conditions: ${orConditions}`);
+            query = query.or(orConditions);
           }
         }
         
@@ -147,31 +110,41 @@ export const productsDb = {
         if (filters.caseColor && filters.caseColor.trim() !== '') {
           const colors = filters.caseColor.split(',').map((c: string) => c.trim());
           console.log(`[DB:products] Applying case material filter: ${colors.join(', ')}`);
+          
+          // Use contains for first value
           query = query.contains('specifications', { caseMaterial: colors[0] });
           
-          // If more than one case color, use OR conditions for each additional one
+          // For multiple case colors, use proper OR syntax
           if (colors.length > 1) {
-            console.log(`[DB:products] Applying multiple case material conditions`);
-            for (let i = 1; i < colors.length; i++) {
-              query = query.or(`specifications->caseMaterial.eq.${colors[i]}`);
-            }
+            const orConditions = colors.slice(1).map(color => 
+              `specifications->caseMaterial.eq.${color}`
+            ).join(',');
+            
+            console.log(`[DB:products] Applying additional case material conditions: ${orConditions}`);
+            query = query.or(orConditions);
           }
         }
         
         // Apply color filter (for both dial and strap)
         if (filters.color && filters.color.trim() !== '') {
           const colors = filters.color.split(',').map((c: string) => c.trim());
-          let colorConditions = [];
-          console.log(`[DB:products] Applying color filter: ${colors.join(', ')}`);
           
-          // Build conditions for each color and each field
-          for (const color of colors) {
-            colorConditions.push(`specifications->dialColor.eq.${color}`);
-            colorConditions.push(`specifications->strapColor.eq.${color}`);
+          if (colors.length === 1) {
+            const color = colors[0];
+            console.log(`[DB:products] Applying single color filter: ${color}`);
+            query = query.or(`specifications->dialColor.eq.${color},specifications->strapColor.eq.${color}`);
+          } else {
+            console.log(`[DB:products] Applying multiple color filters: ${colors.join(', ')}`);
+            
+            // Build proper OR conditions for multiple colors
+            const colorConditions = colors.flatMap(color => [
+              `specifications->dialColor.eq.${color}`,
+              `specifications->strapColor.eq.${color}`
+            ]).join(',');
+            
+            console.log(`[DB:products] Color filter conditions: ${colorConditions}`);
+            query = query.or(colorConditions);
           }
-          
-          console.log(`[DB:products] Color filter conditions: ${colorConditions.join(' OR ')}`);
-          query = query.or(colorConditions.join(','));
         }
       } else {
         console.log('[DB:products] Skipping watch-specific filters for non-watch categories');
@@ -256,7 +229,7 @@ export const productsDb = {
         };
       }
       
-      // Ensure all products have valid image URLs
+      // Process products
       console.log('[DB:products] Processing products data');
       const processedProducts = products.map(product => {
         // Validate image URL

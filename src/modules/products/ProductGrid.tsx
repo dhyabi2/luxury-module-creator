@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useProductFetching } from './hooks/useProductFetching';
 import ProductGridHeader from './components/ProductGridHeader';
 import ProductsDisplay from './components/ProductsDisplay';
@@ -21,26 +21,37 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   const [sortOption, setSortOption] = useState('featured');
   const [currentPage, setCurrentPage] = useState(1);
   
+  // Memoize the filter value to prevent reference changes when the object is the same
+  const memoizedFilters = useCallback(() => {
+    return filters;
+  }, [JSON.stringify(filters)]); // Only update when stringified filters change
+  
   // Reset to page 1 when filters or sort options change
   useEffect(() => {
     if (currentPage !== 1) {
       console.log('[ProductGrid] Resetting to page 1 due to filter/sort change');
       setCurrentPage(1);
     }
-  }, [filters, sortOption, pageSize, currentPage]);
+  }, [memoizedFilters(), sortOption, pageSize]); // Use memoized filters here
   
   const { products, isLoading, pagination } = useProductFetching({
     filteredBrand,
-    filters,
+    filters: memoizedFilters(),
     pageSize,
     currentPage,
     sortOption
   });
 
-  const handleSort = (option: string) => {
+  // Memoize the sort handler to prevent unnecessary rerenders
+  const handleSort = useCallback((option: string) => {
     console.log(`[ProductGrid] Sort option changed to: ${option}`);
     setSortOption(option);
-  };
+  }, []);
+  
+  // Memoize the page change handler
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
   
   return (
     <div>
@@ -60,10 +71,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       
       <ProductPagination 
         pagination={pagination}
-        onPageChange={setCurrentPage}
+        onPageChange={handlePageChange}
       />
     </div>
   );
 };
 
-export default ProductGrid;
+export default React.memo(ProductGrid);

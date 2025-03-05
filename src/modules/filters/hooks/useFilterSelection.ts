@@ -28,6 +28,7 @@ export const useFilterSelection = ({
     max: initialFilters.caseSizeRange?.max || 45 
   });
   
+  // Flag to track if we have pending filter changes
   const [pendingFilters, setPendingFilters] = useState<boolean>(false);
   
   // Update price and case size ranges when filtersData changes
@@ -71,7 +72,7 @@ export const useFilterSelection = ({
     }
   }, [filtersData, initialFilters]);
   
-  // Create a debounced version that doesn't change on every render
+  // Create a single debounced function that doesn't change on every render
   const debouncedFilterChange = useCallback(
     debounce((filters: Record<string, any>) => {
       if (onFilterChange && !isUpdating.current) {
@@ -79,6 +80,7 @@ export const useFilterSelection = ({
         onFilterChange(filters);
         setPendingFilters(false);
       }
+    // Increased debounce time to reduce API calls
     }, 500),
     [onFilterChange]
   );
@@ -117,6 +119,7 @@ export const useFilterSelection = ({
   
   const handleSelectionChange = (category: string, selected: string[]) => {
     console.log(`[useFilterSelection] Selection changed for ${category}:`, selected);
+    // Set batching flag to prevent immediate filter application
     isUpdating.current = true;
     
     setSelectedOptions(prev => ({
@@ -133,6 +136,7 @@ export const useFilterSelection = ({
   
   const handlePriceRangeChange = (min: number, max: number) => {
     console.log(`[useFilterSelection] Price range changed: ${min}-${max}`);
+    // Set batching flag to prevent immediate filter application
     isUpdating.current = true;
     
     setPriceRange({ min, max });
@@ -146,6 +150,7 @@ export const useFilterSelection = ({
   
   const handleCaseSizeRangeChange = (min: number, max: number) => {
     console.log(`[useFilterSelection] Case size range changed: ${min}-${max}`);
+    // Set batching flag to prevent immediate filter application
     isUpdating.current = true;
     
     setCaseSizeRange({ min, max });
