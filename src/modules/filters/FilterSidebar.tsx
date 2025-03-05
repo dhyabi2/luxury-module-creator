@@ -61,7 +61,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [pendingFilters, setPendingFilters] = useState<boolean>(false);
   const [showWatchFilters, setShowWatchFilters] = useState<boolean>(true);
   const [categorySpecificBrands, setCategorySpecificBrands] = useState<FilterOption[]>([]);
-  const [activeCategoryName, setActiveCategoryName] = useState<string>("All Categories");
+  const [activeCategoryName, setActiveCategoryName] = useState<string>("All Brands");
   
   // Define a mapping between category IDs and display names
   const categoryDisplayNames: {[key: string]: string} = useMemo(() => ({
@@ -121,7 +121,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         }
       }
     }
-  }, [selectedOptions.categories, filtersData, categoryDisplayNames]);
+  }, [selectedOptions.categories, filtersData, categoryDisplayNames, categorySpecificBrands]);
   
   const fetchFilters = async () => {
     if (isLoading === false && filtersData !== null) return;
