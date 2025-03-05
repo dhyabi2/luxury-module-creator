@@ -59,17 +59,25 @@ const MainNavigation = () => {
           </div>
         ) : (
           <ul className="flex justify-center space-x-12">
-            {categories.map((category) => (
-              <li key={category.id}>
-                <Link 
-                  to="/"
-                  className={`nav-item py-3 px-6 font-display tracking-widest text-sm ${activeCategory === category.id ? 'nav-item-active bg-sale' : ''}`}
-                  onClick={() => setActiveCategory(category.id)}
-                >
-                  {category.name}
-                </Link>
-              </li>
-            ))}
+            {categories.map((category) => {
+              // Map category IDs to appropriate routes
+              let routePath = '/';
+              if (category.id === 'women' || category.id === 'men') {
+                routePath = `/${category.id}`;
+              }
+              
+              return (
+                <li key={category.id}>
+                  <Link 
+                    to={routePath}
+                    className={`nav-item py-3 px-6 font-display tracking-widest text-sm ${activeCategory === category.id ? 'nav-item-active bg-sale' : ''}`}
+                    onClick={() => setActiveCategory(category.id)}
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

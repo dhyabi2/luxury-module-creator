@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Sale from "./pages/Sale";
+import NewIn from "./pages/NewIn";
+import Brands from "./pages/Brands";
+import ProductCategory from "./pages/ProductCategory";
+import StoreLocator from "./pages/StoreLocator";
 
 // Import API handlers for local development fallback
 import ProductsAPI from "./api/products";
@@ -113,6 +117,17 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/sale" element={<Sale />} />
+            <Route path="/new-in" element={<NewIn />} />
+            <Route path="/brands" element={<Brands />} />
+            <Route path="/watches" element={<ProductCategory />}>
+              <Route path=":category" element={<ProductCategory />} />
+            </Route>
+            <Route path="/jewellery" element={<ProductCategory />} />
+            <Route path="/accessories" element={<ProductCategory />} />
+            <Route path="/bags" element={<ProductCategory />} />
+            <Route path="/perfumes" element={<ProductCategory />} />
+            <Route path="/store-locator" element={<StoreLocator />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
