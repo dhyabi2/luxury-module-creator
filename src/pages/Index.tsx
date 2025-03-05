@@ -5,9 +5,7 @@ import ProductGrid from '../modules/products/ProductGrid';
 import FilterSidebar from '../modules/filters/FilterSidebar';
 
 const Index = () => {
-  const [activeFilters, setActiveFilters] = useState<Record<string, any>>({
-    categories: ['accessories', 'bags', 'perfumes']
-  });
+  const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
   
   // Use a memoized callback to prevent unnecessary rerenders
   const handleFilterChange = useCallback((filters: Record<string, any>) => {
@@ -56,7 +54,7 @@ const Index = () => {
           {/* Sidebar - Order first on mobile but last on desktop */}
           <div className="w-full lg:w-1/4 order-first">
             <FilterSidebar 
-              initialFilters={activeFilters}
+              initialFilters={{}}
               onFilterChange={handleFilterChange}
             />
           </div>

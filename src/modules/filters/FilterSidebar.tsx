@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import FilterCategory from './FilterCategory';
 import { toast } from 'sonner';
@@ -37,7 +36,7 @@ interface FilterSidebarProps {
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({ 
   onFilterChange,
-  initialFilters = { brands: ['aigner'] }
+  initialFilters = {}
 }) => {
   const [filtersData, setFiltersData] = useState<FiltersData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +45,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [caseSizeRange, setCaseSizeRange] = useState<{min: number, max: number}>({ min: 20, max: 45 });
   const [pendingFilters, setPendingFilters] = useState<boolean>(false);
   
-  // Fetch filters directly from the API
   const fetchFilters = async () => {
     if (isLoading === false && filtersData !== null) return;
     
@@ -55,16 +53,13 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     try {
       console.log('Fetching filters data');
       
-      // Direct API call without hooks or middleware
       const response = await fetch('/api/filters');
       const data = await response.json();
       
       console.log('Filters data received:', data);
       
-      // Update state with fetched data
       setFiltersData(data);
       
-      // Initialize ranges
       if (data.priceRange) {
         setPriceRange({
           min: data.priceRange.min,
@@ -86,12 +81,10 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     }
   };
   
-  // Fetch filters when component mounts (only once)
   useEffect(() => {
     fetchFilters();
   }, []);
   
-  // Debounced function to notify parent of filter changes
   const debouncedFilterChange = useCallback(
     debounce((filters: Record<string, any>) => {
       if (onFilterChange) {
@@ -103,7 +96,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     [onFilterChange]
   );
   
-  // Notify parent when filters change
   useEffect(() => {
     setPendingFilters(true);
     
@@ -120,7 +112,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     };
   }, [selectedOptions, priceRange, caseSizeRange, debouncedFilterChange]);
   
-  // Handle selection changes for checkboxes
   const handleSelectionChange = (category: string, selected: string[]) => {
     setSelectedOptions(prev => ({
       ...prev,
@@ -128,19 +119,15 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     }));
   };
   
-  // Handle price range changes
   const handlePriceRangeChange = (min: number, max: number) => {
     setPriceRange({ min, max });
   };
   
-  // Handle case size range changes
   const handleCaseSizeRangeChange = (min: number, max: number) => {
     setCaseSizeRange({ min, max });
   };
   
-  // Clear all filters
   const handleClearFilters = () => {
-    // Reset to initial values from API data
     setSelectedOptions({});
     
     if (filtersData) {
@@ -171,7 +158,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       </div>
       
       {isLoading ? (
-        // Loading skeleton for filters
         <div className="space-y-6">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="animate-pulse">
@@ -188,7 +174,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           ))}
         </div>
       ) : filtersData ? (
-        // Actual filters when data is loaded
         <>
           <FilterCategory
             title="Price Range"
