@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Database operations for products
@@ -28,12 +27,26 @@ export const productsDb = {
       // Apply category filter - can be single category or comma-separated list
       if (filters.category && filters.category.trim() !== '') {
         if (filters.category.includes(',')) {
-          const categories = filters.category.split(',').map((c: string) => c.trim().toLowerCase());
+          const categories = filters.category.split(',').map((c: string) => c.trim());
           console.log(`[DB:products] Applying multiple categories filter: ${categories.join(', ')}`);
-          query = query.in('category', categories);
+          
+          // Start with first category
+          let categoryQuery = query.ilike('category', `%${categories[0]}%`);
+          
+          // Add OR conditions for additional categories
+          if (categories.length > 1) {
+            console.log('[DB:products] Building OR conditions for multiple categories');
+            for (let i = 1; i < categories.length; i++) {
+              categoryQuery = categoryQuery.or(`category.ilike.%${categories[i]}%`);
+            }
+            query = categoryQuery;
+          } else {
+            query = categoryQuery;
+          }
         } else {
           console.log(`[DB:products] Applying single category filter: ${filters.category}`);
-          query = query.eq('category', filters.category.toLowerCase());
+          // Use ilike for case-insensitive matching instead of eq
+          query = query.ilike('category', `%${filters.category}%`);
         }
       }
       
@@ -70,9 +83,19 @@ export const productsDb = {
           if (filters.category && filters.category.trim() !== '') {
             if (filters.category.includes(',')) {
               const categories = filters.category.split(',').map((c: string) => c.trim().toLowerCase());
-              query = query.in('category', categories);
+              // Use ilike for multiple categories
+              let categoryQuery = query.ilike('category', `%${categories[0]}%`);
+              if (categories.length > 1) {
+                for (let i = 1; i < categories.length; i++) {
+                  categoryQuery = categoryQuery.or(`category.ilike.%${categories[i]}%`);
+                }
+                query = categoryQuery;
+              } else {
+                query = categoryQuery;
+              }
             } else {
-              query = query.eq('category', filters.category.toLowerCase());
+              // Use ilike for single category
+              query = query.ilike('category', `%${filters.category}%`);
             }
           }
           
