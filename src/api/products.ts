@@ -8,7 +8,7 @@ const CACHE_TIME = 60; // 60 seconds
 
 // Edge function handler
 export default async (req: Request) => {
-  console.log('Products API request received:', req.url);
+  console.log('[API:products] Request received:', req.url);
   
   // Parse URL and query parameters
   const url = new URL(req.url);
@@ -27,9 +27,21 @@ export default async (req: Request) => {
   const caseColor = url.searchParams.get('caseColor') || '';
   const color = url.searchParams.get('color') || '';
   
-  console.log(`Processing request with filters: brand=${brand}, category=${category}, price=${minPrice}-${maxPrice}, caseSize=${minCaseSize}-${maxCaseSize}`);
+  console.log('[API:products] Request parameters:', {
+    brand,
+    category,
+    page,
+    pageSize,
+    sortBy,
+    priceRange: minPrice !== undefined && maxPrice !== undefined ? `${minPrice}-${maxPrice}` : 'not set',
+    caseSizeRange: minCaseSize !== undefined && maxCaseSize !== undefined ? `${minCaseSize}-${maxCaseSize}` : 'not set',
+    band: band || 'not set',
+    caseColor: caseColor || 'not set',
+    color: color || 'not set'
+  });
   
   try {
+    console.log('[API:products] Calling productsDb.getAll');
     // Query the database
     const result = await productsDb.getAll(
       { 
@@ -47,7 +59,7 @@ export default async (req: Request) => {
       { sortBy }
     );
     
-    console.log(`Returning ${result.products.length} products (page ${result.pagination.currentPage}/${result.pagination.totalPages})`);
+    console.log(`[API:products] Database returned ${result.products.length} products (page ${result.pagination.currentPage}/${result.pagination.totalPages})`);
     
     // Return the response with caching headers
     return new Response(
@@ -62,7 +74,7 @@ export default async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error('Error in products API:', error);
+    console.error('[API:products] Error processing request:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Failed to fetch products',

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import FilterCategory from './FilterCategory';
 import { toast } from 'sonner';
@@ -49,18 +50,20 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     if (isLoading === false && filtersData !== null) return;
     
     setIsLoading(true);
+    console.log('[FilterSidebar] Starting filters data fetch');
     
     try {
-      console.log('Fetching filters data');
+      console.log('[FilterSidebar] Sending request to /api/filters');
       
       const response = await fetch('/api/filters');
       const data = await response.json();
       
-      console.log('Filters data received:', data);
+      console.log('[FilterSidebar] Filters data received:', data);
       
       setFiltersData(data);
       
       if (data.priceRange) {
+        console.log(`[FilterSidebar] Setting price range: ${data.priceRange.min}-${data.priceRange.max} ${data.priceRange.unit}`);
         setPriceRange({
           min: data.priceRange.min,
           max: data.priceRange.max
@@ -68,15 +71,17 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       }
       
       if (data.caseSizeRange) {
+        console.log(`[FilterSidebar] Setting case size range: ${data.caseSizeRange.min}-${data.caseSizeRange.max} ${data.caseSizeRange.unit}`);
         setCaseSizeRange({
           min: data.caseSizeRange.min,
           max: data.caseSizeRange.max
         });
       }
     } catch (error) {
-      console.log('Error fetching filters:', error);
+      console.error('[FilterSidebar] Error fetching filters:', error);
       toast.error('Failed to load filters. Please try again.');
     } finally {
+      console.log('[FilterSidebar] Filters fetch completed');
       setIsLoading(false);
     }
   };
@@ -88,7 +93,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const debouncedFilterChange = useCallback(
     debounce((filters: Record<string, any>) => {
       if (onFilterChange) {
-        console.log('Applying debounced filters:', filters);
+        console.log('[FilterSidebar] Applying debounced filters:', filters);
         onFilterChange(filters);
         setPendingFilters(false);
       }
@@ -97,6 +102,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   );
   
   useEffect(() => {
+    console.log('[FilterSidebar] Filter state changed, preparing update');
     setPendingFilters(true);
     
     const filters = {
@@ -105,14 +111,17 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       caseSizeRange
     };
     
+    console.log('[FilterSidebar] Filters to be applied (debounced):', filters);
     debouncedFilterChange(filters);
     
     return () => {
+      console.log('[FilterSidebar] Cleanup - cancelling debounced filter change');
       debouncedFilterChange.cancel();
     };
   }, [selectedOptions, priceRange, caseSizeRange, debouncedFilterChange]);
   
   const handleSelectionChange = (category: string, selected: string[]) => {
+    console.log(`[FilterSidebar] Selection changed for ${category}:`, selected);
     setSelectedOptions(prev => ({
       ...prev,
       [category]: selected
@@ -120,17 +129,21 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   };
   
   const handlePriceRangeChange = (min: number, max: number) => {
+    console.log(`[FilterSidebar] Price range changed: ${min}-${max}`);
     setPriceRange({ min, max });
   };
   
   const handleCaseSizeRangeChange = (min: number, max: number) => {
+    console.log(`[FilterSidebar] Case size range changed: ${min}-${max}`);
     setCaseSizeRange({ min, max });
   };
   
   const handleClearFilters = () => {
+    console.log('[FilterSidebar] Clearing all filters');
     setSelectedOptions({});
     
     if (filtersData) {
+      console.log('[FilterSidebar] Resetting price and case size ranges to defaults');
       setPriceRange({
         min: filtersData.priceRange.min,
         max: filtersData.priceRange.max
