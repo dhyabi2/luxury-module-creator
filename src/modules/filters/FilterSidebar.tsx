@@ -42,8 +42,18 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [filtersData, setFiltersData] = useState<FiltersData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string[] }>(initialFilters);
-  const [priceRange, setPriceRange] = useState<{min: number, max: number}>({ min: 0, max: 1000 });
-  const [caseSizeRange, setCaseSizeRange] = useState<{min: number, max: number}>({ min: 20, max: 45 });
+  
+  // Initialize price range with values from initialFilters if available
+  const [priceRange, setPriceRange] = useState<{min: number, max: number}>({ 
+    min: initialFilters.priceRange?.min || 0, 
+    max: initialFilters.priceRange?.max || 1225 
+  });
+  
+  const [caseSizeRange, setCaseSizeRange] = useState<{min: number, max: number}>({ 
+    min: initialFilters.caseSizeRange?.min || 20, 
+    max: initialFilters.caseSizeRange?.max || 45 
+  });
+  
   const [pendingFilters, setPendingFilters] = useState<boolean>(false);
   
   const fetchFilters = async () => {

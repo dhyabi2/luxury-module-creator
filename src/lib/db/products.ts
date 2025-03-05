@@ -20,17 +20,18 @@ export const productsDb = {
           query = query.in('brand', brands);
         } else {
           console.log(`[DB:products] Applying single brand filter: ${filters.brand}`);
-          query = query.ilike('brand', filters.brand);
+          query = query.ilike('brand', `%${filters.brand}%`);
         }
       }
       
       // Apply category filter - can be single category or comma-separated list
       if (filters.category && filters.category.trim() !== '') {
+        console.log(`[DB:products] Raw category value: "${filters.category}"`);
         if (filters.category.includes(',')) {
           const categories = filters.category.split(',').map((c: string) => c.trim());
           console.log(`[DB:products] Applying multiple categories filter: ${categories.join(', ')}`);
           
-          // Start with first category
+          // For the first category
           let categoryQuery = query.ilike('category', `%${categories[0]}%`);
           
           // Add OR conditions for additional categories
@@ -45,7 +46,7 @@ export const productsDb = {
           }
         } else {
           console.log(`[DB:products] Applying single category filter: ${filters.category}`);
-          // Use ilike for case-insensitive matching instead of eq
+          // Use ilike for case-insensitive matching with wildcards
           query = query.ilike('category', `%${filters.category}%`);
         }
       }
