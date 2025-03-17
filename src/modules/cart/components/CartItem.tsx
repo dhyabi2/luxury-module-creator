@@ -62,6 +62,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
               size="icon" 
               className="h-7 w-7" 
               onClick={handleDecrement}
+              aria-label="Decrease quantity"
             >
               <Minus className="h-3 w-3" />
             </Button>
@@ -73,6 +74,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
               size="icon" 
               className="h-7 w-7" 
               onClick={handleIncrement}
+              aria-label="Increase quantity"
             >
               <Plus className="h-3 w-3" />
             </Button>
