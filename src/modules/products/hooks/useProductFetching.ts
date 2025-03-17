@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { debounce } from 'lodash';
 import { toast } from 'sonner';
@@ -42,7 +41,9 @@ export const useProductFetching = ({
   const lastPage = useRef(currentPage);
   const lastPageSize = useRef(pageSize);
 
-  // Memoize the buildQueryParams function to prevent recreation on each render
+  const responseCache = useRef<Map<string, { timestamp: number, data: any }>>(new Map());
+  const CACHE_TTL = 5000;
+
   const buildQueryParams = useCallback((page: number, sort: string, filterValues: Record<string, any>) => {
     const urlParams = new URLSearchParams();
     
@@ -98,12 +99,9 @@ export const useProductFetching = ({
     return urlParams.toString();
   }, [filteredBrand, pageSize]);
   
-  // Skip fetch if filters haven't changed
   const shouldFetch = useCallback(() => {
-    // Always fetch on initial render
     if (isInitialRender.current) return true;
     
-    // Check if any major params have changed
     if (
       lastPage.current !== currentPage ||
       lastSort.current !== sortOption ||
@@ -116,8 +114,23 @@ export const useProductFetching = ({
     return false;
   }, [currentPage, filters, sortOption, pageSize]);
   
+  const getCachedResponse = useCallback((cacheKey: string) => {
+    const cachedData = responseCache.current.get(cacheKey);
+    if (cachedData && (Date.now() - cachedData.timestamp) < CACHE_TTL) {
+      console.log('[ProductGrid] Using cached response for:', cacheKey);
+      return cachedData.data;
+    }
+    return null;
+  }, []);
+  
+  const cacheResponse = useCallback((cacheKey: string, data: any) => {
+    responseCache.current.set(cacheKey, {
+      timestamp: Date.now(),
+      data
+    });
+  }, []);
+  
   const fetchProducts = useCallback(async () => {
-    // Skip fetch if nothing has changed
     if (!shouldFetch()) {
       console.log('[ProductGrid] Skipping fetch - no relevant parameters changed');
       setIsLoading(false);
@@ -126,7 +139,6 @@ export const useProductFetching = ({
     
     console.log('[ProductGrid] Starting products fetch');
     
-    // Store current values in refs for future comparison
     lastFilters.current = filters;
     lastSort.current = sortOption;
     lastPage.current = currentPage;
@@ -149,6 +161,16 @@ export const useProductFetching = ({
         return;
       }
       
+      const cachedResponse = getCachedResponse(queryString);
+      if (cachedResponse) {
+        console.log('[ProductGrid] Using cached response');
+        setProducts(cachedResponse.products);
+        setPagination(cachedResponse.pagination);
+        setIsLoading(false);
+        isInitialRender.current = false;
+        return;
+      }
+      
       console.log(`[ProductGrid] Fetching products: /api/products?${queryString}`);
       setLastFetchParams(queryString);
       
@@ -164,8 +186,28 @@ export const useProductFetching = ({
       
       console.log(`[ProductGrid] Products data received: ${data.products.length} products, total: ${data.pagination.totalCount}`);
       
-      setProducts(data.products);
+      const validatedProducts = data.products.map((product: ProductProps) => {
+        const validImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && 
+          (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'));
+        
+        if (!validImageUrl) {
+          console.log(`[ProductGrid] Fixing invalid image URL for product: ${product.id}`);
+          return {
+            ...product,
+            imageUrl: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&h=600&fit=crop&auto=format'
+          };
+        }
+        return product;
+      });
+      
+      setProducts(validatedProducts);
       setPagination(data.pagination);
+      
+      cacheResponse(queryString, {
+        products: validatedProducts,
+        pagination: data.pagination
+      });
+      
       isInitialRender.current = false;
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
@@ -184,19 +226,16 @@ export const useProductFetching = ({
       setIsLoading(false);
       pendingRequest.current = null;
     }
-  }, [currentPage, filters, buildQueryParams, sortOption, lastFetchParams, products.length, pageSize, shouldFetch]);
+  }, [currentPage, filters, buildQueryParams, sortOption, lastFetchParams, products.length, pageSize, shouldFetch, getCachedResponse, cacheResponse]);
   
-  // Use a properly memoized debounce that won't recreate on every render
-  // This helps prevent multiple requests when filters change frequently
   const debouncedFetchProducts = useCallback(
     debounce(() => {
       console.log('[ProductGrid] Executing debounced fetch');
       fetchProducts();
-    }, 300),
+    }, 500),
     [fetchProducts]
   );
 
-  // Effect for filters or sort option changes
   useEffect(() => {
     console.log('[ProductGrid] Filters or sort options changed');
     console.log('[ProductGrid] Initiating debounced fetch due to filter/sort change');
@@ -211,7 +250,6 @@ export const useProductFetching = ({
     };
   }, [filters, sortOption, pageSize, debouncedFetchProducts]);
   
-  // Only use immediate fetch for page changes (not debounced)
   useEffect(() => {
     if (currentPage !== lastPage.current) {
       console.log(`[ProductGrid] Page changed to ${currentPage}, initiating fetch`);

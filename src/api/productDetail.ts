@@ -6,7 +6,7 @@ export default async function productDetailHandler(req: Request) {
 
   console.log(`API: Fetching product detail for ID: ${productId}`);
 
-  // High-quality product images based on ID
+  // High-quality product images based on ID - ensuring they are all valid and distinct
   const productImages = {
     // Men's Watches
     '1': "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=600&h=600&fit=crop&auto=format",
@@ -14,7 +14,7 @@ export default async function productDetailHandler(req: Request) {
     '3': "https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=600&h=600&fit=crop&auto=format",
     '4': "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&h=600&fit=crop&auto=format",
     '5': "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&h=600&fit=crop&auto=format",
-    '6': "https://images.unsplash.com/photo-1457831449053-3aca29not?w=600&h=600&fit=crop&auto=format",
+    '6': "https://images.unsplash.com/photo-1548171245-9d193cef056d?w=600&h=600&fit=crop&auto=format",
     '7': "https://images.unsplash.com/photo-1508057198894-247b23fe5ade?w=600&h=600&fit=crop&auto=format",
     '8': "https://images.unsplash.com/photo-1539874754764-5a96559165b0?w=600&h=600&fit=crop&auto=format",
     // Women's Watches
