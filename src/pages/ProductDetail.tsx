@@ -49,7 +49,7 @@ const ProductDetail = () => {
     if (product) {
       // Format product to match the expected type
       const formattedProduct = {
-        id: productId || '',
+        id: product.id || productId || '',  // Use product.id first, fallback to route param
         name: product.name,
         price: product.price,
         image: product.imageUrl,

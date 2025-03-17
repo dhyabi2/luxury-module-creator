@@ -48,6 +48,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Add item to cart
   const addItem = (product: Product, quantity: number = 1) => {
+    console.log('Adding product to cart:', product); // Debug log
     const updatedCart = cartDb.addItemToCart(product, quantity);
     setCart(updatedCart);
     toast({
