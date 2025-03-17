@@ -60,6 +60,7 @@ const ProductDetail = () => {
       };
       
       addItem(formattedProduct, quantity);
+      // No navigation here, stays on product page
     }
   };
 

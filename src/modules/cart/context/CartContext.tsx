@@ -56,7 +56,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       description: `${product.name} has been added to your cart.`,
       duration: 2000
     });
-    openCart(); // Open cart drawer when item is added
+    // Removed the openCart() call to prevent drawer from opening automatically
   };
 
   // Remove item from cart
