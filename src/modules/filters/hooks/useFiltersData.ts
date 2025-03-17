@@ -18,14 +18,33 @@ export const useFiltersData = () => {
       
       const response = await fetch('/api/filters');
       
+      // Check if the response is OK
       if (!response.ok) {
+        const text = await response.text();
+        console.error('[useFiltersData] Server responded with error:', response.status, text.substring(0, 100) + '...');
         throw new Error(`Failed to fetch filters: ${response.status}`);
       }
       
-      const data = await response.json();
+      // Try to parse as JSON and validate the response format
+      const responseText = await response.text();
+      let data;
+      
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[useFiltersData] Failed to parse JSON response:', responseText.substring(0, 100) + '...');
+        throw new Error('Invalid JSON response from server');
+      }
       
       console.log('[useFiltersData] Filters data received:', data);
       
+      // Validate the data has the expected structure
+      if (!data || typeof data !== 'object') {
+        console.error('[useFiltersData] Invalid filters data format');
+        throw new Error('Invalid filters data format');
+      }
+      
+      // Create category-specific brand mappings if not present
       if (!data.categoryBrands) {
         console.log('[useFiltersData] Creating category-specific brand mappings');
         data.categoryBrands = {
@@ -43,6 +62,13 @@ export const useFiltersData = () => {
       setFiltersData(data);
     } catch (error) {
       console.error('[useFiltersData] Error fetching filters:', error);
+      
+      // Fall back to default filters if we have any cached
+      if (!filtersData) {
+        console.log('[useFiltersData] Using fallback default filters');
+        // We could set some default filters here if needed
+      }
+      
       toast.error('Failed to load filters. Please try again.');
     } finally {
       console.log('[useFiltersData] Filters fetch completed');

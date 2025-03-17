@@ -32,6 +32,7 @@ export default async (req: Request) => {
       throw new Error('Invalid filters data format');
     }
     
+    // Log response data details for debugging
     console.log('[API:filters] Response data summary:', {
       categories: Array.isArray(filtersData.categories) ? filtersData.categories.length : 0,
       brands: Array.isArray(filtersData.brands) ? filtersData.brands.length : 0,
@@ -43,25 +44,32 @@ export default async (req: Request) => {
       categoryBrands: filtersData.categoryBrands ? Object.keys(filtersData.categoryBrands).length : 0
     });
     
-    // Return the response
+    // Return the response with proper headers
     return new Response(
       JSON.stringify(filtersData),
       {
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'no-store, max-age=0'
         }
       }
     );
   } catch (error) {
     console.error('[API:filters] Error in filters API:', error);
+    
+    // Return proper error response
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch filters data' }),
+      JSON.stringify({ 
+        error: 'Failed to fetch filters data',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }),
       {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'no-store, max-age=0'
         }
       }
     );
