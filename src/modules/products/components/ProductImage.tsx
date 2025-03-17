@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 
-interface ProductImageProps {
+export interface ProductImageProps {
   image: string;
   name: string;
   discount?: number;

@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-interface ProductInfoProps {
+export interface ProductInfoProps {
   brand: string;
   name: string;
   price: number;

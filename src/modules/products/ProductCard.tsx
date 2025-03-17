@@ -30,14 +30,20 @@ const ProductCard: React.FC<ProductProps> = (product) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <Link to={`/product/${product.id}`} className="block">
-        <ProductImage imageUrl={product.imageUrl} name={product.name} isNew={product.isNew} onSale={product.onSale} />
+        <ProductImage 
+          image={product.imageUrl} 
+          name={product.name} 
+          discount={product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : undefined}
+          isHovered={isHovered} 
+        />
       </Link>
       
       <ProductInfo
-        name={product.name}
         brand={product.brand}
+        name={product.name}
         price={product.price}
-        originalPrice={product.originalPrice}
+        currency="$"
+        discount={product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : undefined}
       />
       
       <ViewDetailsButton isHovered={isHovered} productId={product.id} />

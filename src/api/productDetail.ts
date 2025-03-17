@@ -1,7 +1,5 @@
 
-import { NextRequest } from 'next/server';
-
-export default async function productDetailHandler(req: NextRequest) {
+export default async function productDetailHandler(req: Request) {
   const url = new URL(req.url);
   const pathParts = url.pathname.split('/');
   const productId = pathParts[pathParts.length - 1];
