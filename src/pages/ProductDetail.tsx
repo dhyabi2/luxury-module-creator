@@ -12,7 +12,11 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [imageError, setImageError] = useState(false);
   const { addItem } = useCart();
+
+  // Fallback image if the product image fails to load
+  const fallbackImage = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=600&h=600&fit=crop&auto=format';
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -52,7 +56,7 @@ const ProductDetail = () => {
         id: product.id || productId || '',  // Use product.id first, fallback to route param
         name: product.name,
         price: product.price,
-        image: product.imageUrl,
+        image: imageError ? fallbackImage : product.imageUrl,
         brand: product.brand,
         currency: '$',
         category: product.category || '',
@@ -100,9 +104,13 @@ const ProductDetail = () => {
             {/* Product Image */}
             <div className="rounded-lg overflow-hidden">
               <img 
-                src={product.imageUrl} 
+                src={imageError ? fallbackImage : product.imageUrl} 
                 alt={product.name} 
                 className="w-full h-auto object-cover"
+                onError={() => {
+                  console.log(`Product image failed to load: ${product.imageUrl}`);
+                  setImageError(true);
+                }}
               />
             </div>
             

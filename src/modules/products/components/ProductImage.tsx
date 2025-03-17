@@ -17,8 +17,8 @@ const ProductImage: React.FC<ProductImageProps> = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
-  // Fallback image if the main image fails to load
-  const fallbackImage = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8';
+  // Improved fallback image if the main image fails to load
+  const fallbackImage = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=400&h=400&fit=crop&auto=format';
   
   return (
     <div className="product-card-img-container aspect-square bg-gray-50 flex-shrink-0 relative">
@@ -35,6 +35,7 @@ const ProductImage: React.FC<ProductImageProps> = ({
         loading="lazy"
         onLoad={() => setImageLoaded(true)}
         onError={() => {
+          console.log(`Image failed to load: ${image}`);
           setImageError(true);
           setImageLoaded(true);
         }}

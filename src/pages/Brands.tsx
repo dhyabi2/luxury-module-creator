@@ -23,14 +23,14 @@ const Brands = () => {
         // We'll use placeholder data for now
         // In a real app, this would be fetched from an API
         const dummyBrands: Brand[] = [
-          { id: 'rolex', name: 'Rolex', logo: 'https://via.placeholder.com/200x100?text=Rolex' },
-          { id: 'omega', name: 'Omega', logo: 'https://via.placeholder.com/200x100?text=Omega' },
-          { id: 'cartier', name: 'Cartier', logo: 'https://via.placeholder.com/200x100?text=Cartier' },
-          { id: 'tag-heuer', name: 'Tag Heuer', logo: 'https://via.placeholder.com/200x100?text=TagHeuer' },
-          { id: 'bulgari', name: 'Bulgari', logo: 'https://via.placeholder.com/200x100?text=Bulgari' },
-          { id: 'gucci', name: 'Gucci', logo: 'https://via.placeholder.com/200x100?text=Gucci' },
-          { id: 'tiffany', name: 'Tiffany & Co', logo: 'https://via.placeholder.com/200x100?text=Tiffany' },
-          { id: 'chanel', name: 'Chanel', logo: 'https://via.placeholder.com/200x100?text=Chanel' },
+          { id: 'rolex', name: 'Rolex', logo: 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=200&h=100&fit=crop&auto=format' },
+          { id: 'omega', name: 'Omega', logo: 'https://images.unsplash.com/photo-1612817159949-195b6eb9e31a?w=200&h=100&fit=crop&auto=format' },
+          { id: 'cartier', name: 'Cartier', logo: 'https://images.unsplash.com/photo-1649155208397-935746511591?w=200&h=100&fit=crop&auto=format' },
+          { id: 'tag-heuer', name: 'Tag Heuer', logo: 'https://images.unsplash.com/photo-1623998021450-85c29c644e0d?w=200&h=100&fit=crop&auto=format' },
+          { id: 'bulgari', name: 'Bulgari', logo: 'https://images.unsplash.com/photo-1507679799348-fb93ca0b7c32?w=200&h=100&fit=crop&auto=format' },
+          { id: 'gucci', name: 'Gucci', logo: 'https://images.unsplash.com/photo-1588222303175-36dc4908aa95?w=200&h=100&fit=crop&auto=format' },
+          { id: 'tiffany', name: 'Tiffany & Co', logo: 'https://images.unsplash.com/photo-1602157337140-8acad82331a1?w=200&h=100&fit=crop&auto=format' },
+          { id: 'chanel', name: 'Chanel', logo: 'https://images.unsplash.com/photo-1523593288094-3ccfb6b2c192?w=200&h=100&fit=crop&auto=format' },
         ];
         
         setBrands(dummyBrands);

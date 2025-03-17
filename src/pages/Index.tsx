@@ -24,7 +24,7 @@ const Index = () => {
           <div className="h-[300px] sm:h-[350px] md:h-[450px] bg-gradient-to-r from-black/95 to-gray-800/95 relative flex items-center">
             <div className="absolute inset-0 opacity-10">
               <img 
-                src="https://via.placeholder.com/1920x400?text=Luxury+Watches" 
+                src="https://images.unsplash.com/photo-1548169874-53e85f753f1e?w=1920&h=400&fit=crop&auto=format" 
                 alt="Luxury Watches"
                 className="w-full h-full object-cover"
               />
