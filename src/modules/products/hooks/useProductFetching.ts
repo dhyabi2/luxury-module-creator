@@ -1,14 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+
+import { useEffect, useCallback, useRef } from 'react';
 import { debounce } from 'lodash';
 import { toast } from 'sonner';
-import { ProductProps } from '../ProductCard';
-
-interface PaginationData {
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
+import { useQueryParamsBuilder } from './useQueryParamsBuilder';
+import { useProductCache } from './useProductCache';
+import { useProductFetchState } from './useProductFetchState';
 
 interface UseProductFetchingProps {
   filteredBrand?: string;
@@ -25,113 +21,47 @@ export const useProductFetching = ({
   currentPage,
   sortOption
 }: UseProductFetchingProps) => {
-  const [products, setProducts] = useState<ProductProps[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [pagination, setPagination] = useState<PaginationData>({
-    totalCount: 0,
-    totalPages: 0,
-    currentPage: 1,
-    pageSize: pageSize
-  });
-  const [lastFetchParams, setLastFetchParams] = useState('');
-  const isInitialRender = useRef(true);
-  const pendingRequest = useRef<AbortController | null>(null);
+  // Use our smaller hooks
+  const { buildQueryParams } = useQueryParamsBuilder({ filteredBrand, filters, pageSize });
+  const { getCachedResponse, cacheResponse } = useProductCache();
+  const {
+    products,
+    isLoading,
+    pagination,
+    pendingRequest,
+    lastFetchParams,
+    isInitialRender,
+    setProducts,
+    setIsLoading,
+    setPagination,
+    setLastFetchParams,
+    shouldFetch
+  } = useProductFetchState(pageSize);
+
+  // Refs to track changes
   const lastFilters = useRef(filters);
   const lastSort = useRef(sortOption);
   const lastPage = useRef(currentPage);
   const lastPageSize = useRef(pageSize);
 
-  const responseCache = useRef<Map<string, { timestamp: number, data: any }>>(new Map());
-  const CACHE_TTL = 5000;
-
-  const buildQueryParams = useCallback((page: number, sort: string, filterValues: Record<string, any>) => {
-    const urlParams = new URLSearchParams();
-    
-    if (filteredBrand) {
-      console.log(`[ProductGrid] Using filteredBrand: ${filteredBrand}`);
-      urlParams.append('brand', filteredBrand);
-    } else if (filterValues.brands && filterValues.brands.length > 0) {
-      console.log(`[ProductGrid] Using brands filter: ${filterValues.brands.join(',')}`);
-      urlParams.append('brand', filterValues.brands.join(','));
-    }
-    
-    if (filterValues.categories && filterValues.categories.length > 0) {
-      console.log(`[ProductGrid] Using categories filter: ${filterValues.categories.join(',')}`);
-      urlParams.append('category', filterValues.categories.join(','));
-    }
-    
-    if (filterValues.genders && filterValues.genders.length > 0) {
-      console.log(`[ProductGrid] Using genders filter: ${filterValues.genders.join(',')}`);
-      urlParams.append('gender', filterValues.genders.join(','));
-    }
-    
-    if (filterValues.bands && filterValues.bands.length > 0) {
-      console.log(`[ProductGrid] Using bands filter: ${filterValues.bands.join(',')}`);
-      urlParams.append('band', filterValues.bands.join(','));
-    }
-    
-    if (filterValues.caseColors && filterValues.caseColors.length > 0) {
-      console.log(`[ProductGrid] Using caseColors filter: ${filterValues.caseColors.join(',')}`);
-      urlParams.append('caseColor', filterValues.caseColors.join(','));
-    }
-    
-    if (filterValues.colors && filterValues.colors.length > 0) {
-      console.log(`[ProductGrid] Using colors filter: ${filterValues.colors.join(',')}`);
-      urlParams.append('color', filterValues.colors.join(','));
-    }
-    
-    if (filterValues.priceRange) {
-      console.log(`[ProductGrid] Using price range: ${filterValues.priceRange.min}-${filterValues.priceRange.max}`);
-      urlParams.append('minPrice', filterValues.priceRange.min.toString());
-      urlParams.append('maxPrice', filterValues.priceRange.max.toString());
-    }
-    
-    if (filterValues.caseSizeRange) {
-      console.log(`[ProductGrid] Using case size range: ${filterValues.caseSizeRange.min}-${filterValues.caseSizeRange.max}`);
-      urlParams.append('minCaseSize', filterValues.caseSizeRange.min.toString());
-      urlParams.append('maxCaseSize', filterValues.caseSizeRange.max.toString());
-    }
-    
-    urlParams.append('page', page.toString());
-    urlParams.append('pageSize', pageSize.toString());
-    urlParams.append('sortBy', sort);
-    
-    return urlParams.toString();
-  }, [filteredBrand, pageSize]);
-  
-  const shouldFetch = useCallback(() => {
-    if (isInitialRender.current) return true;
-    
-    if (
-      lastPage.current !== currentPage ||
-      lastSort.current !== sortOption ||
-      lastPageSize.current !== pageSize ||
-      JSON.stringify(lastFilters.current) !== JSON.stringify(filters)
-    ) {
-      return true;
-    }
-    
-    return false;
-  }, [currentPage, filters, sortOption, pageSize]);
-  
-  const getCachedResponse = useCallback((cacheKey: string) => {
-    const cachedData = responseCache.current.get(cacheKey);
-    if (cachedData && (Date.now() - cachedData.timestamp) < CACHE_TTL) {
-      console.log('[ProductGrid] Using cached response for:', cacheKey);
-      return cachedData.data;
-    }
-    return null;
-  }, []);
-  
-  const cacheResponse = useCallback((cacheKey: string, data: any) => {
-    responseCache.current.set(cacheKey, {
-      timestamp: Date.now(),
-      data
+  const validateProducts = useCallback((productsData: any[]) => {
+    return productsData.map((product) => {
+      const validImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && 
+        (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'));
+      
+      if (!validImageUrl) {
+        console.log(`[ProductGrid] Fixing invalid image URL for product: ${product.id}`);
+        return {
+          ...product,
+          imageUrl: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&h=600&fit=crop&auto=format'
+        };
+      }
+      return product;
     });
   }, []);
-  
+
   const fetchProducts = useCallback(async () => {
-    if (!shouldFetch()) {
+    if (!shouldFetch(currentPage, sortOption, pageSize, filters)) {
       console.log('[ProductGrid] Skipping fetch - no relevant parameters changed');
       setIsLoading(false);
       return;
@@ -186,19 +116,7 @@ export const useProductFetching = ({
       
       console.log(`[ProductGrid] Products data received: ${data.products.length} products, total: ${data.pagination.totalCount}`);
       
-      const validatedProducts = data.products.map((product: ProductProps) => {
-        const validImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && 
-          (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'));
-        
-        if (!validImageUrl) {
-          console.log(`[ProductGrid] Fixing invalid image URL for product: ${product.id}`);
-          return {
-            ...product,
-            imageUrl: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&h=600&fit=crop&auto=format'
-          };
-        }
-        return product;
-      });
+      const validatedProducts = validateProducts(data.products);
       
       setProducts(validatedProducts);
       setPagination(data.pagination);
@@ -226,7 +144,23 @@ export const useProductFetching = ({
       setIsLoading(false);
       pendingRequest.current = null;
     }
-  }, [currentPage, filters, buildQueryParams, sortOption, lastFetchParams, products.length, pageSize, shouldFetch, getCachedResponse, cacheResponse]);
+  }, [
+    currentPage, 
+    filters, 
+    buildQueryParams, 
+    sortOption, 
+    lastFetchParams, 
+    products.length, 
+    pageSize, 
+    shouldFetch, 
+    getCachedResponse, 
+    cacheResponse,
+    validateProducts,
+    setIsLoading,
+    setLastFetchParams,
+    setProducts,
+    setPagination
+  ]);
   
   const debouncedFetchProducts = useCallback(
     debounce(() => {
