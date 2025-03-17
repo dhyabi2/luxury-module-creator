@@ -15,7 +15,8 @@ const SecondaryNavigation = () => {
   const navigate = useNavigate();
   
   // Determine which category is active based on current path
-  const activeCategory = location.pathname.split('/')[1] || '';
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  const activeCategory = pathSegments.length > 0 ? pathSegments[0] : '';
   
   const fetchNavigationData = async () => {
     setIsLoading(true);
@@ -64,9 +65,14 @@ const SecondaryNavigation = () => {
 
   const handleCategoryClick = (categoryId: string, event: React.MouseEvent<HTMLAnchorElement>) => {
     // Allow normal navigation to occur as well
-    // This ensures the URL changes, which will trigger the correct page to load
-    // with the appropriate filter
     console.log(`Navigation: Category ${categoryId} clicked`);
+  };
+
+  // Helper function to check if current path is related to the category
+  const isCategoryActive = (categoryId: string): boolean => {
+    // Check if the current path starts with the category ID
+    return location.pathname === getCategoryRoutePath(categoryId) || 
+           location.pathname.startsWith(`${getCategoryRoutePath(categoryId)}/`);
   };
 
   return (
@@ -85,7 +91,7 @@ const SecondaryNavigation = () => {
                 to={getCategoryRoutePath(category.id)}
                 className={`category-item whitespace-nowrap tracking-wider ${
                   category.highlight ? 'bg-black text-white px-4 py-1.5 rounded-sm' : ''
-                } ${activeCategory === category.id ? 'font-medium underline' : ''}`}
+                } ${isCategoryActive(category.id) ? 'font-medium underline' : ''}`}
                 onClick={(e) => handleCategoryClick(category.id, e)}
               >
                 {category.name}

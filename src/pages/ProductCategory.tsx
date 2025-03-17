@@ -7,48 +7,79 @@ import FilterSidebar from '../modules/filters/FilterSidebar';
 import { useState, useCallback, useEffect } from 'react';
 
 const ProductCategory = () => {
-  const { category } = useParams();
+  const { category, brandId } = useParams();
   const location = useLocation();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({
     priceRange: { min: 0, max: 1225 }
   });
   
-  // Reset filters when category changes
+  // Determine if we're on a brand-specific page
+  const isBrandPage = location.pathname.includes('/brands/');
+  
+  // Reset filters when category or brand changes
   useEffect(() => {
-    console.log(`ProductCategory: Category changed to ${category}, resetting filters`);
-    setActiveFilters({
-      priceRange: { min: 0, max: 1225 },
-      categories: category ? [category] : []
-    });
-  }, [category]);
+    console.log(`ProductCategory: Path changed to ${location.pathname}, resetting filters`);
+    const newFilters: Record<string, any> = {
+      priceRange: { min: 0, max: 1225 }
+    };
+    
+    // Add category filter if not on a brand page
+    if (category && !isBrandPage) {
+      newFilters.categories = [category];
+    }
+    
+    // Add brand filter if on a brand page
+    if (brandId) {
+      newFilters.brand = brandId;
+    }
+    
+    setActiveFilters(newFilters);
+  }, [category, brandId, location.pathname, isBrandPage]);
   
   // Use a memoized callback to prevent unnecessary rerenders
   const handleFilterChange = useCallback((filters: Record<string, any>) => {
     console.log('Filters changed:', filters);
-    // Make sure to preserve the category from the URL
-    const updatedFilters = {
-      ...filters,
-      categories: category ? [category] : filters.categories || []
-    };
+    // Make sure to preserve the category and/or brand from the URL
+    const updatedFilters = { ...filters };
+    
+    if (category && !isBrandPage) {
+      updatedFilters.categories = [category];
+    }
+    
+    if (brandId) {
+      updatedFilters.brand = brandId;
+    }
+    
     setActiveFilters(updatedFilters);
-  }, [category]);
+  }, [category, brandId, isBrandPage]);
 
-  // Format category name for display (capitalize first letter, remove hyphens)
-  const formatCategoryName = (categorySlug: string) => {
-    return categorySlug
+  // Format category/brand name for display (capitalize first letter, remove hyphens)
+  const formatDisplayName = (slug: string) => {
+    return slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
   
-  const displayName = category ? formatCategoryName(category) : '';
+  // Determine the title to display based on path
+  const displayName = brandId 
+    ? formatDisplayName(brandId)
+    : category 
+      ? formatDisplayName(category) 
+      : '';
   
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Breadcrumb */}
         <div className="text-xs sm:text-sm text-gray-600 mb-6 sm:mb-8 tracking-wider overflow-x-auto whitespace-nowrap pb-2">
-          <span className="hover:text-black cursor-pointer transition-colors">HOME</span> / <span className="font-medium text-gray-900">{displayName.toUpperCase()}</span>
+          <span className="hover:text-black cursor-pointer transition-colors">HOME</span> / 
+          {isBrandPage && (
+            <>
+              <span className="hover:text-black cursor-pointer transition-colors">BRANDS</span> / 
+            </>
+          )}
+          <span className="font-medium text-gray-900">{displayName.toUpperCase()}</span>
         </div>
         
         {/* Products with Sidebar - Mobile First Approach */}
@@ -58,7 +89,8 @@ const ProductCategory = () => {
             <FilterSidebar 
               initialFilters={{
                 priceRange: { min: 0, max: 1225 },
-                categories: category ? [category] : []
+                ...(category && !isBrandPage ? { categories: [category] } : {}),
+                ...(brandId ? { brand: brandId } : {})
               }}
               onFilterChange={handleFilterChange}
             />

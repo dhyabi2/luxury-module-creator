@@ -46,9 +46,9 @@ const Brands = () => {
   
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 mt-24">
         <div className="text-xs sm:text-sm text-gray-600 mb-6 tracking-wider">
-          <span className="hover:text-black cursor-pointer transition-colors">HOME</span> / <span className="font-medium text-gray-900">BRANDS</span>
+          <Link to="/" className="hover:text-black transition-colors">HOME</Link> / <span className="font-medium text-gray-900">BRANDS</span>
         </div>
         
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif mb-6 sm:mb-10">Our Brands</h1>

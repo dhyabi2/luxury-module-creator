@@ -132,6 +132,8 @@ const App = () => {
               <Route path="/sale" element={<Sale />} />
               <Route path="/new-in" element={<NewIn />} />
               <Route path="/brands" element={<Brands />} />
+              {/* Add specific brand route */}
+              <Route path="/brands/:brandId" element={<ProductCategory />} />
               <Route path="/watches" element={<ProductCategory />}>
                 <Route path=":category" element={<ProductCategory />} />
               </Route>

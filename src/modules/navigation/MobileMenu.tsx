@@ -49,6 +49,41 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
               <SecondaryNavigation />
             </div>
           </div>
+          
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+              Quick Links
+            </h3>
+            <ul className="space-y-2">
+              <li>
+                <Link 
+                  to="/sale" 
+                  className="block p-2 hover:bg-gray-100 rounded-md"
+                  onClick={onClose}
+                >
+                  Sale
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/new-in" 
+                  className="block p-2 hover:bg-gray-100 rounded-md"
+                  onClick={onClose}
+                >
+                  New Arrivals
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/brands" 
+                  className="block p-2 hover:bg-gray-100 rounded-md"
+                  onClick={onClose}
+                >
+                  All Brands
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
