@@ -1,5 +1,4 @@
-
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
 import { toast } from 'sonner';
 import { useQueryParamsBuilder } from './useQueryParamsBuilder';
@@ -38,12 +37,6 @@ export const useProductFetching = ({
     shouldFetch
   } = useProductFetchState(pageSize);
 
-  // Refs to track changes
-  const lastFilters = useRef(filters);
-  const lastSort = useRef(sortOption);
-  const lastPage = useRef(currentPage);
-  const lastPageSize = useRef(pageSize);
-
   const validateProducts = useCallback((productsData: any[]) => {
     return productsData.map((product) => {
       const validImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && 
@@ -68,11 +61,6 @@ export const useProductFetching = ({
     }
     
     console.log('[ProductGrid] Starting products fetch');
-    
-    lastFilters.current = filters;
-    lastSort.current = sortOption;
-    lastPage.current = currentPage;
-    lastPageSize.current = pageSize;
     
     if (pendingRequest.current) {
       pendingRequest.current.abort();
