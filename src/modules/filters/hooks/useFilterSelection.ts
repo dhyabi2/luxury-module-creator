@@ -1,7 +1,11 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { debounce } from 'lodash';
+import { useCallback, useEffect } from 'react';
 import { FiltersData } from '@/lib/db/filters/types';
+import { useBatchUpdates } from './useBatchUpdates';
+import { usePriceRangeFilter } from './usePriceRangeFilter';
+import { useCaseSizeFilter } from './useCaseSizeFilter';
+import { useCategorySelection } from './useCategorySelection';
+import { useDebouncedFilters } from './useDebouncedFilters';
 
 interface UseFilterSelectionProps {
   initialFilters: Record<string, any>;
@@ -14,78 +18,13 @@ export const useFilterSelection = ({
   filtersData, 
   onFilterChange 
 }: UseFilterSelectionProps) => {
-  // Use a ref to track if we're in the middle of a batch update
-  const isUpdating = useRef(false);
-  const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string[] }>(initialFilters);
+  // Use the batch updates hook
+  const { isUpdating, startBatchUpdate, endBatchUpdate } = useBatchUpdates();
   
-  const [priceRange, setPriceRange] = useState<{min: number, max: number}>({ 
-    min: initialFilters.priceRange?.min || 0, 
-    max: initialFilters.priceRange?.max || 1225 
-  });
+  // Handle filter changes with debouncing
+  const { pendingFilters, setPendingFilters, debouncedFilterChange } = useDebouncedFilters({ onFilterChange });
   
-  const [caseSizeRange, setCaseSizeRange] = useState<{min: number, max: number}>({ 
-    min: initialFilters.caseSizeRange?.min || 20, 
-    max: initialFilters.caseSizeRange?.max || 45 
-  });
-  
-  // Flag to track if we have pending filter changes
-  const [pendingFilters, setPendingFilters] = useState<boolean>(false);
-  
-  // Update price and case size ranges when filtersData changes
-  useEffect(() => {
-    if (filtersData && !isUpdating.current) {
-      isUpdating.current = true;
-      
-      const updates: Record<string, any> = {};
-      let hasUpdates = false;
-      
-      if (!initialFilters.priceRange) {
-        updates.priceRange = {
-          min: filtersData.priceRange.min,
-          max: filtersData.priceRange.max
-        };
-        hasUpdates = true;
-      }
-      
-      if (!initialFilters.caseSizeRange) {
-        updates.caseSizeRange = {
-          min: filtersData.caseSizeRange.min,
-          max: filtersData.caseSizeRange.max
-        };
-        hasUpdates = true;
-      }
-      
-      if (hasUpdates) {
-        if (updates.priceRange) {
-          setPriceRange(updates.priceRange);
-        }
-        
-        if (updates.caseSizeRange) {
-          setCaseSizeRange(updates.caseSizeRange);
-        }
-      }
-      
-      // Use setTimeout to ensure this happens after all state updates
-      setTimeout(() => {
-        isUpdating.current = false;
-      }, 0);
-    }
-  }, [filtersData, initialFilters]);
-  
-  // Create a single debounced function that doesn't change on every render
-  const debouncedFilterChange = useCallback(
-    debounce((filters: Record<string, any>) => {
-      if (onFilterChange && !isUpdating.current) {
-        console.log('[useFilterSelection] Applying debounced filters:', filters);
-        onFilterChange(filters);
-        setPendingFilters(false);
-      }
-    // Increased debounce time to reduce API calls
-    }, 500),
-    [onFilterChange]
-  );
-  
-  // Batch all filter changes together to prevent multiple API calls
+  // Trigger filter application when needed
   const applyFilters = useCallback(() => {
     if (isUpdating.current) {
       console.log('[useFilterSelection] Skipping filter update while batch updating');
@@ -102,8 +41,109 @@ export const useFilterSelection = ({
     };
     
     console.log('[useFilterSelection] Filters to be applied (debounced):', filters);
-    debouncedFilterChange(filters);
-  }, [selectedOptions, priceRange, caseSizeRange, debouncedFilterChange]);
+    debouncedFilterChange(filters, isUpdating);
+  }, [debouncedFilterChange, setPendingFilters, isUpdating]);
+  
+  // Initialize category selection state
+  const { 
+    selectedOptions, 
+    setSelectedOptions, 
+    handleSelectionChange: handleCategorySelectionChange 
+  } = useCategorySelection({ 
+    initialSelections: initialFilters,
+    onUpdate: applyFilters
+  });
+  
+  // Initialize price range state
+  const { 
+    priceRange, 
+    handlePriceRangeChange: handlePriceChange,
+    initPriceRangeFromData: initPriceRange
+  } = usePriceRangeFilter({ 
+    initialRange: initialFilters.priceRange,
+    filtersData,
+    onUpdate: applyFilters
+  });
+  
+  // Initialize case size range state
+  const { 
+    caseSizeRange, 
+    handleCaseSizeRangeChange: handleCaseSizeChange,
+    initCaseSizeRangeFromData: initCaseSizeRange
+  } = useCaseSizeFilter({ 
+    initialRange: initialFilters.caseSizeRange,
+    filtersData,
+    onUpdate: applyFilters
+  });
+  
+  // Wrapper for selection change to handle batching
+  const handleSelectionChange = useCallback((category: string, selected: string[]) => {
+    startBatchUpdate();
+    handleCategorySelectionChange(category, selected);
+    endBatchUpdate(applyFilters);
+  }, [handleCategorySelectionChange, startBatchUpdate, endBatchUpdate, applyFilters]);
+  
+  // Wrapper for price range change to handle batching
+  const handlePriceRangeChange = useCallback((min: number, max: number) => {
+    startBatchUpdate();
+    handlePriceChange(min, max);
+    endBatchUpdate(applyFilters);
+  }, [handlePriceChange, startBatchUpdate, endBatchUpdate, applyFilters]);
+  
+  // Wrapper for case size range change to handle batching
+  const handleCaseSizeRangeChange = useCallback((min: number, max: number) => {
+    startBatchUpdate();
+    handleCaseSizeChange(min, max);
+    endBatchUpdate(applyFilters);
+  }, [handleCaseSizeChange, startBatchUpdate, endBatchUpdate, applyFilters]);
+  
+  // Clear all filters function
+  const handleClearFilters = useCallback(() => {
+    console.log('[useFilterSelection] Clearing all filters');
+    startBatchUpdate();
+    
+    setSelectedOptions({});
+    
+    if (filtersData) {
+      console.log('[useFilterSelection] Resetting price and case size ranges to defaults');
+      if (filtersData.priceRange) {
+        handlePriceChange(filtersData.priceRange.min, filtersData.priceRange.max);
+      }
+      
+      if (filtersData.caseSizeRange) {
+        handleCaseSizeChange(filtersData.caseSizeRange.min, filtersData.caseSizeRange.max);
+      }
+    }
+    
+    endBatchUpdate(applyFilters);
+  }, [
+    setSelectedOptions, 
+    handlePriceChange, 
+    handleCaseSizeChange, 
+    filtersData, 
+    startBatchUpdate, 
+    endBatchUpdate,
+    applyFilters
+  ]);
+  
+  // Update price and case size ranges when filtersData changes
+  useEffect(() => {
+    if (filtersData && !isUpdating.current) {
+      startBatchUpdate();
+      
+      let hasUpdates = false;
+      
+      if (initPriceRange(filtersData)) {
+        hasUpdates = true;
+      }
+      
+      if (initCaseSizeRange(filtersData)) {
+        hasUpdates = true;
+      }
+      
+      endBatchUpdate(hasUpdates ? applyFilters : undefined);
+    }
+  }, [filtersData, initPriceRange, initCaseSizeRange, startBatchUpdate, endBatchUpdate, applyFilters]);
   
   // Apply filters when state changes, but only if we're not in a batch update
   useEffect(() => {
@@ -116,77 +156,6 @@ export const useFilterSelection = ({
       debouncedFilterChange.cancel();
     };
   }, [selectedOptions, priceRange, caseSizeRange, applyFilters, debouncedFilterChange]);
-  
-  const handleSelectionChange = (category: string, selected: string[]) => {
-    console.log(`[useFilterSelection] Selection changed for ${category}:`, selected);
-    // Set batching flag to prevent immediate filter application
-    isUpdating.current = true;
-    
-    setSelectedOptions(prev => ({
-      ...prev,
-      [category]: selected
-    }));
-    
-    // Allow state to settle before applying filters
-    setTimeout(() => {
-      isUpdating.current = false;
-      applyFilters();
-    }, 0);
-  };
-  
-  const handlePriceRangeChange = (min: number, max: number) => {
-    console.log(`[useFilterSelection] Price range changed: ${min}-${max}`);
-    // Set batching flag to prevent immediate filter application
-    isUpdating.current = true;
-    
-    setPriceRange({ min, max });
-    
-    // Allow state to settle before applying filters
-    setTimeout(() => {
-      isUpdating.current = false;
-      applyFilters();
-    }, 0);
-  };
-  
-  const handleCaseSizeRangeChange = (min: number, max: number) => {
-    console.log(`[useFilterSelection] Case size range changed: ${min}-${max}`);
-    // Set batching flag to prevent immediate filter application
-    isUpdating.current = true;
-    
-    setCaseSizeRange({ min, max });
-    
-    // Allow state to settle before applying filters
-    setTimeout(() => {
-      isUpdating.current = false;
-      applyFilters();
-    }, 0);
-  };
-  
-  const handleClearFilters = () => {
-    console.log('[useFilterSelection] Clearing all filters');
-    isUpdating.current = true;
-    
-    setSelectedOptions({});
-    
-    if (filtersData) {
-      console.log('[useFilterSelection] Resetting price and case size ranges to defaults');
-      setPriceRange({
-        min: filtersData.priceRange.min,
-        max: filtersData.priceRange.max
-      });
-      
-      setCaseSizeRange({
-        min: filtersData.caseSizeRange.min,
-        max: filtersData.caseSizeRange.max
-      });
-    }
-    
-    // Allow state to settle before applying filters
-    setTimeout(() => {
-      isUpdating.current = false;
-      applyFilters();
-    }, 0);
-  };
   
   return {
     selectedOptions,
