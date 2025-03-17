@@ -17,8 +17,15 @@ const ProductImage: React.FC<ProductImageProps> = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
-  // Improved fallback image if the main image fails to load
+  // More reliable fallback image
   const fallbackImage = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=400&h=400&fit=crop&auto=format';
+  
+  // Validate image URL before even trying to load it
+  const validImageUrl = image && typeof image === 'string' && 
+    (image.startsWith('http://') || image.startsWith('https://'));
+  
+  // Use fallback if URL is invalid
+  const imageToLoad = validImageUrl ? image : fallbackImage;
   
   return (
     <div className="product-card-img-container aspect-square bg-gray-50 flex-shrink-0 relative">
@@ -29,19 +36,19 @@ const ProductImage: React.FC<ProductImageProps> = ({
       )}
       
       <img 
-        src={imageError ? fallbackImage : image} 
+        src={imageError ? fallbackImage : imageToLoad} 
         alt={name}
         className={`product-card-img object-cover w-full h-full transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
         loading="lazy"
         onLoad={() => setImageLoaded(true)}
         onError={() => {
-          console.log(`Image failed to load: ${image}`);
+          console.log(`Image failed to load: ${imageToLoad}`);
           setImageError(true);
           setImageLoaded(true);
         }}
       />
       
-      {discount && (
+      {discount && discount > 0 && (
         <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-medium py-1 px-2 rounded-sm">
           SAVE {discount}%
         </div>
