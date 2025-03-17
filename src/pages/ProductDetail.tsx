@@ -2,13 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MainLayout from '../modules/layout/MainLayout';
-import { ProductProps } from '../modules/products/ProductCard';
+import { useCart } from '@/modules/cart/context/CartContext';
+import { Button } from '@/components/ui/button';
+import { Minus, Plus, ShoppingBag, Heart } from 'lucide-react';
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
-  const [product, setProduct] = useState<ProductProps | null>(null);
+  const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const { addItem } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -32,6 +36,32 @@ const ProductDetail = () => {
       fetchProduct();
     }
   }, [productId]);
+
+  const incrementQuantity = () => {
+    setQuantity(prev => prev + 1);
+  };
+
+  const decrementQuantity = () => {
+    setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+  };
+
+  const handleAddToCart = () => {
+    if (product) {
+      // Format product to match the expected type
+      const formattedProduct = {
+        id: productId || '',
+        name: product.name,
+        price: product.price,
+        image: product.imageUrl,
+        brand: product.brand,
+        currency: '$',
+        category: product.category || '',
+        discount: product.onSale ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : undefined
+      };
+      
+      addItem(formattedProduct, quantity);
+    }
+  };
 
   return (
     <MainLayout>
@@ -111,15 +141,44 @@ const ProductDetail = () => {
                 )}
               </div>
               
+              {/* Quantity Selector */}
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-2">Quantity</p>
+                <div className="flex items-center border border-gray-200 rounded-sm inline-block">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-10 w-10 rounded-none"
+                    onClick={decrementQuantity}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="px-4 text-sm font-medium">{quantity}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-10 w-10 rounded-none"
+                    onClick={incrementQuantity}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              
               <div className="flex space-x-4">
-                <button className="w-full bg-brand text-white py-3 rounded-sm hover:bg-brand/90 transition-colors">
+                <Button 
+                  className="w-full bg-brand text-white py-3 rounded-sm hover:bg-brand/90 transition-colors"
+                  onClick={handleAddToCart}
+                >
+                  <ShoppingBag className="mr-2 h-4 w-4" />
                   Add to Cart
-                </button>
-                <button className="border border-gray-300 p-3 rounded-sm hover:bg-gray-50 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                </button>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="border border-gray-300 p-3 rounded-sm hover:bg-gray-50 transition-colors"
+                >
+                  <Heart className="h-6 w-6" />
+                </Button>
               </div>
             </div>
           </div>

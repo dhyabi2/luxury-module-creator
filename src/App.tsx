@@ -13,6 +13,8 @@ import Brands from "./pages/Brands";
 import ProductCategory from "./pages/ProductCategory";
 import ProductDetail from "./pages/ProductDetail";
 import StoreLocator from "./pages/StoreLocator";
+import { CartProvider } from "./modules/cart/context/CartContext";
+import { CartDrawer } from "./modules/cart/components/CartDrawer";
 
 // Import API handlers for local development fallback
 import ProductsAPI from "./api/products";
@@ -120,27 +122,30 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/sale" element={<Sale />} />
-            <Route path="/new-in" element={<NewIn />} />
-            <Route path="/brands" element={<Brands />} />
-            <Route path="/watches" element={<ProductCategory />}>
-              <Route path=":category" element={<ProductCategory />} />
-            </Route>
-            <Route path="/jewellery" element={<ProductCategory />} />
-            <Route path="/accessories" element={<ProductCategory />} />
-            <Route path="/bags" element={<ProductCategory />} />
-            <Route path="/perfumes" element={<ProductCategory />} />
-            <Route path="/product/:productId" element={<ProductDetail />} />
-            <Route path="/store-locator" element={<StoreLocator />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <CartProvider>
+          <Toaster />
+          <Sonner />
+          <CartDrawer />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/sale" element={<Sale />} />
+              <Route path="/new-in" element={<NewIn />} />
+              <Route path="/brands" element={<Brands />} />
+              <Route path="/watches" element={<ProductCategory />}>
+                <Route path=":category" element={<ProductCategory />} />
+              </Route>
+              <Route path="/jewellery" element={<ProductCategory />} />
+              <Route path="/accessories" element={<ProductCategory />} />
+              <Route path="/bags" element={<ProductCategory />} />
+              <Route path="/perfumes" element={<ProductCategory />} />
+              <Route path="/product/:productId" element={<ProductDetail />} />
+              <Route path="/store-locator" element={<StoreLocator />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </CartProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
