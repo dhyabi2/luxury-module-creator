@@ -1,3 +1,4 @@
+
 import { useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
 import { toast } from 'sonner';
@@ -34,7 +35,11 @@ export const useProductFetching = ({
     setIsLoading,
     setPagination,
     setLastFetchParams,
-    shouldFetch
+    shouldFetch,
+    lastFilters,
+    lastSort,
+    lastPage,
+    lastPageSize
   } = useProductFetchState(pageSize);
 
   const validateProducts = useCallback((productsData: any[]) => {
@@ -183,7 +188,7 @@ export const useProductFetching = ({
         pendingRequest.current.abort();
       }
     };
-  }, [currentPage, fetchProducts]);
+  }, [currentPage, fetchProducts, lastPage]);
 
   return {
     products,

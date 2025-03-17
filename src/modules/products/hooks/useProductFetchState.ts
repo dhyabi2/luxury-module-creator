@@ -10,16 +10,18 @@ export const useProductFetchState = (initialPageSize: number) => {
   const [products, setProducts] = useState<ProductProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastFetchParams, setLastFetchParams] = useState('');
+  
+  // Always place useRef after useState
   const isInitialRender = useRef(true);
   
   // Delegate pagination state to a separate hook
   const { pagination, setPagination } = usePagination(initialPageSize);
   
   // Delegate request tracking to a separate hook
-  const { pendingRequest } = useRequestTracking();
+  const { pendingRequest, abortPendingRequest, createNewRequest } = useRequestTracking();
   
   // Delegate fetch decision logic to a separate hook
-  const { shouldFetch } = useFetchDecision(isInitialRender);
+  const { shouldFetch, lastFilters, lastSort, lastPage, lastPageSize } = useFetchDecision(isInitialRender);
 
   return {
     products,
@@ -32,6 +34,10 @@ export const useProductFetchState = (initialPageSize: number) => {
     setIsLoading,
     setPagination,
     setLastFetchParams,
-    shouldFetch
+    shouldFetch,
+    lastFilters,
+    lastSort,
+    lastPage,
+    lastPageSize
   };
 };
