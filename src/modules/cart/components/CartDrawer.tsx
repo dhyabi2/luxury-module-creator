@@ -8,7 +8,7 @@ import {
   SheetTitle, 
   SheetDescription 
 } from '@/components/ui/sheet';
-import { CartItem } from './CartItem';
+import CartItem from './CartItem';
 import { CartSummary } from './CartSummary';
 import { ShoppingBag } from 'lucide-react';
 
