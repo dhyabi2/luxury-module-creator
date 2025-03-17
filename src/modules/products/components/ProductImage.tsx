@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export interface ProductImageProps {
   image: string;
@@ -17,8 +17,8 @@ const ProductImage: React.FC<ProductImageProps> = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
-  // More reliable fallback image
-  const fallbackImage = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=400&h=400&fit=crop&auto=format';
+  // Higher quality fallback image with better dimensions
+  const fallbackImage = 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&h=600&fit=crop&auto=format';
   
   // Validate image URL before even trying to load it
   const validImageUrl = image && typeof image === 'string' && 
@@ -26,6 +26,12 @@ const ProductImage: React.FC<ProductImageProps> = ({
   
   // Use fallback if URL is invalid
   const imageToLoad = validImageUrl ? image : fallbackImage;
+  
+  // Reset state when image changes
+  useEffect(() => {
+    setImageLoaded(false);
+    setImageError(false);
+  }, [image]);
   
   return (
     <div className="product-card-img-container aspect-square bg-gray-50 flex-shrink-0 relative">
