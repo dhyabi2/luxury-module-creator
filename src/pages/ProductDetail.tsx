@@ -1,45 +1,24 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MainLayout from '../modules/layout/MainLayout';
 import { useCart } from '@/modules/cart/context/CartContext';
-import { Button } from '@/components/ui/button';
-import { Minus, Plus, ShoppingBag, Heart } from 'lucide-react';
+import ProductBreadcrumb from '@/modules/products/components/ProductBreadcrumb';
+import ProductDetailImage from '@/modules/products/components/ProductDetailImage';
+import ProductSpecifications from '@/modules/products/components/ProductSpecifications';
+import QuantitySelector from '@/modules/products/components/QuantitySelector';
+import ProductActions from '@/modules/products/components/ProductActions';
+import { useProductDetail } from '@/modules/products/hooks/useProductDetail';
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
-  const [product, setProduct] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { product, loading, error } = useProductDetail(productId);
   const [quantity, setQuantity] = useState(1);
   const [imageError, setImageError] = useState(false);
   const { addItem } = useCart();
 
   // Fallback image if the product image fails to load
   const fallbackImage = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=600&h=600&fit=crop&auto=format';
-
-  useEffect(() => {
-    const fetchProduct = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/products/${productId}`);
-        if (!response.ok) {
-          throw new Error('Product not found');
-        }
-        const data = await response.json();
-        setProduct(data.product);
-      } catch (err) {
-        console.error('Error fetching product:', err);
-        setError('Failed to load product details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (productId) {
-      fetchProduct();
-    }
-  }, [productId]);
 
   const incrementQuantity = () => {
     setQuantity(prev => prev + 1);
@@ -60,11 +39,10 @@ const ProductDetail = () => {
         brand: product.brand,
         currency: '$',
         category: product.category || '',
-        discount: product.onSale ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : undefined
+        discount: product.onSale ? Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100) : undefined
       };
       
       addItem(formattedProduct, quantity);
-      // No navigation here, stays on product page
     }
   };
 
@@ -72,17 +50,12 @@ const ProductDetail = () => {
     <MainLayout>
       <div className="container mx-auto px-4 py-8 mt-24">
         {/* Breadcrumb */}
-        <div className="text-xs sm:text-sm text-gray-600 mb-6 tracking-wider overflow-x-auto whitespace-nowrap pb-2">
-          <Link to="/" className="hover:text-black transition-colors">HOME</Link> / 
-          {product?.category && (
-            <>
-              <Link to={`/${product.category.toLowerCase()}`} className="hover:text-black transition-colors">
-                {product.category.toUpperCase()}
-              </Link> / 
-            </>
-          )}
-          <span className="font-medium text-gray-900">{product?.name || 'Product Details'}</span>
-        </div>
+        {product && (
+          <ProductBreadcrumb 
+            productName={product.name} 
+            productCategory={product.category} 
+          />
+        )}
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
@@ -102,17 +75,10 @@ const ProductDetail = () => {
         ) : product ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Product Image */}
-            <div className="rounded-lg overflow-hidden">
-              <img 
-                src={imageError ? fallbackImage : product.imageUrl} 
-                alt={product.name} 
-                className="w-full h-auto object-cover"
-                onError={() => {
-                  console.log(`Product image failed to load: ${product.imageUrl}`);
-                  setImageError(true);
-                }}
-              />
-            </div>
+            <ProductDetailImage 
+              imageUrl={product.imageUrl} 
+              productName={product.name} 
+            />
             
             {/* Product Details */}
             <div>
@@ -131,64 +97,19 @@ const ProductDetail = () => {
                 {product.description || 'Luxury timepiece crafted with precision and elegant design. The perfect accessory for any occasion.'}
               </p>
               
-              <div className="border-t border-gray-200 pt-6 mb-6">
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-gray-600">Brand</span>
-                  <span className="font-medium">{product.brand}</span>
-                </div>
-                {product.gender && (
-                  <div className="flex justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Gender</span>
-                    <span className="font-medium">{product.gender}</span>
-                  </div>
-                )}
-                {product.caseSize && (
-                  <div className="flex justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Case Size</span>
-                    <span className="font-medium">{product.caseSize}mm</span>
-                  </div>
-                )}
-              </div>
+              <ProductSpecifications 
+                brand={product.brand} 
+                gender={product.gender} 
+                caseSize={product.caseSize} 
+              />
               
-              {/* Quantity Selector */}
-              <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-2">Quantity</p>
-                <div className="flex items-center border border-gray-200 rounded-sm inline-block">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-10 w-10 rounded-none"
-                    onClick={decrementQuantity}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="px-4 text-sm font-medium">{quantity}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-10 w-10 rounded-none"
-                    onClick={incrementQuantity}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <QuantitySelector 
+                quantity={quantity} 
+                onIncrement={incrementQuantity} 
+                onDecrement={decrementQuantity} 
+              />
               
-              <div className="flex space-x-4">
-                <Button 
-                  className="w-full bg-brand text-white py-3 rounded-sm hover:bg-brand/90 transition-colors"
-                  onClick={handleAddToCart}
-                >
-                  <ShoppingBag className="mr-2 h-4 w-4" />
-                  Add to Cart
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="border border-gray-300 p-3 rounded-sm hover:bg-gray-50 transition-colors"
-                >
-                  <Heart className="h-6 w-6" />
-                </Button>
-              </div>
+              <ProductActions onAddToCart={handleAddToCart} />
             </div>
           </div>
         ) : null}
