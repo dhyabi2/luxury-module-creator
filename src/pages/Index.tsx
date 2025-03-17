@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import MainLayout from '../modules/layout/MainLayout';
 import ProductGrid from '../modules/products/ProductGrid';
 import FilterSidebar from '../modules/filters/FilterSidebar';
@@ -37,10 +38,12 @@ const Index = () => {
                 <p className="text-white/90 mb-6 sm:mb-10 text-sm sm:text-base md:text-lg leading-relaxed">
                   Discover our curated collection of luxury accessories, bags, and perfumes for the discerning customer.
                 </p>
-                <button className="bg-white text-black hover:bg-gray-100 transition-colors px-6 sm:px-8 py-3 sm:py-3.5 rounded-sm font-medium tracking-wider group text-sm sm:text-base">
-                  <span className="group-hover:mr-2 transition-all">SHOP NOW</span>
-                  <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
-                </button>
+                <Link to="/watches" className="inline-block">
+                  <button className="bg-white text-black hover:bg-gray-100 transition-colors px-6 sm:px-8 py-3 sm:py-3.5 rounded-sm font-medium tracking-wider group text-sm sm:text-base">
+                    <span className="group-hover:mr-2 transition-all">SHOP NOW</span>
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -48,7 +51,9 @@ const Index = () => {
         
         {/* Breadcrumb */}
         <div className="text-xs sm:text-sm text-gray-600 mb-6 sm:mb-8 tracking-wider overflow-x-auto whitespace-nowrap pb-2">
-          <span className="hover:text-black cursor-pointer transition-colors">HOME</span> / <span className="hover:text-black cursor-pointer transition-colors">COLLECTIONS</span> / <span className="font-medium text-gray-900">LUXURY LIFESTYLE</span>
+          <Link to="/" className="hover:text-black cursor-pointer transition-colors">HOME</Link> / 
+          <Link to="/watches" className="hover:text-black cursor-pointer transition-colors">COLLECTIONS</Link> / 
+          <span className="font-medium text-gray-900">LUXURY LIFESTYLE</span>
         </div>
         
         {/* Products with Sidebar - Mobile First Approach */}

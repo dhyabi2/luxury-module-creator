@@ -8,42 +8,40 @@ import ViewDetailsButton from './components/ViewDetailsButton';
 export interface ProductProps {
   id: string;
   name: string;
-  price: number;
-  currency: string;
-  image: string;
-  discount?: number;
-  category: string;
   brand: string;
+  category?: string;
+  price: number;
+  originalPrice?: number;
+  onSale?: boolean;
+  isNew?: boolean;
+  imageUrl: string;
+  gender?: string;
+  caseSize?: number;
+  description?: string;
 }
 
 const ProductCard: React.FC<ProductProps> = (product) => {
   const [isHovered, setIsHovered] = useState(false);
   
   return (
-    <Link to={`/product/${product.id}`} className="block h-full w-full">
-      <div 
-        className="product-card group h-full flex flex-col relative overflow-hidden rounded-md shadow-sm hover:shadow-md transition-shadow duration-300"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <ProductImage 
-          image={product.image} 
-          name={product.name} 
-          discount={product.discount} 
-          isHovered={isHovered} 
-        />
-        
-        <ProductInfo 
-          brand={product.brand}
-          name={product.name}
-          price={product.price}
-          currency={product.currency}
-          discount={product.discount}
-        />
-        
-        <ViewDetailsButton isHovered={isHovered} />
-      </div>
-    </Link>
+    <article 
+      className="product-card h-full"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Link to={`/product/${product.id}`} className="block">
+        <ProductImage imageUrl={product.imageUrl} name={product.name} isNew={product.isNew} onSale={product.onSale} />
+      </Link>
+      
+      <ProductInfo
+        name={product.name}
+        brand={product.brand}
+        price={product.price}
+        originalPrice={product.originalPrice}
+      />
+      
+      <ViewDetailsButton isHovered={isHovered} productId={product.id} />
+    </article>
   );
 };
 

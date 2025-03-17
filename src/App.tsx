@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,12 +11,14 @@ import Sale from "./pages/Sale";
 import NewIn from "./pages/NewIn";
 import Brands from "./pages/Brands";
 import ProductCategory from "./pages/ProductCategory";
+import ProductDetail from "./pages/ProductDetail";
 import StoreLocator from "./pages/StoreLocator";
 
 // Import API handlers for local development fallback
 import ProductsAPI from "./api/products";
 import FiltersAPI from "./api/filters";
 import NavigationAPI from "./api/navigation";
+import ProductDetailAPI from "./api/productDetail";
 
 // Import database initialization
 import { getDb } from "./lib/db";
@@ -37,6 +40,11 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     const url = input instanceof Request ? input.url : input.toString();
     
     // Check if the request is for one of our API endpoints
+    if (url.includes('/api/products/') && !url.endsWith('/api/products/')) {
+      console.log('Intercepting product detail API request');
+      return await ProductDetailAPI(new Request(url, init));
+    }
+    
     if (url.includes('/api/products')) {
       console.log('Intercepting products API request');
       return await ProductsAPI(new Request(url, init));
@@ -127,6 +135,7 @@ const App = () => {
             <Route path="/accessories" element={<ProductCategory />} />
             <Route path="/bags" element={<ProductCategory />} />
             <Route path="/perfumes" element={<ProductCategory />} />
+            <Route path="/product/:productId" element={<ProductDetail />} />
             <Route path="/store-locator" element={<StoreLocator />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
