@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useQueryParamsBuilder } from './useQueryParamsBuilder';
 import { useProductCache } from './useProductCache';
 import { useProductFetchState } from './useProductFetchState';
+import { validateProductImages } from '../utils/productValidator';
 
 interface UseProductFetchingProps {
   filteredBrand?: string;
@@ -41,22 +42,6 @@ export const useProductFetching = ({
     lastPage,
     lastPageSize
   } = useProductFetchState(pageSize);
-
-  const validateProducts = useCallback((productsData: any[]) => {
-    return productsData.map((product) => {
-      const validImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && 
-        (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'));
-      
-      if (!validImageUrl) {
-        console.log(`[ProductGrid] Fixing invalid image URL for product: ${product.id}`);
-        return {
-          ...product,
-          imageUrl: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&h=600&fit=crop&auto=format'
-        };
-      }
-      return product;
-    });
-  }, []);
 
   const fetchProducts = useCallback(async () => {
     if (!shouldFetch(currentPage, sortOption, pageSize, filters)) {
@@ -109,7 +94,8 @@ export const useProductFetching = ({
       
       console.log(`[ProductGrid] Products data received: ${data.products.length} products, total: ${data.pagination.totalCount}`);
       
-      const validatedProducts = validateProducts(data.products);
+      // Validate product images only once after fetching
+      const validatedProducts = validateProductImages(data.products);
       
       setProducts(validatedProducts);
       setPagination(data.pagination);
@@ -148,7 +134,6 @@ export const useProductFetching = ({
     shouldFetch, 
     getCachedResponse, 
     cacheResponse,
-    validateProducts,
     setIsLoading,
     setLastFetchParams,
     setProducts,
