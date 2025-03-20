@@ -1,14 +1,40 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import MainNavigation from '@/modules/navigation/MainNavigation';
 import SecondaryNavigation from '@/modules/navigation/SecondaryNavigation';
 import SearchBar from '@/modules/navigation/SearchBar';
 import MobileMenu from '@/modules/navigation/MobileMenu';
 import { CartIcon } from '@/modules/cart/components/CartIcon';
+import { supabase } from '@/integrations/supabase/client';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState('/logo.svg');
+
+  useEffect(() => {
+    const fetchLogoUrl = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('logo_url')
+          .single();
+        
+        if (error) {
+          console.error('Error fetching logo URL:', error);
+          return;
+        }
+        
+        if (data && data.logo_url) {
+          setLogoUrl(data.logo_url);
+        }
+      } catch (err) {
+        console.error('Failed to fetch logo URL:', err);
+      }
+    };
+    
+    fetchLogoUrl();
+  }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -20,7 +46,16 @@ const Header = () => {
         <div className="flex justify-between h-16 sm:h-20 items-center">
           {/* Left section: Logo */}
           <Link to="/" className="flex-shrink-0">
-            <img src="/logo.svg" alt="Logo" className="h-8 sm:h-12 w-auto" />
+            <img 
+              src={logoUrl} 
+              alt="Logo" 
+              className="h-8 sm:h-12 w-auto"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/logo.svg'; // Fallback to default logo
+                console.error('Error loading logo image:', logoUrl);
+              }}
+            />
           </Link>
           
           {/* Center section: Main nav (show on desktop) */}

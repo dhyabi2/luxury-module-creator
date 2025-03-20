@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      customers: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      dashboard_stats: {
+        Row: {
+          id: number
+          last_updated: string | null
+          total_customers: number | null
+          total_orders: number | null
+          total_revenue: number | null
+        }
+        Insert: {
+          id?: number
+          last_updated?: string | null
+          total_customers?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+        }
+        Update: {
+          id?: number
+          last_updated?: string | null
+          total_customers?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+        }
+        Relationships: []
+      }
       filters: {
         Row: {
           data: Json
@@ -39,6 +87,33 @@ export type Database = {
           data?: Json
           id?: number
           type?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          customer_id: string
+          id: string
+          items: Json
+          order_date: string | null
+          status: string | null
+          total: number
+        }
+        Insert: {
+          customer_id: string
+          id?: string
+          items: Json
+          order_date?: string | null
+          status?: string | null
+          total: number
+        }
+        Update: {
+          customer_id?: string
+          id?: string
+          items?: Json
+          order_date?: string | null
+          status?: string | null
+          total?: number
         }
         Relationships: []
       }
@@ -87,6 +162,93 @@ export type Database = {
           reviews?: number
           specifications?: Json | null
           stock?: number
+        }
+        Relationships: []
+      }
+      sales_by_month: {
+        Row: {
+          amount: number
+          id: number
+          month: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          id?: number
+          month: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          id?: number
+          month?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      sales_stats: {
+        Row: {
+          average_order_value: number | null
+          id: number
+          total_customers: number | null
+          total_orders: number | null
+          total_sales: number | null
+        }
+        Insert: {
+          average_order_value?: number | null
+          id?: number
+          total_customers?: number | null
+          total_orders?: number | null
+          total_sales?: number | null
+        }
+        Update: {
+          average_order_value?: number | null
+          id?: number
+          total_customers?: number | null
+          total_orders?: number | null
+          total_sales?: number | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          created_at: string | null
+          enable_guest_checkout: boolean | null
+          enable_notifications: boolean | null
+          id: number
+          logo_url: string | null
+          maintenance_mode: boolean | null
+          store_address: string | null
+          store_email: string | null
+          store_name: string | null
+          store_phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enable_guest_checkout?: boolean | null
+          enable_notifications?: boolean | null
+          id?: number
+          logo_url?: string | null
+          maintenance_mode?: boolean | null
+          store_address?: string | null
+          store_email?: string | null
+          store_name?: string | null
+          store_phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enable_guest_checkout?: boolean | null
+          enable_notifications?: boolean | null
+          id?: number
+          logo_url?: string | null
+          maintenance_mode?: boolean | null
+          store_address?: string | null
+          store_email?: string | null
+          store_name?: string | null
+          store_phone?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
