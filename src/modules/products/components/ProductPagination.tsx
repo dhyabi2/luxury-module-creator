@@ -1,59 +1,89 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-interface PaginationData {
-  totalCount: number;
-  totalPages: number;
+export interface ProductPaginationProps {
   currentPage: number;
-  pageSize: number;
-}
-
-interface ProductPaginationProps {
-  pagination: PaginationData;
+  totalPages: number;
   onPageChange: (page: number) => void;
 }
 
 const ProductPagination: React.FC<ProductPaginationProps> = ({
-  pagination,
+  currentPage,
+  totalPages,
   onPageChange
 }) => {
-  if (pagination.totalPages <= 0) {
-    return null;
-  }
+  if (totalPages <= 1) return null;
+
+  // Calculate page numbers to show
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    
+    // Always show first page
+    pageNumbers.push(1);
+    
+    // Add current page neighborhood
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+      pageNumbers.push(i);
+    }
+    
+    // Always show last page if there are more than 1 pages
+    if (totalPages > 1) {
+      pageNumbers.push(totalPages);
+    }
+    
+    // Add ellipsis as needed
+    const result = [];
+    let prev = 0;
+    
+    for (const num of pageNumbers) {
+      if (num - prev > 1) {
+        result.push('...');
+      }
+      result.push(num);
+      prev = num;
+    }
+    
+    return result;
+  };
   
+  const pageNumbers = getPageNumbers();
+
   return (
-    <div className="mt-8 flex justify-center">
-      <div className="flex items-center space-x-1 text-sm">
-        <button 
-          className="px-3 py-1 rounded-sm bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50 disabled:hover:bg-gray-100"
-          disabled={pagination.currentPage === 1}
-          onClick={() => onPageChange(Math.max(pagination.currentPage - 1, 1))}
-        >
-          Previous
-        </button>
-        
-        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => (
-          <button 
-            key={i}
-            className={`w-8 h-8 flex items-center justify-center rounded-sm ${
-              pagination.currentPage === i + 1 
-                ? 'bg-brand text-white' 
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-            onClick={() => onPageChange(i + 1)}
+    <div className="flex justify-center items-center space-x-2 mt-8">
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      
+      {pageNumbers.map((page, index) => (
+        page === '...' ? (
+          <span key={`ellipsis-${index}`} className="px-2">...</span>
+        ) : (
+          <Button
+            key={`page-${page}`}
+            variant={currentPage === page ? "default" : "outline"}
+            className={`w-8 h-8 ${currentPage === page ? 'bg-primary text-primary-foreground' : ''}`}
+            onClick={() => page !== '...' && onPageChange(page as number)}
           >
-            {i + 1}
-          </button>
-        ))}
-        
-        <button 
-          className="px-3 py-1 rounded-sm bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-50 disabled:hover:bg-gray-100"
-          disabled={pagination.currentPage === pagination.totalPages}
-          onClick={() => onPageChange(Math.min(pagination.currentPage + 1, pagination.totalPages))}
-        >
-          Next
-        </button>
-      </div>
+            {page}
+          </Button>
+        )
+      ))}
+      
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
     </div>
   );
 };

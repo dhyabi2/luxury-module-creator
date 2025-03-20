@@ -1,5 +1,5 @@
 
-import { ProductsResponse, Product, FiltersResponse, FilterOption } from '@/types/api';
+import { ProductsResponse, Product, FiltersResponse } from '@/types/api';
 
 interface ProductQueryParams {
   gender?: string;
@@ -19,140 +19,221 @@ interface ProductQueryParams {
   color?: string;
 }
 
-// Caching mechanism for API responses
-const responseCache = new Map();
-const CACHE_TTL = 60000; // 1 minute cache TTL
+// Simple mock data for development
+const mockProducts: Product[] = [
+  {
+    id: "1",
+    name: "Classic Timepiece",
+    price: 299.99,
+    currency: "$",
+    image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d",
+    category: "watches",
+    brand: "Timex",
+    discount: 10,
+    description: "A classic timepiece that never goes out of style.",
+    specifications: {
+      caseMaterial: "Stainless Steel",
+      caseSize: "42mm",
+      dialColor: "Black",
+      movement: "Automatic",
+      waterResistance: "30m",
+      strapMaterial: "Leather",
+      strapColor: "Brown"
+    },
+    stock: 15,
+    rating: 4.5,
+    reviews: 120
+  },
+  {
+    id: "2",
+    name: "Luxury Gold Watch",
+    price: 999.99,
+    currency: "$",
+    image: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3",
+    category: "watches",
+    brand: "Rolex",
+    specifications: {
+      caseMaterial: "Gold",
+      caseSize: "40mm",
+      dialColor: "Gold",
+      movement: "Automatic",
+      waterResistance: "100m",
+      strapMaterial: "Gold",
+      strapColor: "Gold"
+    },
+    stock: 5,
+    rating: 5,
+    reviews: 42
+  }
+];
 
-// Helper function to check if a cached response is still valid
-const isCacheValid = (timestamp: number) => {
-  return (Date.now() - timestamp) < CACHE_TTL;
+// Mock filters data
+const mockFilters: FiltersResponse = {
+  priceRange: {
+    min: 0,
+    max: 1225,
+    unit: "$"
+  },
+  categories: [
+    { id: "watches", name: "Watches", count: 45 },
+    { id: "accessories", name: "Accessories", count: 12 }
+  ],
+  brands: [
+    { id: "timex", name: "Timex", count: 8 },
+    { id: "rolex", name: "Rolex", count: 15 },
+    { id: "seiko", name: "Seiko", count: 12 }
+  ],
+  categoryBrands: {
+    "watches": [
+      { id: "timex", name: "Timex", count: 8 },
+      { id: "rolex", name: "Rolex", count: 15 },
+      { id: "seiko", name: "Seiko", count: 12 }
+    ],
+    "accessories": [
+      { id: "gucci", name: "Gucci", count: 5 },
+      { id: "prada", name: "Prada", count: 7 }
+    ]
+  },
+  bands: [
+    { id: "leather", name: "Leather", count: 25 },
+    { id: "metal", name: "Metal", count: 20 }
+  ],
+  caseColors: [
+    { id: "gold", name: "Gold", count: 15 },
+    { id: "silver", name: "Silver", count: 30 }
+  ],
+  colors: [
+    { id: "black", name: "Black", count: 18 },
+    { id: "brown", name: "Brown", count: 12 }
+  ],
+  genders: [
+    { id: "men", name: "Men", count: 30 },
+    { id: "women", name: "Women", count: 25 },
+    { id: "unisex", name: "Unisex", count: 10 }
+  ],
+  caseSizeRange: {
+    min: 20,
+    max: 45,
+    unit: "mm"
+  }
 };
 
+// Mock navigation data
+const mockNavigation = {
+  mainCategories: [
+    { id: "watches", name: "Watches", active: true },
+    { id: "accessories", name: "Accessories", active: false }
+  ],
+  secondaryCategories: [
+    { id: "newin", name: "New In", highlight: true },
+    { id: "sale", name: "Sale", highlight: true }
+  ],
+  featuredBrands: [
+    { id: "rolex", name: "Rolex", featured: true },
+    { id: "omega", name: "Omega", featured: true }
+  ]
+};
+
+// Simulate loading delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Fetch products with filters
 export const fetchProducts = async (params: ProductQueryParams): Promise<ProductsResponse> => {
-  const queryParams = new URLSearchParams();
-  
-  if (params.gender) queryParams.append('gender', params.gender);
-  if (params.brand) queryParams.append('brand', params.brand);
-  if (params.category) queryParams.append('category', params.category);
-  if (params.isNewIn) queryParams.append('isNewIn', 'true');
-  if (params.isOnSale) queryParams.append('isOnSale', 'true');
-  if (params.page) queryParams.append('page', params.page.toString());
-  if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
-  if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString());
-  if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString());
-  if (params.minCaseSize !== undefined) queryParams.append('minCaseSize', params.minCaseSize.toString());
-  if (params.maxCaseSize !== undefined) queryParams.append('maxCaseSize', params.maxCaseSize.toString());
-  if (params.band) queryParams.append('band', params.band);
-  if (params.caseColor) queryParams.append('caseColor', params.caseColor);
-  if (params.color) queryParams.append('color', params.color);
-  
-  const queryString = queryParams.toString();
-  const cacheKey = `products_${queryString}`;
-  
-  // Check cache first
-  const cachedData = responseCache.get(cacheKey);
-  if (cachedData && isCacheValid(cachedData.timestamp)) {
-    console.log('Using cached product data for:', queryString);
-    return cachedData.data;
+  console.log("Fetching products with params:", params);
+
+  // In a real app, we would use actual API endpoints
+  try {
+    // Simulate API call latency
+    await delay(300);
+    
+    // Filter and paginate mock products based on params
+    let filteredProducts = [...mockProducts];
+    
+    // Simple filtering for demo
+    if (params.brand) {
+      const brands = params.brand.split(',');
+      filteredProducts = filteredProducts.filter(p => brands.includes(p.brand.toLowerCase()));
+    }
+    
+    if (params.category) {
+      const categories = params.category.split(',');
+      filteredProducts = filteredProducts.filter(p => categories.includes(p.category.toLowerCase()));
+    }
+    
+    // Calculate pagination
+    const page = params.page || 1;
+    const pageSize = params.pageSize || 8;
+    const totalCount = filteredProducts.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    // Apply pagination
+    const startIndex = (page - 1) * pageSize;
+    const paginatedProducts = filteredProducts.slice(startIndex, startIndex + pageSize);
+    
+    return {
+      products: paginatedProducts,
+      pagination: {
+        totalCount,
+        totalPages,
+        currentPage: page,
+        pageSize
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw error;
   }
-  
-  const response = await fetch(`/api/products?${queryString}`);
-  
-  if (!response.ok) {
-    throw new Error(`Error fetching products: ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  
-  // Cache the response
-  responseCache.set(cacheKey, {
-    timestamp: Date.now(),
-    data
-  });
-  
-  return data;
 };
 
+// Fetch product by ID
 export const fetchProductById = async (productId: string): Promise<Product> => {
-  const cacheKey = `product_${productId}`;
+  console.log("Fetching product with ID:", productId);
   
-  // Check cache first
-  const cachedData = responseCache.get(cacheKey);
-  if (cachedData && isCacheValid(cachedData.timestamp)) {
-    console.log('Using cached product data for ID:', productId);
-    return cachedData.data;
+  try {
+    // Simulate API call latency
+    await delay(200);
+    
+    const product = mockProducts.find(p => p.id === productId);
+    
+    if (!product) {
+      throw new Error("Product not found");
+    }
+    
+    return product;
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    throw error;
   }
-  
-  const response = await fetch(`/api/products/${productId}`);
-  
-  if (!response.ok) {
-    throw new Error(`Error fetching product: ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  
-  // Cache the response
-  responseCache.set(cacheKey, {
-    timestamp: Date.now(),
-    data: data.product
-  });
-  
-  return data.product;
 };
 
+// Fetch filters
 export const fetchFilters = async (): Promise<FiltersResponse> => {
-  const cacheKey = 'filters';
+  console.log("Fetching filters");
   
-  // Check cache first
-  const cachedData = responseCache.get(cacheKey);
-  if (cachedData && isCacheValid(cachedData.timestamp)) {
-    console.log('Using cached filters data');
-    return cachedData.data;
+  try {
+    // Simulate API call latency
+    await delay(200);
+    
+    return mockFilters;
+  } catch (error) {
+    console.error("Error fetching filters:", error);
+    throw error;
   }
-  
-  const response = await fetch('/api/filters');
-  
-  if (!response.ok) {
-    throw new Error(`Error fetching filters: ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  
-  // Cache the response
-  responseCache.set(cacheKey, {
-    timestamp: Date.now(),
-    data
-  });
-  
-  return data;
 };
 
+// Fetch navigation
 export const fetchNavigation = async () => {
-  const cacheKey = 'navigation';
+  console.log("Fetching navigation");
   
-  // Check cache first
-  const cachedData = responseCache.get(cacheKey);
-  if (cachedData && isCacheValid(cachedData.timestamp)) {
-    console.log('Using cached navigation data');
-    return cachedData.data;
+  try {
+    // Simulate API call latency
+    await delay(150);
+    
+    return mockNavigation;
+  } catch (error) {
+    console.error("Error fetching navigation:", error);
+    throw error;
   }
-  
-  const response = await fetch('/api/navigation');
-  
-  if (!response.ok) {
-    throw new Error(`Error fetching navigation: ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  
-  // Cache the response
-  responseCache.set(cacheKey, {
-    timestamp: Date.now(),
-    data
-  });
-  
-  return data;
 };
 
 // For backward compatibility with existing code
@@ -162,11 +243,11 @@ export const fetchProductDetail = fetchProductById;
 
 // Utility function to combine brands from multiple categories
 export const getCombinedBrands = (
-  categoryBrands: Record<string, FilterOption[]>,
+  categoryBrands: Record<string, any[]>,
   selectedCategories: string[]
-): FilterOption[] => {
+): any[] => {
   // Create a map to store unique brands by ID
-  const uniqueBrands = new Map<string, FilterOption>();
+  const uniqueBrands = new Map<string, any>();
   
   // Iterate through selected categories
   selectedCategories.forEach(categoryId => {
@@ -181,10 +262,4 @@ export const getCombinedBrands = (
   
   // Convert map back to array and return
   return Array.from(uniqueBrands.values());
-};
-
-// Helper function to clear the cache
-export const clearApiCache = () => {
-  responseCache.clear();
-  console.log('API cache cleared');
 };

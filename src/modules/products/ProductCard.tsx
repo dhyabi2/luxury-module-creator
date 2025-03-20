@@ -4,23 +4,13 @@ import { Link } from 'react-router-dom';
 import ProductImage from './components/ProductImage';
 import ProductInfo from './components/ProductInfo';
 import ViewDetailsButton from './components/ViewDetailsButton';
+import { Product } from '@/types/api';
 
-export interface ProductProps {
-  id: string;
-  name: string;
-  brand: string;
-  category?: string;
-  price: number;
-  originalPrice?: number;
-  onSale?: boolean;
-  isNew?: boolean;
-  imageUrl: string;
-  gender?: string;
-  caseSize?: number;
-  description?: string;
+export interface ProductCardProps {
+  product: Product;
 }
 
-const ProductCard: React.FC<ProductProps> = (product) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   
   return (
@@ -31,9 +21,9 @@ const ProductCard: React.FC<ProductProps> = (product) => {
     >
       <Link to={`/product/${product.id}`} className="block">
         <ProductImage 
-          image={product.imageUrl} 
+          image={product.image} 
           name={product.name} 
-          discount={product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : undefined}
+          discount={product.discount}
           isHovered={isHovered} 
         />
       </Link>
@@ -42,8 +32,8 @@ const ProductCard: React.FC<ProductProps> = (product) => {
         brand={product.brand}
         name={product.name}
         price={product.price}
-        currency="$"
-        discount={product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : undefined}
+        currency={product.currency}
+        discount={product.discount}
       />
       
       <ViewDetailsButton isHovered={isHovered} productId={product.id} />

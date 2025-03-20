@@ -98,6 +98,13 @@ const ProductDetail = () => {
   
   if (!product) return null;
   
+  // Get caseSize as a number if it exists
+  const caseSize = specifications.caseSize ? 
+    typeof specifications.caseSize === 'string' ? 
+      parseFloat(specifications.caseSize) : 
+      specifications.caseSize 
+    : undefined;
+  
   return (
     <div className="container mx-auto px-4 py-8">
       <ProductBreadcrumb category={product.category} productName={product.name} />
@@ -126,7 +133,7 @@ const ProductDetail = () => {
           {specifications && Object.keys(specifications).length > 0 && (
             <ProductSpecifications 
               caseMaterial={specifications.caseMaterial}
-              caseSize={specifications.caseSize ? Number(specifications.caseSize) : undefined}
+              caseSize={caseSize}
               dialColor={specifications.dialColor}
               movement={specifications.movement}
               waterResistance={specifications.waterResistance}

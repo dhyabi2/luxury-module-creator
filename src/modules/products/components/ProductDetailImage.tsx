@@ -1,14 +1,16 @@
 
 import React, { useState } from 'react';
 
-interface ProductDetailImageProps {
-  imageUrl: string;
-  productName: string;
+export interface ProductDetailImageProps {
+  image: string;
+  name: string;
+  brand: string;
 }
 
 const ProductDetailImage: React.FC<ProductDetailImageProps> = ({ 
-  imageUrl, 
-  productName 
+  image, 
+  name,
+  brand
 }) => {
   const [imageError, setImageError] = useState(false);
   
@@ -18,11 +20,11 @@ const ProductDetailImage: React.FC<ProductDetailImageProps> = ({
   return (
     <div className="rounded-lg overflow-hidden">
       <img 
-        src={imageError ? fallbackImage : imageUrl} 
-        alt={productName} 
+        src={imageError ? fallbackImage : image} 
+        alt={name} 
         className="w-full h-auto object-cover"
         onError={() => {
-          console.log(`Product image failed to load: ${imageUrl}`);
+          console.log(`Product image failed to load: ${image}`);
           setImageError(true);
         }}
       />

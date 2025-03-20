@@ -2,22 +2,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-interface ProductBreadcrumbProps {
+export interface ProductBreadcrumbProps {
+  category?: string;
   productName: string;
-  productCategory?: string;
 }
 
 const ProductBreadcrumb: React.FC<ProductBreadcrumbProps> = ({ 
   productName, 
-  productCategory 
+  category 
 }) => {
   return (
     <div className="text-xs sm:text-sm text-gray-600 mb-6 tracking-wider overflow-x-auto whitespace-nowrap pb-2">
       <Link to="/" className="hover:text-black transition-colors">HOME</Link> / 
-      {productCategory && (
+      {category && (
         <>
-          <Link to={`/${productCategory.toLowerCase()}`} className="hover:text-black transition-colors">
-            {productCategory.toUpperCase()}
+          <Link to={`/${category.toLowerCase()}`} className="hover:text-black transition-colors">
+            {category.toUpperCase()}
           </Link> / 
         </>
       )}
