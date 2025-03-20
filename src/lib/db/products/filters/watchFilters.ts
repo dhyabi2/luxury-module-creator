@@ -16,15 +16,25 @@ export const applyGenderFilter = (query: any, gender: string) => {
     
     const genders = gender.split(',').map(g => g.trim());
     
-    // Use contains for JSON data instead of eq
+    // Use containedBy for JSONB which is more reliable
     if (genders.length > 0) {
-      // Use contains which is safer for JSON fields
-      query = query.contains('specifications', { gender: genders[0] });
+      const genderFilter: any = {};
+      genderFilter['gender'] = genders[0];
       
-      // For multiple genders, use OR conditions
+      // Use containedBy for JSONB
+      query = query.containedBy('specifications', genderFilter);
+      
+      // For multiple genders, add OR conditions
       if (genders.length > 1) {
+        let orConditions = [];
         for (let i = 1; i < genders.length; i++) {
-          query = query.or(`specifications->gender.eq.${genders[i]}`);
+          const additionalFilter: any = {};
+          additionalFilter['gender'] = genders[i];
+          orConditions.push(`specifications::jsonb @> '${JSON.stringify(additionalFilter)}'`);
+        }
+        
+        if (orConditions.length > 0) {
+          query = query.or(orConditions.join(','));
         }
       }
     }
@@ -48,9 +58,15 @@ export const applyCaseSizeFilter = (query: any, minCaseSize: string, maxCaseSize
     const minSize = parseInt(minCaseSize);
     const maxSize = parseInt(maxCaseSize);
     
-    // Use a more lenient range-based approach
+    // Use text search for case size values 
+    let sizeConditions = [];
     for (let size = minSize; size <= maxSize; size++) {
-      query = query.or(`specifications->caseSize.like.%${size}mm%`);
+      sizeConditions.push(`specifications::text ilike '%"caseSize":"${size}mm"%'`);
+      sizeConditions.push(`specifications::text ilike '%"caseSize": "${size}mm"%'`);
+    }
+    
+    if (sizeConditions.length > 0) {
+      query = query.or(sizeConditions.join(','));
     }
   }
   
@@ -70,14 +86,25 @@ export const applyBandFilter = (query: any, band: string) => {
     
     const bands = band.split(',').map(b => b.trim());
     
-    // Use contains for JSON data
+    // Use containedBy for JSONB
     if (bands.length > 0) {
-      query = query.contains('specifications', { strapMaterial: bands[0] });
+      const bandFilter: any = {};
+      bandFilter['strapMaterial'] = bands[0];
       
-      // For additional bands, use OR conditions
+      // Use containedBy for JSONB
+      query = query.containedBy('specifications', bandFilter);
+      
+      // For multiple bands, add OR conditions
       if (bands.length > 1) {
+        let orConditions = [];
         for (let i = 1; i < bands.length; i++) {
-          query = query.or(`specifications->strapMaterial.eq.${bands[i]}`);
+          const additionalFilter: any = {};
+          additionalFilter['strapMaterial'] = bands[i];
+          orConditions.push(`specifications::jsonb @> '${JSON.stringify(additionalFilter)}'`);
+        }
+        
+        if (orConditions.length > 0) {
+          query = query.or(orConditions.join(','));
         }
       }
     }
@@ -99,14 +126,25 @@ export const applyCaseColorFilter = (query: any, caseColor: string) => {
     
     const caseColors = caseColor.split(',').map(c => c.trim());
     
-    // Use contains for JSON data
+    // Use containedBy for JSONB
     if (caseColors.length > 0) {
-      query = query.contains('specifications', { caseMaterial: caseColors[0] });
+      const caseColorFilter: any = {};
+      caseColorFilter['caseMaterial'] = caseColors[0];
       
-      // For additional case colors, use OR conditions
+      // Use containedBy for JSONB
+      query = query.containedBy('specifications', caseColorFilter);
+      
+      // For multiple case colors, add OR conditions
       if (caseColors.length > 1) {
+        let orConditions = [];
         for (let i = 1; i < caseColors.length; i++) {
-          query = query.or(`specifications->caseMaterial.eq.${caseColors[i]}`);
+          const additionalFilter: any = {};
+          additionalFilter['caseMaterial'] = caseColors[i];
+          orConditions.push(`specifications::jsonb @> '${JSON.stringify(additionalFilter)}'`);
+        }
+        
+        if (orConditions.length > 0) {
+          query = query.or(orConditions.join(','));
         }
       }
     }
@@ -128,13 +166,19 @@ export const applyColorFilter = (query: any, color: string) => {
     
     const colors = color.split(',').map(c => c.trim());
     
-    // Use reliable OR conditions for multiple fields
+    // Use text search for colors which is more reliable
     if (colors.length > 0) {
-      query = query.or(`specifications->dialColor.eq.${colors[0]},specifications->strapColor.eq.${colors[0]}`);
+      let colorConditions = [];
       
-      // Add OR conditions for additional colors
-      for (let i = 1; i < colors.length; i++) {
-        query = query.or(`specifications->dialColor.eq.${colors[i]},specifications->strapColor.eq.${colors[i]}`);
+      for (let i = 0; i < colors.length; i++) {
+        colorConditions.push(`specifications::text ilike '%"dialColor":"${colors[i]}"%'`);
+        colorConditions.push(`specifications::text ilike '%"strapColor":"${colors[i]}"%'`);
+        colorConditions.push(`specifications::text ilike '%"dialColor": "${colors[i]}"%'`);
+        colorConditions.push(`specifications::text ilike '%"strapColor": "${colors[i]}"%'`);
+      }
+      
+      if (colorConditions.length > 0) {
+        query = query.or(colorConditions.join(','));
       }
     }
   }
