@@ -80,9 +80,21 @@ serve(async (req) => {
       throw error;
     }
     
+    // Process products (validate images etc.)
+    const processedProducts = products?.map(product => {
+      // Validate image URL for each product
+      if (!product.image || !product.image.startsWith('http')) {
+        return {
+          ...product,
+          image: 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8'
+        };
+      }
+      return product;
+    }) || [];
+    
     // Prepare the response
     const response = {
-      products: products || [],
+      products: processedProducts,
       pagination: {
         totalCount: count || 0,
         totalPages: Math.ceil((count || 0) / pageSize),

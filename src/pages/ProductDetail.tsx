@@ -173,7 +173,7 @@ const ProductDetail = () => {
   const caseSize = specifications && specifications.caseSize ? 
     typeof specifications.caseSize === 'string' ? 
       parseFloat(specifications.caseSize) : 
-      specifications.caseSize 
+      specifications.caseSize as number 
     : undefined;
   
   return (
