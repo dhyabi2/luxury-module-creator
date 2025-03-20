@@ -30,7 +30,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   // Extract specifications for display
   const specifications = formattedProduct.specifications;
   
-  // Get caseSize as a number if it exists
+  // Parse caseSize as a number if it exists
   const caseSize = specifications && specifications.caseSize ? 
     (typeof specifications.caseSize === 'string' ? 
       parseFloat(specifications.caseSize) : 
