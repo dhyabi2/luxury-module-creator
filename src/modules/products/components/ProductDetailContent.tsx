@@ -34,6 +34,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   let caseSizeNumber: number | undefined = undefined;
   
   if (specifications && specifications.caseSize) {
+    // Make sure we convert the value to a number
     const parsedSize = parseFloat(specifications.caseSize.toString());
     if (!isNaN(parsedSize)) {
       caseSizeNumber = parsedSize;

@@ -17,11 +17,28 @@ export default async (req: Request) => {
   
   // Fetch filters directly from Supabase
   console.log('[API:filters] Fetching filters from Supabase');
-  const { data, error } = await supabase.from('filters').select('data').eq('id', 1).single();
+  const { data, error } = await supabase.from('filters').select('data').eq('id', 1).maybeSingle();
   
   if (error) {
     console.error('Error fetching filters:', error);
-    throw error;
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  }
+  
+  if (!data) {
+    console.error('No filters data found');
+    return new Response(JSON.stringify({ error: 'No filters data found' }), {
+      status: 404,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   }
   
   console.log('[API:filters] Filters data retrieved successfully');
@@ -45,6 +62,7 @@ export default async (req: Request) => {
   return new Response(
     JSON.stringify(filtersData),
     {
+      status: 200,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
