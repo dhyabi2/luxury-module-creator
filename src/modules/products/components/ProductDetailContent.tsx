@@ -65,12 +65,14 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
           {specifications && Object.keys(specifications).length > 0 && (
             <ProductSpecifications 
               caseMaterial={specifications.caseMaterial}
-              caseSize={caseSize}
+              caseSize={typeof caseSize === 'number' ? caseSize : undefined}
               dialColor={specifications.dialColor}
               movement={specifications.movement}
               waterResistance={specifications.waterResistance}
               strapMaterial={specifications.strapMaterial}
               strapColor={specifications.strapColor}
+              brand={product.brand}
+              gender={specifications.gender}
             />
           )}
           
