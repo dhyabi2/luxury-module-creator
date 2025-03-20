@@ -3,14 +3,17 @@ import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import AdminDashboard from './AdminDashboard';
 import ProductForm from './ProductForm';
+import { AdminLayout } from './AdminLayout';
 
-export const AdminRoutes = () => {
+const AdminRoutes = () => {
   return (
-    <Routes>
-      <Route path="/" element={<AdminDashboard />} />
-      <Route path="/products/new" element={<ProductForm />} />
-      <Route path="/products/edit/:id" element={<ProductForm />} />
-    </Routes>
+    <AdminLayout>
+      <Routes>
+        <Route path="/" element={<AdminDashboard />} />
+        <Route path="products/new" element={<ProductForm />} />
+        <Route path="products/edit/:id" element={<ProductForm />} />
+      </Routes>
+    </AdminLayout>
   );
 };
 

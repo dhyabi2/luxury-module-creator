@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { ThemeProvider } from '@/components/ui/theme-provider';
@@ -52,7 +53,7 @@ function App() {
               <Route path="store-locator" element={<StoreLocatorPage />} />
             </Route>
 
-            <Route path="/admin/*" element={<AdminRoutes />} />
+            <Route path="admin/*" element={<AdminRoutes />} />
             
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
