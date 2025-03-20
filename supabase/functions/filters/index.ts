@@ -32,7 +32,11 @@ serve(async (req) => {
   try {
     // Fetch filters directly from Supabase
     console.log('[API:filters] Querying database for filters data');
-    const { data, error } = await supabase.from('filters').select('data').eq('id', 1).single();
+    const { data, error } = await supabase
+      .from('filters')
+      .select('data')
+      .eq('id', 1)
+      .single();
     
     if (error) {
       console.error('[API:filters] Database error:', error);

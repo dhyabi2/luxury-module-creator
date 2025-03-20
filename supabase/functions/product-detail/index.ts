@@ -19,67 +19,82 @@ serve(async (req) => {
   const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Parse URL to extract product ID
+  // Extract product ID from the URL path
   const url = new URL(req.url);
   const pathParts = url.pathname.split('/');
   const productId = pathParts[pathParts.length - 1];
-
-  console.log(`[API:product-detail] Request received from: ${req.headers.get('origin') || 'unknown origin'}`);
-  console.log(`[API:product-detail] Request method: ${req.method}`);
-  console.log(`[API:product-detail] Product ID requested: ${productId}`);
-
+  
   if (!productId) {
-    console.error('[API:product-detail] No product ID provided');
-    return new Response(JSON.stringify({ error: 'Product ID is required' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    console.error('[API:product-detail] Missing product ID in request');
+    return new Response(
+      JSON.stringify({ error: 'Product ID is required' }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
-
+  
+  console.log(`[API:product-detail] Request received for product: ${productId}`);
+  
   try {
-    // Query the database for the product
+    // Fetch the product from Supabase
     console.log(`[API:product-detail] Querying database for product ID: ${productId}`);
-    const { data, error } = await supabase
+    const { data: product, error } = await supabase
       .from('products')
       .select('*')
       .eq('id', productId)
-      .maybeSingle();
+      .single();
     
     if (error) {
-      console.error(`[API:product-detail] Database error:`, error);
-      console.error(`[API:product-detail] Error details: ${error.message}`);
+      console.error('[API:product-detail] Database error:', error);
+      if (error.code === 'PGRST116') {
+        return new Response(
+          JSON.stringify({ error: 'Product not found' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
       throw error;
     }
     
-    if (!data) {
-      console.error(`[API:product-detail] Product with ID ${productId} not found`);
-      return new Response(JSON.stringify({ error: `Product with ID ${productId} not found` }), {
-        status: 404,
+    if (!product) {
+      console.error('[API:product-detail] Product not found:', productId);
+      return new Response(
+        JSON.stringify({ error: 'Product not found' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    console.log('[API:product-detail] Product found, returning data');
+    
+    // Process the product (validate image URL, etc.)
+    if (!product.image || !product.image.startsWith('http')) {
+      product.image = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8';
+    }
+    
+    // Return the response
+    return new Response(
+      JSON.stringify(product),
+      { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    
-    // Validate image URL
-    if (!data.image || !data.image.startsWith('http')) {
-      console.log(`[API:product-detail] Product ID ${productId} has invalid image URL, using fallback`);
-      data.image = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8';
-    }
-
-    console.log(`[API:product-detail] Successfully retrieved product data for ID: ${productId}`);
-    
-    return new Response(JSON.stringify({ product: data }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+      }
+    );
   } catch (error) {
     console.error('[API:product-detail] Error processing request:', error);
     console.error('[API:product-detail] Error details:', error.message);
-    if (error.stack) {
-      console.error('[API:product-detail] Stack trace:', error.stack);
-    }
     
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });

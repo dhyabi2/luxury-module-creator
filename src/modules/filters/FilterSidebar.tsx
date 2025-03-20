@@ -70,7 +70,9 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     const getFiltersData = async () => {
       setIsLoading(true);
       try {
+        console.log('Calling fetchFilters...');
         const data = await fetchFilters();
+        console.log('Filter data received:', data);
         setFiltersData(data);
         
         // Initialize ranges if not already set

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { fetchNavigation } from '@/utils/apiUtils';
 
 interface MainCategory {
   id: string;
@@ -21,19 +22,7 @@ const MainNavigation = () => {
       try {
         console.log('Fetching navigation data');
         
-        // Direct API call to Supabase edge function
-        const response = await fetch("https://kkdldvrceqdcgclnvixt.supabase.co/functions/navigation", {
-          headers: {
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo"
-          }
-        });
-        
-        if (!response.ok) {
-          console.log('Error fetching navigation data:', response.status, response.statusText);
-          throw new Error(`Failed to fetch navigation data: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
+        const data = await fetchNavigation();
         
         console.log('Navigation data received:', data);
         
