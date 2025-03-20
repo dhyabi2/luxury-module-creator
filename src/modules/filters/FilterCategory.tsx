@@ -1,27 +1,10 @@
 
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-
-interface FilterOption {
-  id: string;
-  name: string;
-  count?: number;
-}
-
-interface FilterCategoryProps {
-  title: string;
-  options: FilterOption[];
-  type: 'checkbox' | 'radio' | 'range';
-  initialExpanded?: boolean;
-  rangeMin?: number;
-  rangeMax?: number;
-  rangeUnit?: string;
-  currentMin?: number;
-  currentMax?: number;
-  selectedOptions?: string[];
-  onSelectionChange?: (selectedIds: string[]) => void;
-  onRangeChange?: (min: number, max: number) => void;
-}
+import { FilterCategoryProps } from './types/filterTypes';
+import RangeFilter from './components/RangeFilter';
+import CheckboxFilter from './components/CheckboxFilter';
+import RadioFilter from './components/RadioFilter';
 
 const FilterCategory: React.FC<FilterCategoryProps> = ({
   title,
@@ -41,8 +24,6 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
   const [selected, setSelected] = useState<string[]>(selectedOptions);
   const [minValue, setMinValue] = useState(currentMin ?? rangeMin);
   const [maxValue, setMaxValue] = useState(currentMax ?? rangeMax);
-  const [showAll, setShowAll] = useState(false);
-  const [isBatchUpdating, setIsBatchUpdating] = useState(false);
   
   // Synchronize with external selected options when they change
   useEffect(() => {
@@ -61,27 +42,11 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
     }
   }, [currentMin, currentMax]);
   
-  // Limit number of visible options when collapsed
-  const visibleOptions = showAll ? options : options.slice(0, 5);
-  
   // Toggle expansion
-  const toggleExpand = useCallback(() => setIsExpanded(prev => !prev), []);
+  const toggleExpand = () => setIsExpanded(prev => !prev);
   
-  // Handle checkbox/radio change with debounce to prevent multiple API calls
-  const handleSelectionChange = useCallback((optionId: string) => {
-    setIsBatchUpdating(true);
-    let newSelected: string[];
-    
-    if (type === 'radio') {
-      newSelected = [optionId];
-    } else {
-      if (selected.includes(optionId)) {
-        newSelected = selected.filter(id => id !== optionId);
-      } else {
-        newSelected = [...selected, optionId];
-      }
-    }
-    
+  // Handle selection change with debounce to prevent multiple API calls
+  const handleSelectionChange = (newSelected: string[]) => {
     setSelected(newSelected);
     
     // Use setTimeout to batch multiple selections before triggering the callback
@@ -89,29 +54,17 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
       if (onSelectionChange) {
         onSelectionChange(newSelected);
       }
-      setIsBatchUpdating(false);
     }, 0);
-  }, [selected, type, onSelectionChange]);
+  };
   
-  // Memoize the range change handler
-  const handleRangeChange = useCallback((value: number, isMin: boolean) => {
-    if (isMin) {
-      setMinValue(value);
-      if (onRangeChange) {
-        onRangeChange(value, maxValue);
-      }
-    } else {
-      setMaxValue(value);
-      if (onRangeChange) {
-        onRangeChange(minValue, value);
-      }
+  // Handle range change
+  const handleRangeChange = (min: number, max: number) => {
+    setMinValue(min);
+    setMaxValue(max);
+    if (onRangeChange) {
+      onRangeChange(min, max);
     }
-  }, [maxValue, minValue, onRangeChange]);
-  
-  // Memoize the show more/less handler
-  const toggleShowAll = useCallback(() => {
-    setShowAll(prev => !prev);
-  }, []);
+  };
   
   return (
     <div className="border-b border-gray-200 py-4">
@@ -129,63 +82,26 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
       {isExpanded && (
         <div className="mt-3 space-y-2">
           {type === 'range' ? (
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>{minValue} {rangeUnit}</span>
-                <span>{maxValue} {rangeUnit}</span>
-              </div>
-              
-              <input
-                type="range"
-                min={rangeMin}
-                max={rangeMax}
-                value={minValue}
-                onChange={(e) => handleRangeChange(parseInt(e.target.value), true)}
-                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              
-              <input
-                type="range"
-                min={rangeMin}
-                max={rangeMax}
-                value={maxValue}
-                onChange={(e) => handleRangeChange(parseInt(e.target.value), false)}
-                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
+            <RangeFilter
+              rangeMin={rangeMin}
+              rangeMax={rangeMax}
+              rangeUnit={rangeUnit}
+              currentMin={minValue}
+              currentMax={maxValue}
+              onRangeChange={handleRangeChange}
+            />
+          ) : type === 'radio' ? (
+            <RadioFilter
+              options={options}
+              selectedOptions={selected}
+              onSelectionChange={handleSelectionChange}
+            />
           ) : (
-            <>
-              {visibleOptions.map((option) => (
-                <div key={option.id} className="flex items-center">
-                  <input
-                    type={type}
-                    id={`filter-${title}-${option.id}`}
-                    name={`filter-${title}`}
-                    value={option.id}
-                    checked={selected.includes(option.id)}
-                    onChange={() => handleSelectionChange(option.id)}
-                    className="filter-checkbox"
-                  />
-                  <label 
-                    htmlFor={`filter-${title}-${option.id}`}
-                    className="ml-2 text-sm text-gray-700 cursor-pointer"
-                  >
-                    {option.name} {option.count !== undefined && (
-                      <span className="text-gray-500">({option.count})</span>
-                    )}
-                  </label>
-                </div>
-              ))}
-              
-              {options.length > 5 && (
-                <button
-                  className="text-xs text-brand hover:underline mt-1"
-                  onClick={toggleShowAll}
-                >
-                  {showAll ? 'Show Less' : 'Show More'}
-                </button>
-              )}
-            </>
+            <CheckboxFilter
+              options={options}
+              selectedOptions={selected}
+              onSelectionChange={handleSelectionChange}
+            />
           )}
         </div>
       )}
