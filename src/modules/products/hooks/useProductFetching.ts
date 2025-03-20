@@ -1,7 +1,6 @@
 
 import { useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
-import { toast } from 'sonner';
 import { useQueryParamsBuilder } from './useQueryParamsBuilder';
 import { useProductCache } from './useProductCache';
 import { useProductFetchState } from './useProductFetchState';
@@ -60,33 +59,36 @@ export const useProductFetching = ({
     pendingRequest.current = new AbortController();
     setIsLoading(true);
     
+    const queryString = buildQueryParams(currentPage, sortOption, filters);
+    
+    if (queryString === lastFetchParams && products.length > 0 && !isInitialRender.current) {
+      console.log('[ProductGrid] Skipping fetch - parameters unchanged and products exist');
+      setIsLoading(false);
+      return;
+    }
+    
+    const cachedResponse = getCachedResponse(queryString);
+    if (cachedResponse) {
+      console.log('[ProductGrid] Using cached response');
+      setProducts(cachedResponse.products);
+      setPagination(cachedResponse.pagination);
+      setIsLoading(false);
+      isInitialRender.current = false;
+      return;
+    }
+    
+    console.log(`[ProductGrid] Fetching products: /api/products?${queryString}`);
+    setLastFetchParams(queryString);
+    
     try {
-      const queryString = buildQueryParams(currentPage, sortOption, filters);
-      
-      if (queryString === lastFetchParams && products.length > 0 && !isInitialRender.current) {
-        console.log('[ProductGrid] Skipping fetch - parameters unchanged and products exist');
-        setIsLoading(false);
-        return;
-      }
-      
-      const cachedResponse = getCachedResponse(queryString);
-      if (cachedResponse) {
-        console.log('[ProductGrid] Using cached response');
-        setProducts(cachedResponse.products);
-        setPagination(cachedResponse.pagination);
-        setIsLoading(false);
-        isInitialRender.current = false;
-        return;
-      }
-      
-      console.log(`[ProductGrid] Fetching products: /api/products?${queryString}`);
-      setLastFetchParams(queryString);
-      
       const response = await fetch(`/api/products?${queryString}`, {
         signal: pendingRequest.current.signal
       });
       
+      // Let error responses propagate
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[ProductGrid] API error (${response.status}): ${errorText.substring(0, 150)}...`);
         throw new Error(`API error: ${response.status}`);
       }
       
@@ -109,7 +111,8 @@ export const useProductFetching = ({
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
         console.error('[ProductGrid] Error fetching products:', error);
-        toast.error('Failed to load products. Please try again.');
+        
+        // Clear products but don't show toast - let error propagate
         setProducts([]);
         setPagination({
           totalCount: 0,
@@ -117,6 +120,9 @@ export const useProductFetching = ({
           currentPage: 1,
           pageSize: pageSize
         });
+        
+        // Rethrow the error to allow global error handling
+        throw error;
       }
     } finally {
       console.log('[ProductGrid] Products fetch completed');

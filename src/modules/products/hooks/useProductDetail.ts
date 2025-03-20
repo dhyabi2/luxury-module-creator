@@ -44,7 +44,11 @@ export const useProductDetail = (productId: string | undefined) => {
       
       try {
         const response = await fetch(`/api/products/${productId}`);
+        
+        // Let error responses propagate
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Error fetching product (${response.status}): ${errorText.substring(0, 150)}...`);
           throw new Error('Product not found');
         }
         
@@ -56,6 +60,7 @@ export const useProductDetail = (productId: string | undefined) => {
       } catch (err) {
         console.error('Error fetching product:', err);
         setError('Failed to load product details');
+        throw err;
       } finally {
         setLoading(false);
       }

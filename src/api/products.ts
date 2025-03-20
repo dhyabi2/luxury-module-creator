@@ -3,9 +3,6 @@
 // Now uses Supabase database instead of in-memory data
 import { productsDb } from '../lib/db';
 
-// Add cache support to reduce duplicate calls
-const CACHE_TIME = 60; // 60 seconds
-
 // Edge function handler
 export default async (req: Request) => {
   console.log('[API:products] Request received:', req.url);
@@ -42,73 +39,34 @@ export default async (req: Request) => {
     color: color || 'not set'
   });
   
-  try {
-    console.log('[API:products] Calling productsDb.getAll');
-    // Query the database
-    const result = await productsDb.getAll(
-      { 
-        brand, 
-        category,
-        gender,
-        minPrice,
-        maxPrice,
-        minCaseSize,
-        maxCaseSize,
-        band,
-        caseColor,
-        color
-      },
-      { page, pageSize },
-      { sortBy }
-    );
-    
-    console.log(`[API:products] Database returned ${result.products.length} products (page ${result.pagination.currentPage}/${result.pagination.totalPages})`);
-    
-    // Return the response with caching headers
-    return new Response(
-      JSON.stringify(result),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Cache-Control': `public, max-age=${CACHE_TIME}`,
-          'ETag': generateETag(result)
-        }
+  // Query the database - let errors propagate naturally
+  const result = await productsDb.getAll(
+    { 
+      brand, 
+      category,
+      gender,
+      minPrice,
+      maxPrice,
+      minCaseSize,
+      maxCaseSize,
+      band,
+      caseColor,
+      color
+    },
+    { page, pageSize },
+    { sortBy }
+  );
+  
+  console.log(`[API:products] Database returned ${result.products.length} products (page ${result.pagination.currentPage}/${result.pagination.totalPages})`);
+  
+  // Return the response
+  return new Response(
+    JSON.stringify(result),
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
       }
-    );
-  } catch (error) {
-    console.error('[API:products] Error processing request:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Failed to fetch products',
-        products: [],
-        pagination: {
-          totalCount: 0,
-          totalPages: 0,
-          currentPage: page,
-          pageSize: pageSize
-        } 
-      }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
-    );
-  }
+    }
+  );
 };
-
-// Helper to generate a simple ETag for caching
-function generateETag(data: any): string {
-  // Simple hash function for objects
-  const str = JSON.stringify(data);
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return `"${hash.toString(16)}"`;
-}
