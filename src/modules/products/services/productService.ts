@@ -19,11 +19,10 @@ export const fetchProducts = async (queryParams: string): Promise<ProductsRespon
     
     console.log('Fetching products with params:', queryParams);
     
-    // Make the request with minimal headers - direct API call
+    // Make the request with completely open access - direct API call
     const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${queryParams}`, {
       method: 'GET',
       mode: 'cors',
-      cache: 'no-cache',
       headers: {
         'Content-Type': 'application/json'
       }
