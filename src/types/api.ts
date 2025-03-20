@@ -1,4 +1,3 @@
-
 // API Response Types
 
 // Product
@@ -40,35 +39,37 @@ export interface ProductsResponse {
   pagination: Pagination;
 }
 
-// Filter Option
+// Product filter options
 export interface FilterOption {
   id: string;
   name: string;
   count: number;
 }
 
-// Range
-export interface Range {
-  min: number;
-  max: number;
-  unit: string;
-}
-
-// Category Brands mapping
+// Category-specific brand mapping
 export interface CategoryBrands {
-  [key: string]: FilterOption[];
+  [categoryId: string]: FilterOption[];
 }
 
-// Filters Response
+// Complete filters response
 export interface FiltersResponse {
-  priceRange: Range;
+  priceRange: {
+    min: number;
+    max: number;
+    unit: string;
+  };
   categories: FilterOption[];
   brands: FilterOption[];
+  categoryBrands: CategoryBrands;
   bands: FilterOption[];
   caseColors: FilterOption[];
   colors: FilterOption[];
-  caseSizeRange: Range;
-  categoryBrands: CategoryBrands;
+  genders: FilterOption[];
+  caseSizeRange: {
+    min: number;
+    max: number;
+    unit: string;
+  };
 }
 
 // Main Category
