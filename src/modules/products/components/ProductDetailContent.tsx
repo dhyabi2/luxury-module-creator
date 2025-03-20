@@ -30,27 +30,6 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   // Extract specifications for display
   const specifications = formattedProduct.specifications;
   
-  // Convert caseSize from string to number if it exists
-  let caseSizeNumber: number | undefined = undefined;
-  
-  if (specifications && specifications.caseSize) {
-    // Make sure we convert the value to a number
-    const caseSizeValue = specifications.caseSize;
-    
-    if (typeof caseSizeValue === 'string') {
-      // Extract numeric values from the string using regex
-      const numericMatch = caseSizeValue.match(/(\d+(\.\d+)?)/);
-      if (numericMatch && numericMatch[0]) {
-        const parsedValue = parseFloat(numericMatch[0]);
-        if (!isNaN(parsedValue)) {
-          caseSizeNumber = parsedValue;
-        }
-      }
-    } else if (typeof caseSizeValue === 'number') {
-      caseSizeNumber = caseSizeValue;
-    }
-  }
-  
   return (
     <div className="container mx-auto px-4 py-8">
       <ProductBreadcrumb category={product.category} productName={product.name} />
@@ -79,14 +58,14 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
           {specifications && Object.keys(specifications).length > 0 && (
             <ProductSpecifications 
               caseMaterial={specifications.caseMaterial}
-              caseSize={caseSizeNumber}
+              caseSize={specifications.caseSize}
               dialColor={specifications.dialColor}
               movement={specifications.movement}
               waterResistance={specifications.waterResistance}
               strapMaterial={specifications.strapMaterial}
               strapColor={specifications.strapColor}
               brand={product.brand}
-              gender={specifications.gender as string | undefined}
+              gender={specifications.gender}
             />
           )}
           
