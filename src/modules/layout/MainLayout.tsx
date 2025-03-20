@@ -14,6 +14,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Update document title with the new brand name
+    document.title = "M&K Watches - Luxury Watch Store";
   }, [location.pathname]);
 
   return (

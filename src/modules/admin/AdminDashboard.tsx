@@ -1,147 +1,200 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, PenLine, Trash2, Plus } from 'lucide-react';
+import { TrendingUp, ShoppingBag, Users, Package, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AdminLayout } from './AdminLayout';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AdminDashboard = () => {
-  const [products, setProducts] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+    totalRevenue: 0
+  });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    fetchProducts();
+  useEffect(() => {
+    fetchDashboardData();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchDashboardData = async () => {
     setLoading(true);
-    console.log('Fetching products for admin dashboard...');
+    console.log('Fetching dashboard data...');
     
     try {
-      const { data, error } = await supabase
+      // Fetch products count
+      const { count: productsCount, error: productsError } = await supabase
         .from('products')
-        .select('*')
-        .order('name', { ascending: true });
+        .select('*', { count: 'exact', head: true });
       
-      if (error) {
-        console.error('Error fetching products:', error);
-        throw error;
+      if (productsError) {
+        console.error('Error fetching products count:', productsError);
       }
       
-      console.log('Products fetched successfully:', data?.length);
-      setProducts(data || []);
+      // Fetch recent orders
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (ordersError) {
+        console.error('Error fetching recent orders:', ordersError);
+      }
+      
+      // Fetch dashboard stats
+      const { data: statsData, error: statsError } = await supabase
+        .from('dashboard_stats')
+        .select('*')
+        .single();
+      
+      if (statsError) {
+        console.error('Error fetching dashboard stats:', statsError);
+      }
+      
+      // Set the data
+      setRecentOrders(ordersData || []);
+      setStats({
+        totalProducts: productsCount || 0,
+        totalOrders: statsData?.total_orders || 0,
+        totalCustomers: statsData?.total_customers || 0,
+        totalRevenue: statsData?.total_revenue || 0
+      });
+      
+      console.log('Dashboard data fetched successfully');
     } catch (err) {
-      console.error('Failed to fetch products:', err);
+      console.error('Failed to fetch dashboard data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) {
-      return;
-    }
-    
-    console.log('Deleting product with ID:', id);
-    
-    try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error deleting product:', error);
-        throw error;
-      }
-      
-      console.log('Product deleted successfully');
-      // Refresh the product list
-      fetchProducts();
-    } catch (err) {
-      console.error('Failed to delete product:', err);
-    }
-  };
+  const StatCard = ({ title, value, icon, color, link }: { title: string; value: string | number; icon: React.ReactNode; color: string; link: string }) => (
+    <Link to={link} className="block">
+      <div className={`bg-white p-6 rounded-lg shadow-sm border-l-4 ${color}`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">{title}</p>
+            <h3 className="text-2xl font-semibold mt-1">{value}</h3>
+          </div>
+          <div className="text-gray-400">
+            {icon}
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
 
   return (
-    <AdminLayout>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Products Management</h2>
-        <Link to="/admin/products/new">
-          <Button className="flex items-center gap-2">
-            <Plus size={16} />
-            Add New Product
-          </Button>
-        </Link>
-      </div>
+    <div>
+      <h2 className="text-xl font-semibold mb-6">Dashboard Overview</h2>
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <p className="text-gray-500">Loading products...</p>
-        </div>
-      ) : products.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
-          <Package className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-lg font-medium text-gray-900">No products found</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by creating a new product.</p>
-          <div className="mt-6">
-            <Link to="/admin/products/new">
-              <Button>Add New Product</Button>
-            </Link>
-          </div>
+          <p className="text-gray-500">Loading dashboard data...</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Brand</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <img 
-                      src={product.image || 'https://via.placeholder.com/50'} 
-                      alt={product.name} 
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.brand}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>OMR {product.price.toFixed(2)}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Link to={`/admin/products/edit/${product.id}`}>
-                        <Button variant="outline" size="sm" className="flex items-center gap-1">
-                          <PenLine size={14} />
-                          Edit
-                        </Button>
-                      </Link>
-                      <Button variant="destructive" size="sm" className="flex items-center gap-1" onClick={() => handleDeleteProduct(product.id)}>
-                        <Trash2 size={14} />
-                        Delete
-                      </Button>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <StatCard
+              title="Total Products"
+              value={stats.totalProducts}
+              icon={<Package size={24} />}
+              color="border-blue-500"
+              link="/admin/products"
+            />
+            <StatCard
+              title="Total Orders"
+              value={stats.totalOrders}
+              icon={<ShoppingBag size={24} />}
+              color="border-green-500"
+              link="/admin/orders"
+            />
+            <StatCard
+              title="Total Customers"
+              value={stats.totalCustomers}
+              icon={<Users size={24} />}
+              color="border-purple-500"
+              link="/admin/customers"
+            />
+            <StatCard
+              title="Total Revenue"
+              value={`OMR ${stats.totalRevenue.toFixed(2)}`}
+              icon={<TrendingUp size={24} />}
+              color="border-orange-500"
+              link="/admin/analytics"
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Recent Orders</h3>
+                <Link to="/admin/orders" className="text-primary text-sm flex items-center">
+                  View All <ArrowRight size={16} className="ml-1" />
+                </Link>
+              </div>
+              
+              {recentOrders.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No recent orders found</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {recentOrders.map(order => (
+                    <div key={order.id} className="py-3 flex justify-between items-center">
+                      <div>
+                        <p className="font-medium">Order #{order.order_number}</p>
+                        <p className="text-sm text-gray-500">{order.customer_name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">OMR {order.total.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Quick Actions</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link to="/admin/products/new">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Package size={16} className="mr-2" />
+                    Add New Product
+                  </Button>
+                </Link>
+                <Link to="/admin/orders">
+                  <Button variant="outline" className="w-full justify-start">
+                    <ShoppingBag size={16} className="mr-2" />
+                    View Orders
+                  </Button>
+                </Link>
+                <Link to="/admin/analytics">
+                  <Button variant="outline" className="w-full justify-start">
+                    <TrendingUp size={16} className="mr-2" />
+                    View Analytics
+                  </Button>
+                </Link>
+                <Link to="/admin/settings">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Users size={16} className="mr-2" />
+                    Store Settings
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </>
       )}
-    </AdminLayout>
+    </div>
   );
 };
 
