@@ -5,7 +5,7 @@ import { fetchNavigationData } from '@/utils/apiUtils';
 import { NavigationResponse, MainCategory } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Search, Menu, ShoppingCart } from 'lucide-react';
-import { useCart } from '@/modules/cart/CartContext';
+import { useCart } from '@/modules/cart/context/CartContext';
 
 const MainNavigation = () => {
   const [navigationData, setNavigationData] = useState<NavigationResponse | null>(null);
@@ -31,15 +31,12 @@ const MainNavigation = () => {
     <div className="flex-1 flex items-center justify-between md:px-2">
       <div className="flex items-center space-x-2 md:space-x-6">
         <div className="font-medium text-base flex items-center">
-          {/* Keep existing logo and brand */}
           <Link to="/" className="hidden md:flex items-center">
             <img src="/logo.svg" alt="Brand Logo" className="h-6 w-auto mr-2" />
             <span className="text-lg font-bold text-primary mr-6">Luxury Watches</span>
           </Link>
           
-          {/* Main navigation links */}
           <nav className="flex items-center space-x-2 md:space-x-4">
-            {/* Existing navigation links will remain here */}
             {mainCategories.map(category => (
               <Link
                 key={category.id}
@@ -52,7 +49,6 @@ const MainNavigation = () => {
               </Link>
             ))}
             
-            {/* Admin link - new addition */}
             <Link 
               to="/admin" 
               className="py-2 px-3 text-sm font-medium rounded-md hover:bg-accent flex items-center gap-1"

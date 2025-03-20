@@ -67,8 +67,8 @@ export const ProductForm = () => {
       
       console.log('Product details fetched successfully:', data);
       
-      // Initialize specifications if they don't exist
-      const specifications = data.specifications || {
+      // Initialize specifications if they don't exist or aren't in expected format
+      let specifications = {
         caseMaterial: '',
         caseSize: '',
         dialColor: '',
@@ -78,6 +78,14 @@ export const ProductForm = () => {
         strapColor: '',
         gender: '',
       };
+      
+      // If data.specifications exists and is an object, merge with default values
+      if (data.specifications && typeof data.specifications === 'object') {
+        specifications = {
+          ...specifications,
+          ...(data.specifications as Record<string, string>)
+        };
+      }
       
       setFormData({
         ...data,

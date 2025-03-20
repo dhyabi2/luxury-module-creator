@@ -1,29 +1,30 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from './components/ThemeProvider';
-import { CartProvider } from './modules/cart/CartContext';
-import MainLayout from './layouts/MainLayout';
-import IndexPage from './pages/IndexPage';
-import WatchesPage from './pages/WatchesPage';
-import JewelleryPage from './pages/JewelleryPage';
-import BagsPage from './pages/BagsPage';
-import AccessoriesPage from './pages/AccessoriesPage';
-import PerfumesPage from './pages/PerfumesPage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import ProductCategoryPage from './pages/ProductCategoryPage';
-import NewInPage from './pages/NewInPage';
-import BrandsPage from './pages/BrandsPage';
-import SalePage from './pages/SalePage';
-import AboutUsPage from './pages/AboutUsPage';
-import ContactUsPage from './pages/ContactUsPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import TermsConditionsPage from './pages/TermsConditionsPage';
-import ReturnsPage from './pages/ReturnsPage';
-import ShippingDeliveryPage from './pages/ShippingDeliveryPage';
-import StoreLocatorPage from './pages/StoreLocatorPage';
-import NotFoundPage from './pages/NotFoundPage';
+import { ThemeProvider } from '@/components/ui/theme-provider';
+import { CartProvider } from '@/modules/cart/context/CartContext';
+import MainLayout from '@/modules/layout/MainLayout';
+import IndexPage from '@/pages/Index';
+import WatchesPage from '@/pages/Watches';
+import JewelleryPage from '@/pages/Jewellery';
+import BagsPage from '@/pages/Bags';
+import AccessoriesPage from '@/pages/Accessories';
+import PerfumesPage from '@/pages/Perfumes';
+import ProductDetailPage from '@/pages/ProductDetail';
+import ProductCategoryPage from '@/pages/ProductCategory';
+import NewInPage from '@/pages/NewIn';
+import BrandsPage from '@/pages/Brands';
+import SalePage from '@/pages/Sale';
+import AboutUsPage from '@/pages/AboutUs';
+import ContactUsPage from '@/pages/ContactUs';
+import PrivacyPolicyPage from '@/pages/PrivacyPolicy';
+import TermsConditionsPage from '@/pages/TermsConditions';
+import ReturnsPage from '@/pages/Returns';
+import ShippingDeliveryPage from '@/pages/ShippingDelivery';
+import StoreLocatorPage from '@/pages/StoreLocator';
+import NotFoundPage from '@/pages/NotFound';
 
-import AdminRoutes from './modules/admin/AdminRoutes';
+import AdminRoutes from '@/modules/admin/AdminRoutes';
 
 function App() {
   return (
