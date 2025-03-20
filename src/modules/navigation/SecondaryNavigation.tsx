@@ -24,7 +24,19 @@ const SecondaryNavigation = () => {
     try {
       console.log('Fetching secondary navigation data');
       
-      const response = await fetch('/api/navigation');
+      // Direct API call to the navigation edge function
+      const response = await fetch("https://kkdldvrceqdcgclnvixt.supabase.co/functions/navigation", {
+        headers: {
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo"
+        }
+      });
+      
+      if (!response.ok) {
+        console.log('Error fetching navigation data:', response.status, response.statusText);
+        // Let the error be thrown and bubble up
+        throw new Error(`Failed to fetch navigation data: ${response.statusText}`);
+      }
+      
       const data = await response.json();
       
       console.log('Secondary navigation data received:', data);
@@ -38,6 +50,7 @@ const SecondaryNavigation = () => {
       setCategories(indexPageCategories);
     } catch (error) {
       console.log('Error fetching secondary navigation data:', error);
+      // Let the error bubble up
     } finally {
       setIsLoading(false);
     }

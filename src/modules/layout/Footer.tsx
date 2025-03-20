@@ -39,25 +39,25 @@ const Footer = () => {
           <div>
             <h3 className="font-display text-lg font-medium mb-4 text-gray-900">Categories</h3>
             <ul className="space-y-2">
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Women</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Men</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">New Arrivals</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Watches</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Jewelry</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Accessories</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Sale</Link></li>
+              <li><Link to="/women" className="text-gray-600 hover:text-brand transition-colors text-sm">Women</Link></li>
+              <li><Link to="/men" className="text-gray-600 hover:text-brand transition-colors text-sm">Men</Link></li>
+              <li><Link to="/new-in" className="text-gray-600 hover:text-brand transition-colors text-sm">New Arrivals</Link></li>
+              <li><Link to="/watches" className="text-gray-600 hover:text-brand transition-colors text-sm">Watches</Link></li>
+              <li><Link to="/jewellery" className="text-gray-600 hover:text-brand transition-colors text-sm">Jewelry</Link></li>
+              <li><Link to="/accessories" className="text-gray-600 hover:text-brand transition-colors text-sm">Accessories</Link></li>
+              <li><Link to="/sale" className="text-gray-600 hover:text-brand transition-colors text-sm">Sale</Link></li>
             </ul>
           </div>
           
           <div>
             <h3 className="font-display text-lg font-medium mb-4 text-gray-900">Information</h3>
             <ul className="space-y-2">
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">About Us</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Contact Us</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Terms & Conditions</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Returns & Exchanges</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Shipping & Delivery</Link></li>
-              <li><Link to="/" className="text-gray-600 hover:text-brand transition-colors text-sm">Privacy Policy</Link></li>
+              <li><Link to="/about" className="text-gray-600 hover:text-brand transition-colors text-sm">About Us</Link></li>
+              <li><Link to="/contact" className="text-gray-600 hover:text-brand transition-colors text-sm">Contact Us</Link></li>
+              <li><Link to="/terms" className="text-gray-600 hover:text-brand transition-colors text-sm">Terms & Conditions</Link></li>
+              <li><Link to="/returns" className="text-gray-600 hover:text-brand transition-colors text-sm">Returns & Exchanges</Link></li>
+              <li><Link to="/shipping" className="text-gray-600 hover:text-brand transition-colors text-sm">Shipping & Delivery</Link></li>
+              <li><Link to="/privacy" className="text-gray-600 hover:text-brand transition-colors text-sm">Privacy Policy</Link></li>
             </ul>
           </div>
           

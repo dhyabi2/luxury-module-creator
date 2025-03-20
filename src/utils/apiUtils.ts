@@ -1,8 +1,10 @@
 
 // Helper function for making API calls
 const callApi = async (endpoint: string, params?: Record<string, any>): Promise<any> => {
-  // Use the Supabase URL directly instead of window.location.origin
+  // Supabase URL and API key
   const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
+  
   let url = `${SUPABASE_URL}/functions/${endpoint}`;
   
   if (params) {
@@ -22,7 +24,11 @@ const callApi = async (endpoint: string, params?: Record<string, any>): Promise<
   
   console.log(`Calling API: ${url}`);
   
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      "apikey": SUPABASE_KEY
+    }
+  });
   
   if (!response.ok) {
     console.error(`API call failed with status: ${response.status}`);
