@@ -1,21 +1,22 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import FilterCategory from './FilterCategory';
 import FilterHeader from './components/FilterHeader';
 import FilterLoading from './components/FilterLoading';
 import WatchSpecificFilters from './components/WatchSpecificFilters';
-import { fetchFilters, getCombinedBrands } from '@/utils/apiUtils';
 import { FiltersResponse } from '@/types/api';
 
 interface FilterSidebarProps {
   onFilterChange?: (filters: Record<string, any>) => void;
   initialFilters?: Record<string, any>;
+  categoryParam?: string;
 }
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({ 
   onFilterChange,
-  initialFilters = {}
+  initialFilters = {},
+  categoryParam
 }) => {
   // State management
   const [filtersData, setFiltersData] = useState<FiltersResponse | null>(null);
@@ -31,16 +32,12 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   });
   const [pendingFilters, setPendingFilters] = useState(false);
   
-  // Track if we're batching updates to avoid multiple filter applications
-  const isUpdating = useRef(false);
-  const filterChangeTimeout = useRef<number | null>(null);
-  
   // Calculate derived state
   const selectedCategories = selectedOptions.categories || [];
   const showWatchFilters = selectedCategories.includes('watches') && selectedCategories.length === 1;
   
   // Get category-specific brands
-  const categorySpecificBrands = React.useMemo(() => {
+  const getCategorySpecificBrands = () => {
     if (!filtersData || !filtersData.categoryBrands || selectedCategories.length === 0) {
       return [];
     }
@@ -51,10 +48,41 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     } else {
       return getCombinedBrands(filtersData.categoryBrands, selectedCategories);
     }
-  }, [filtersData, selectedCategories]);
+  };
+  
+  const categorySpecificBrands = getCategorySpecificBrands();
+  
+  // Get combined brands from multiple categories
+  function getCombinedBrands(categoryBrands: any, categories: string[]): any[] {
+    if (!categories || categories.length === 0) {
+      return [];
+    }
+    
+    const uniqueBrands = new Map<string, any>();
+    
+    categories.forEach(categoryId => {
+      const brandsForCategory = categoryBrands[categoryId] || [];
+      console.log(`Category ${categoryId} has ${brandsForCategory.length} brands`);
+      
+      brandsForCategory.forEach((brand: any) => {
+        if (!uniqueBrands.has(brand.id)) {
+          uniqueBrands.set(brand.id, { ...brand });
+        } else {
+          // If brand already exists, update the count
+          const existingBrand = uniqueBrands.get(brand.id)!;
+          uniqueBrands.set(brand.id, {
+            ...existingBrand,
+            count: (existingBrand.count || 0) + (brand.count || 0)
+          });
+        }
+      });
+    });
+    
+    return Array.from(uniqueBrands.values());
+  }
   
   // Brand section title
-  const activeCategoryName = React.useMemo(() => {
+  const getActiveCategoryName = () => {
     if (selectedCategories.length === 0) {
       return 'Shop by Brand';
     } else if (selectedCategories.length === 1) {
@@ -63,16 +91,36 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     } else {
       return 'Brands';
     }
-  }, [selectedCategories]);
+  };
+  
+  const activeCategoryName = getActiveCategoryName();
   
   // Fetch filters data
   useEffect(() => {
     const getFiltersData = async () => {
       setIsLoading(true);
       try {
-        console.log('Calling fetchFilters...');
-        const data = await fetchFilters();
-        console.log('Filter data received:', data);
+        console.log('Fetching filters data from API...');
+        
+        // Direct API call to the edge function
+        const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
+        
+        const categoryParam = selectedCategories.length > 0 ? `?category=${selectedCategories.join(',')}` : '';
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/filters${categoryParam}`, {
+          headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`
+          }
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to fetch filters:', response.status, response.statusText);
+          return;
+        }
+        
+        const data = await response.json();
+        console.log('Filter data received:', Object.keys(data));
         setFiltersData(data);
         
         // Initialize ranges if not already set
@@ -89,11 +137,18 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
             max: data.caseSizeRange.max
           });
         }
+        
+        // If there's a category parameter, add it to the selected categories
+        if (categoryParam && !selectedCategories.includes(categoryParam)) {
+          setSelectedOptions(prev => ({
+            ...prev,
+            categories: [...(prev.categories || []), categoryParam]
+          }));
+        }
       } catch (error) {
         console.error('Error fetching filters:', error);
         toast.error('Failed to load filters', {
-          description: 'Please try again later.',
-          duration: 3000
+          description: 'Please try again later.'
         });
       } finally {
         setIsLoading(false);
@@ -103,62 +158,26 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     getFiltersData();
   }, []);
   
-  // Helper function to start a batch update
-  const startBatchUpdate = () => {
-    isUpdating.current = true;
-  };
-  
-  // Helper function to end a batch update
-  const endBatchUpdate = (callback?: () => void) => {
-    setTimeout(() => {
-      isUpdating.current = false;
-      if (callback) {
-        callback();
-      }
-    }, 0);
-  };
-  
-  // Apply filters with debounce
+  // Apply filters
   const applyFilters = () => {
-    if (isUpdating.current) {
-      console.log('Skipping filter update while batch updating');
-      return;
-    }
-    
     setPendingFilters(true);
     
-    // Clear any existing timeout
-    if (filterChangeTimeout.current !== null) {
-      window.clearTimeout(filterChangeTimeout.current);
+    if (onFilterChange) {
+      const filters = {
+        ...selectedOptions,
+        priceRange,
+        caseSizeRange
+      };
+      onFilterChange(filters);
     }
     
-    // Set a new timeout for the filter change
-    filterChangeTimeout.current = window.setTimeout(() => {
-      if (onFilterChange) {
-        const filters = {
-          ...selectedOptions,
-          priceRange,
-          caseSizeRange
-        };
-        onFilterChange(filters);
-      }
-      setPendingFilters(false);
-      filterChangeTimeout.current = null;
-    }, 500);
+    setPendingFilters(false);
   };
   
   // Apply filters when state changes
   useEffect(() => {
-    if (!isUpdating.current) {
-      applyFilters();
-    }
-    
-    return () => {
-      if (filterChangeTimeout.current !== null) {
-        window.clearTimeout(filterChangeTimeout.current);
-      }
-    };
-  }, [selectedOptions, priceRange, caseSizeRange, onFilterChange]);
+    applyFilters();
+  }, [selectedOptions, priceRange, caseSizeRange]);
   
   // Handle selection change
   const handleSelectionChange = (category: string, selected: string[]) => {
@@ -167,32 +186,24 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       return;
     }
     
-    startBatchUpdate();
     setSelectedOptions(prev => ({
       ...prev,
       [category]: selected || []
     }));
-    endBatchUpdate(applyFilters);
   };
   
   // Handle price range change
   const handlePriceRangeChange = (min: number, max: number) => {
-    startBatchUpdate();
     setPriceRange({ min, max });
-    endBatchUpdate(applyFilters);
   };
   
   // Handle case size range change
   const handleCaseSizeRangeChange = (min: number, max: number) => {
-    startBatchUpdate();
     setCaseSizeRange({ min, max });
-    endBatchUpdate(applyFilters);
   };
   
   // Clear all filters
   const handleClearFilters = () => {
-    startBatchUpdate();
-    
     setSelectedOptions({});
     
     if (filtersData) {
@@ -211,26 +222,22 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       }
     }
     
-    endBatchUpdate(applyFilters);
-    
     toast.success('Filters cleared');
   };
   
   // Validate brand selection against available brands
   useEffect(() => {
     if (filtersData && categorySpecificBrands.length > 0 && selectedOptions.brands && selectedOptions.brands.length > 0) {
-      const validBrandIds = new Set(categorySpecificBrands.map(brand => brand.id));
-      const invalidBrands = selectedOptions.brands.filter(brandId => !validBrandIds.has(brandId));
+      const validBrandIds = new Set(categorySpecificBrands.map((brand: any) => brand.id));
+      const invalidBrands = selectedOptions.brands.filter((brandId: string) => !validBrandIds.has(brandId));
       
       if (invalidBrands.length > 0) {
         console.log('Removing brands not in selected categories:', invalidBrands);
-        startBatchUpdate();
-        const newBrands = selectedOptions.brands.filter(brandId => validBrandIds.has(brandId));
+        const newBrands = selectedOptions.brands.filter((brandId: string) => validBrandIds.has(brandId));
         setSelectedOptions(prev => ({
           ...prev,
           brands: newBrands
         }));
-        endBatchUpdate(applyFilters);
       }
     }
   }, [categorySpecificBrands, selectedOptions.brands, filtersData]);

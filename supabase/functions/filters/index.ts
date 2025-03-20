@@ -40,27 +40,22 @@ serve(async (req) => {
     
     if (error) {
       console.error('[API:filters] Database error:', error);
-      console.error('[API:filters] Error details:', error.message);
-      throw error;
+      throw new Error(`Database error: ${error.message}`);
+    }
+    
+    if (!data) {
+      console.error('[API:filters] No filter data found');
+      throw new Error('No filter data found');
     }
     
     console.log('[API:filters] Filters data retrieved successfully');
-    console.log('[API:filters] Filter data structure:', {
-      categories: Array.isArray(data.data.categories) ? data.data.categories.length : 0,
-      brands: Array.isArray(data.data.brands) ? data.data.brands.length : 0,
-      bands: Array.isArray(data.data.bands) ? data.data.bands.length : 0,
-      priceRange: data.data.priceRange ? `${data.data.priceRange.min}-${data.data.priceRange.max}` : 'not available'
-    });
+    console.log('[API:filters] Response structure:', Object.keys(data.data));
     
     return new Response(JSON.stringify(data.data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('[API:filters] Error processing request:', error);
-    console.error('[API:filters] Error details:', error.message);
-    if (error.stack) {
-      console.error('[API:filters] Stack trace:', error.stack);
-    }
     
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,

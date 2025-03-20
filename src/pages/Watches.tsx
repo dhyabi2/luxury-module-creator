@@ -1,67 +1,35 @@
 
-import React, { useState, useCallback } from 'react';
-import MainLayout from '../modules/layout/MainLayout';
-import ProductGrid from '../modules/products/ProductGrid';
-import FilterSidebar from '../modules/filters/FilterSidebar';
+import React, { useState } from 'react';
+import MainLayout from '@/modules/layout/MainLayout';
+import ProductGrid from '@/modules/products/ProductGrid';
+import FilterSidebar from '@/modules/filters/FilterSidebar';
 
 const Watches = () => {
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({
-    priceRange: { min: 0, max: 1225 },
-    category: 'watches' // Set the category filter to watches
+    categories: ['watches']
   });
   
-  // Use a callback to prevent unnecessary rerenders
-  const handleFilterChange = useCallback((filters: Record<string, any>) => {
-    console.log('Filters changed:', filters);
-    setActiveFilters({
-      ...filters,
-      category: 'watches' // Always keep the watches category filter
-    });
-  }, []);
+  const handleFilterChange = (filters: Record<string, any>) => {
+    console.log("Watches page filters changed:", filters);
+    setActiveFilters(filters);
+  };
   
   return (
     <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-        {/* Banner */}
-        <div className="mb-8 sm:mb-12 overflow-hidden rounded-lg relative">
-          <div className="h-[200px] sm:h-[250px] bg-gray-900 relative flex items-center">
-            <div className="container mx-auto px-4 md:px-8 z-10">
-              <div className="max-w-xl">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6">
-                  LUXURY WATCHES
-                </h1>
-                <p className="text-white/90 mb-6 text-sm sm:text-base leading-relaxed">
-                  Discover our exclusive collection of premium timepieces from renowned brands.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      
-        {/* Breadcrumb */}
-        <div className="text-xs sm:text-sm text-gray-600 mb-6 sm:mb-8 tracking-wider overflow-x-auto whitespace-nowrap pb-2">
-          <span className="hover:text-black cursor-pointer transition-colors">HOME</span> / <span className="font-medium text-gray-900">WATCHES</span>
-        </div>
-        
-        {/* Products with Sidebar - Mobile First Approach */}
-        <div className="flex flex-col lg:flex-row gap-6 sm:gap-10">
-          {/* Sidebar - Order first on mobile but last on desktop */}
-          <div className="w-full lg:w-1/4 order-first">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6">Watches Collection</h1>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-1">
             <FilterSidebar 
-              initialFilters={{
-                priceRange: { min: 0, max: 1225 },
-                category: 'watches'
-              }}
-              onFilterChange={handleFilterChange}
+              onFilterChange={handleFilterChange} 
+              initialFilters={activeFilters} 
             />
           </div>
-          
-          {/* Main Content */}
-          <div className="w-full lg:w-3/4 order-last lg:order-first mt-6 lg:mt-0">
+          <div className="lg:col-span-3">
             <ProductGrid 
-              title="Watches Collection" 
+              category="watches" 
               filters={activeFilters}
-              pageSize={8} 
+              title="Luxury Watches"
             />
           </div>
         </div>

@@ -37,36 +37,110 @@ serve(async (req) => {
     let query = supabase.from('products').select('*', { count: 'exact' });
     
     // Apply filters if provided
+    
+    // Brand filter
     if (params.brand) {
-      const brands = params.brand.split(',');
+      const brands = params.brand.split(',').map((b: string) => b.trim());
       console.log(`[API:products] Filtering by brands: ${brands.join(', ')}`);
       query = query.in('brand', brands);
     }
     
+    // Category filter
     if (params.category) {
-      const categories = params.category.split(',');
+      const categories = params.category.split(',').map((c: string) => c.trim());
       console.log(`[API:products] Filtering by categories: ${categories.join(', ')}`);
+      
+      // For exact matches use in operator
       query = query.in('category', categories);
     }
     
+    // Gender filter
+    if (params.gender) {
+      const genders = params.gender.split(',').map((g: string) => g.trim());
+      console.log(`[API:products] Filtering by genders: ${genders.join(', ')}`);
+      
+      // Build OR conditions for each gender
+      if (genders.length > 1) {
+        const orConditions = genders.map(g => `specifications->gender.eq.${g}`).join(',');
+        query = query.or(orConditions);
+      } else {
+        query = query.eq('specifications->gender', genders[0]);
+      }
+    }
+    
+    // Price range filter
     if (params.minPrice && params.maxPrice) {
       console.log(`[API:products] Filtering by price range: $${params.minPrice} - $${params.maxPrice}`);
       query = query.gte('price', parseFloat(params.minPrice))
-                 .lte('price', parseFloat(params.maxPrice));
+               .lte('price', parseFloat(params.maxPrice));
     }
     
-    // Apply sorting
-    const sortBy = params.sortBy || 'featured';
-    console.log(`[API:products] Sorting by: ${sortBy}`);
-    if (sortBy === 'price-low-high') {
-      query = query.order('price', { ascending: true });
-    } else if (sortBy === 'price-high-low') {
-      query = query.order('price', { ascending: false });
-    } else if (sortBy === 'newest') {
-      query = query.order('id', { ascending: false });
-    } else {
-      // Default sorting (featured)
-      query = query.order('id', { ascending: true });
+    // Case size filter
+    if (params.minCaseSize && params.maxCaseSize) {
+      console.log(`[API:products] Filtering by case size: ${params.minCaseSize}mm - ${params.maxCaseSize}mm`);
+      
+      // Filter for case size within specifications
+      query = query.gte('specifications->caseSize', `${params.minCaseSize}mm`)
+               .lte('specifications->caseSize', `${params.maxCaseSize}mm`);
+    }
+    
+    // Band material filter
+    if (params.band) {
+      const bands = params.band.split(',').map((b: string) => b.trim());
+      console.log(`[API:products] Filtering by band materials: ${bands.join(', ')}`);
+      
+      // For the first band, use contains
+      const firstBand = bands[0];
+      query = query.contains('specifications', { strapMaterial: firstBand });
+      
+      // For additional bands, use or conditions
+      if (bands.length > 1) {
+        const orConditions = bands.slice(1).map(b => `specifications->strapMaterial.eq.${b}`).join(',');
+        query = query.or(orConditions);
+      }
+    }
+    
+    // Case color filter
+    if (params.caseColor) {
+      const caseColors = params.caseColor.split(',').map((c: string) => c.trim());
+      console.log(`[API:products] Filtering by case colors: ${caseColors.join(', ')}`);
+      
+      // For the first case color, use contains
+      const firstCaseColor = caseColors[0];
+      query = query.contains('specifications', { caseMaterial: firstCaseColor });
+      
+      // For additional case colors, use or conditions
+      if (caseColors.length > 1) {
+        const orConditions = caseColors.slice(1).map(c => `specifications->caseMaterial.eq.${c}`).join(',');
+        query = query.or(orConditions);
+      }
+    }
+    
+    // Dial/strap color filter
+    if (params.color) {
+      const colors = params.color.split(',').map((c: string) => c.trim());
+      console.log(`[API:products] Filtering by colors: ${colors.join(', ')}`);
+      
+      // Build OR conditions for dial color or strap color
+      const orConditions = colors.flatMap(c => [
+        `specifications->dialColor.eq.${c}`,
+        `specifications->strapColor.eq.${c}`
+      ]).join(',');
+      
+      query = query.or(orConditions);
+    }
+    
+    // New arrivals filter
+    if (params.isNewIn === 'true') {
+      console.log('[API:products] Filtering by new arrivals');
+      // Simulate new items by getting latest IDs
+      query = query.order('id', { ascending: false }).limit(50);
+    }
+    
+    // Sale items filter
+    if (params.isOnSale === 'true') {
+      console.log('[API:products] Filtering by sale items');
+      query = query.gt('discount', 0);
     }
     
     // Execute count query first
@@ -79,6 +153,21 @@ serve(async (req) => {
     }
     
     console.log(`[API:products] Total products found: ${count}`);
+    
+    // Apply sorting
+    const sortBy = params.sortBy || 'featured';
+    console.log(`[API:products] Sorting by: ${sortBy}`);
+    
+    if (sortBy === 'price-low') {
+      query = query.order('price', { ascending: true });
+    } else if (sortBy === 'price-high') {
+      query = query.order('price', { ascending: false });
+    } else if (sortBy === 'newest') {
+      query = query.order('id', { ascending: false });
+    } else {
+      // Default sorting (featured)
+      query = query.order('id', { ascending: true });
+    }
     
     // Apply pagination
     const from = (page - 1) * pageSize;
@@ -130,10 +219,6 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('[API:products] Error processing request:', error);
-    console.error('[API:products] Error details:', error.message);
-    if (error.stack) {
-      console.error('[API:products] Stack trace:', error.stack);
-    }
     
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,

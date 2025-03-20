@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import ProductGridHeader from './components/ProductGridHeader';
 import ProductPagination from './components/ProductPagination';
-import { fetchProducts } from '@/utils/apiUtils';
 import { Product } from '@/types/api';
 import { toast } from 'sonner';
 
@@ -36,111 +35,106 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   const [totalCount, setTotalCount] = useState<number>(0);
   const [sortBy, setSortBy] = useState<string>('featured');
   
-  // Use a ref to track active requests for cleanup
-  const pendingRequest = useRef<AbortController | null>(null);
-  const lastQueryParams = useRef<string>('');
-
   // Function to build query parameters
   const buildQueryParams = () => {
-    const queryParams: Record<string, any> = {
-      gender: gender || filters.gender,
-      brand: brand || filters.brand,
-      category: category || filters.category,
-      page: currentPage,
-      pageSize: pageSize,
-      sortBy: sortBy
-    };
-
-    // Add isNewIn and isOnSale flags
-    if (isNewIn || filters.newArrival) queryParams.isNewIn = true;
-    if (isOnSale || filters.discount) queryParams.isOnSale = true;
-
-    // Add price range if present in filters
-    if (filters.priceRange) {
-      queryParams.minPrice = filters.priceRange.min;
-      queryParams.maxPrice = filters.priceRange.max;
-    }
-
-    // Add case size range if present in filters
-    if (filters.caseSizeRange) {
-      queryParams.minCaseSize = filters.caseSizeRange.min;
-      queryParams.maxCaseSize = filters.caseSizeRange.max;
-    }
-
-    // Add brand filter from filters object
+    const urlParams = new URLSearchParams();
+    
+    // Add page navigation filters
+    if (gender) urlParams.append('gender', gender);
+    if (brand) urlParams.append('brand', brand);
+    if (category) urlParams.append('category', category);
+    if (isNewIn) urlParams.append('isNewIn', 'true');
+    if (isOnSale) urlParams.append('isOnSale', 'true');
+    
+    // Add user-selected filters
     if (filters.brands && filters.brands.length > 0) {
-      queryParams.brand = filters.brands.join(',');
+      urlParams.append('brand', filters.brands.join(','));
     }
-
-    // Add category filter from filters object
+    
     if (filters.categories && filters.categories.length > 0) {
-      queryParams.category = filters.categories.join(',');
+      urlParams.append('category', filters.categories.join(','));
     }
-
-    // Add other watch-specific filters
-    if (filters.bands) queryParams.band = filters.bands.join(',');
-    if (filters.caseColors) queryParams.caseColor = filters.caseColors.join(',');
-    if (filters.colors) queryParams.color = filters.colors.join(',');
-
-    // Create a unique string representation of the query for caching and comparison
-    return queryParams;
+    
+    if (filters.genders && filters.genders.length > 0) {
+      urlParams.append('gender', filters.genders.join(','));
+    }
+    
+    if (filters.bands && filters.bands.length > 0) {
+      urlParams.append('band', filters.bands.join(','));
+    }
+    
+    if (filters.caseColors && filters.caseColors.length > 0) {
+      urlParams.append('caseColor', filters.caseColors.join(','));
+    }
+    
+    if (filters.colors && filters.colors.length > 0) {
+      urlParams.append('color', filters.colors.join(','));
+    }
+    
+    if (filters.priceRange) {
+      urlParams.append('minPrice', filters.priceRange.min.toString());
+      urlParams.append('maxPrice', filters.priceRange.max.toString());
+    }
+    
+    if (filters.caseSizeRange) {
+      urlParams.append('minCaseSize', filters.caseSizeRange.min.toString());
+      urlParams.append('maxCaseSize', filters.caseSizeRange.max.toString());
+    }
+    
+    // Add pagination and sorting
+    urlParams.append('page', currentPage.toString());
+    urlParams.append('pageSize', pageSize.toString());
+    urlParams.append('sortBy', sortBy);
+    
+    return urlParams.toString();
   };
 
   // Fetch products with the current parameters
   const loadProducts = async () => {
-    // If there's a pending request, cancel it
-    if (pendingRequest.current) {
-      pendingRequest.current.abort();
-    }
-    
-    // Create a new abort controller for this request
-    pendingRequest.current = new AbortController();
     setLoading(true);
     
     const queryParams = buildQueryParams();
-    const queryString = JSON.stringify(queryParams);
-    
-    // Skip if params haven't changed and we already have products
-    if (queryString === lastQueryParams.current && products.length > 0) {
-      setLoading(false);
-      return;
-    }
-    
-    lastQueryParams.current = queryString;
+    console.log('Fetching products with params:', queryParams);
     
     try {
-      const response = await fetchProducts(queryParams);
+      // Direct API call to the edge function
+      const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
+      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
       
-      setProducts(response.products);
-      setTotalPages(response.pagination.totalPages);
-      setTotalCount(response.pagination.totalCount);
-      setCurrentPage(response.pagination.currentPage);
-    } catch (err) {
-      // Only handle errors that aren't from aborting
-      if (err instanceof Error && err.name !== 'AbortError') {
-        console.error('Error loading products:', err);
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${queryParams}`, {
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to fetch products:', response.status, response.statusText);
         setError('Failed to load products. Please try again later.');
-        toast.error('Failed to load products', {
-          description: 'Please try again later.',
-          duration: 3000
-        });
+        return;
       }
+      
+      const data = await response.json();
+      console.log('Products data received:', data);
+      
+      setProducts(data.products);
+      setTotalPages(data.pagination.totalPages);
+      setTotalCount(data.pagination.totalCount);
+      setCurrentPage(data.pagination.currentPage);
+    } catch (err) {
+      console.error('Error loading products:', err);
+      setError('Failed to load products. Please try again later.');
+      toast.error('Failed to load products', {
+        description: 'Please try again later.'
+      });
     } finally {
       setLoading(false);
-      pendingRequest.current = null;
     }
   };
 
   // Load products when dependencies change
   useEffect(() => {
     loadProducts();
-    
-    // Cleanup function to abort any pending requests when component unmounts
-    return () => {
-      if (pendingRequest.current) {
-        pendingRequest.current.abort();
-      }
-    };
   }, [gender, brand, category, isNewIn, isOnSale, currentPage, sortBy, JSON.stringify(filters)]);
 
   const handlePageChange = (page: number) => {
