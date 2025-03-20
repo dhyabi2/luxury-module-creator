@@ -16,15 +16,18 @@ export const fetchProducts = async (queryParams: string): Promise<ProductsRespon
   try {
     // Direct API call to the edge function with no security restrictions
     const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
     
     console.log('Fetching products with params:', queryParams);
     
-    // Make the request with completely open access - direct API call
+    // Make the request with completely open access but include the API key
     const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${queryParams}`, {
       method: 'GET',
       mode: 'cors',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
       }
     });
     
