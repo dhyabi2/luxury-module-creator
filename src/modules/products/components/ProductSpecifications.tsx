@@ -3,7 +3,7 @@ import React from 'react';
 
 export interface ProductSpecificationsProps {
   caseMaterial?: string;
-  caseSize?: number;
+  caseSize?: number | undefined;
   dialColor?: string;
   movement?: string;
   waterResistance?: string;
@@ -38,7 +38,7 @@ const ProductSpecifications: React.FC<ProductSpecificationsProps> = ({
           <span className="font-medium">{gender}</span>
         </div>
       )}
-      {caseSize && (
+      {caseSize !== undefined && (
         <div className="flex justify-between py-2 border-b border-gray-100">
           <span className="text-gray-600">Case Size</span>
           <span className="font-medium">{caseSize}mm</span>
