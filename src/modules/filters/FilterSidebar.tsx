@@ -6,7 +6,7 @@ import FilterHeader from './components/FilterHeader';
 import FilterLoading from './components/FilterLoading';
 import WatchSpecificFilters from './components/WatchSpecificFilters';
 import { fetchFilters, getCombinedBrands } from '@/utils/apiUtils';
-import { FiltersData } from '@/lib/db/filters/types';
+import { FiltersResponse } from '@/types/api';
 
 interface FilterSidebarProps {
   onFilterChange?: (filters: Record<string, any>) => void;
@@ -18,7 +18,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   initialFilters = {}
 }) => {
   // State management
-  const [filtersData, setFiltersData] = useState<FiltersData | null>(null);
+  const [filtersData, setFiltersData] = useState<FiltersResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOptions, setSelectedOptions] = useState(initialFilters);
   const [priceRange, setPriceRange] = useState({

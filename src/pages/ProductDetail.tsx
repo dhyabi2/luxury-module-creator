@@ -8,7 +8,7 @@ import ProductDetailImage from '@/modules/products/components/ProductDetailImage
 import ProductSpecifications from '@/modules/products/components/ProductSpecifications';
 import QuantitySelector from '@/modules/products/components/QuantitySelector';
 import ProductActions from '@/modules/products/components/ProductActions';
-import { fetchProductDetail } from '@/utils/apiUtils';
+import { fetchProductById } from '@/utils/apiUtils';
 import { toast } from 'sonner';
 
 interface ProductDetailData {
@@ -49,24 +49,24 @@ const ProductDetail = () => {
       
       try {
         console.log(`Fetching product with ID: ${productId}`);
-        const data = await fetchProductDetail(productId);
+        const productData = await fetchProductById(productId);
         
         // Map API response to component state
-        const productData: ProductDetailData = {
-          id: data.product.id,
-          name: data.product.name,
-          brand: data.product.brand,
-          price: Number(data.product.price),
-          image: data.product.image,
-          description: data.product.description,
-          category: data.product.category,
-          gender: data.product.specifications?.gender,
-          caseSize: data.product.specifications?.caseSize,
-          onSale: data.product.discount > 0,
-          originalPrice: data.product.discount ? Number(data.product.price) * (100 / (100 - data.product.discount)) : undefined
+        const formattedProduct: ProductDetailData = {
+          id: productData.id,
+          name: productData.name,
+          brand: productData.brand,
+          price: Number(productData.price),
+          image: productData.image,
+          description: productData.description,
+          category: productData.category,
+          gender: productData.specifications?.gender,
+          caseSize: productData.specifications?.caseSize,
+          onSale: productData.discount > 0,
+          originalPrice: productData.discount ? Number(productData.price) * (100 / (100 - productData.discount)) : undefined
         };
         
-        setProduct(productData);
+        setProduct(formattedProduct);
         setError(null);
       } catch (err) {
         console.error('Error fetching product:', err);

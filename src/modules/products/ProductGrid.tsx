@@ -13,6 +13,9 @@ interface ProductGridProps {
   category?: string;
   isNewIn?: boolean;
   isOnSale?: boolean;
+  title?: string;
+  filters?: Record<string, any>;
+  pageSize?: number;
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({ 
@@ -20,7 +23,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   brand = '', 
   category = '', 
   isNewIn = false, 
-  isOnSale = false 
+  isOnSale = false,
+  title,
+  filters = {},
+  pageSize = 8
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -29,54 +35,104 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [sortBy, setSortBy] = useState<string>('featured');
-  const pageSize = 8;
   
   // Use a ref to track active requests for cleanup
   const pendingRequest = useRef<AbortController | null>(null);
+  const lastQueryParams = useRef<string>('');
 
-  useEffect(() => {
-    // Function to fetch products
-    const loadProducts = async () => {
-      // If there's a pending request, cancel it
-      if (pendingRequest.current) {
-        pendingRequest.current.abort();
-      }
-      
-      // Create a new abort controller for this request
-      pendingRequest.current = new AbortController();
-      setLoading(true);
-      
-      try {
-        const response = await fetchProducts({
-          gender,
-          brand,
-          category,
-          isNewIn,
-          isOnSale,
-          page: currentPage,
-          pageSize,
-          sortBy
-        });
-        
-        setProducts(response.products);
-        setTotalPages(response.pagination.totalPages);
-        setTotalCount(response.pagination.totalCount);
-      } catch (err) {
-        // Only handle errors that aren't from aborting
-        if (err instanceof Error && err.name !== 'AbortError') {
-          console.error('Error loading products:', err);
-          setError('Failed to load products. Please try again later.');
-          toast.error('Failed to load products', {
-            description: 'Please try again later.',
-            duration: 3000
-          });
-        }
-      } finally {
-        setLoading(false);
-        pendingRequest.current = null;
-      }
+  // Function to build query parameters
+  const buildQueryParams = () => {
+    const queryParams: Record<string, any> = {
+      gender: gender || filters.gender,
+      brand: brand || filters.brand,
+      category: category || filters.category,
+      page: currentPage,
+      pageSize: pageSize,
+      sortBy: sortBy
     };
 
+    // Add isNewIn and isOnSale flags
+    if (isNewIn || filters.newArrival) queryParams.isNewIn = true;
+    if (isOnSale || filters.discount) queryParams.isOnSale = true;
+
+    // Add price range if present in filters
+    if (filters.priceRange) {
+      queryParams.minPrice = filters.priceRange.min;
+      queryParams.maxPrice = filters.priceRange.max;
+    }
+
+    // Add case size range if present in filters
+    if (filters.caseSizeRange) {
+      queryParams.minCaseSize = filters.caseSizeRange.min;
+      queryParams.maxCaseSize = filters.caseSizeRange.max;
+    }
+
+    // Add brand filter from filters object
+    if (filters.brands && filters.brands.length > 0) {
+      queryParams.brand = filters.brands.join(',');
+    }
+
+    // Add category filter from filters object
+    if (filters.categories && filters.categories.length > 0) {
+      queryParams.category = filters.categories.join(',');
+    }
+
+    // Add other watch-specific filters
+    if (filters.bands) queryParams.band = filters.bands.join(',');
+    if (filters.caseColors) queryParams.caseColor = filters.caseColors.join(',');
+    if (filters.colors) queryParams.color = filters.colors.join(',');
+
+    // Create a unique string representation of the query for caching and comparison
+    return queryParams;
+  };
+
+  // Fetch products with the current parameters
+  const loadProducts = async () => {
+    // If there's a pending request, cancel it
+    if (pendingRequest.current) {
+      pendingRequest.current.abort();
+    }
+    
+    // Create a new abort controller for this request
+    pendingRequest.current = new AbortController();
+    setLoading(true);
+    
+    const queryParams = buildQueryParams();
+    const queryString = JSON.stringify(queryParams);
+    
+    // Skip if params haven't changed and we already have products
+    if (queryString === lastQueryParams.current && products.length > 0) {
+      setLoading(false);
+      return;
+    }
+    
+    lastQueryParams.current = queryString;
+    
+    try {
+      const response = await fetchProducts(queryParams);
+      
+      setProducts(response.products);
+      setTotalPages(response.pagination.totalPages);
+      setTotalCount(response.pagination.totalCount);
+      setCurrentPage(response.pagination.currentPage);
+    } catch (err) {
+      // Only handle errors that aren't from aborting
+      if (err instanceof Error && err.name !== 'AbortError') {
+        console.error('Error loading products:', err);
+        setError('Failed to load products. Please try again later.');
+        toast.error('Failed to load products', {
+          description: 'Please try again later.',
+          duration: 3000
+        });
+      }
+    } finally {
+      setLoading(false);
+      pendingRequest.current = null;
+    }
+  };
+
+  // Load products when dependencies change
+  useEffect(() => {
     loadProducts();
     
     // Cleanup function to abort any pending requests when component unmounts
@@ -85,7 +141,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         pendingRequest.current.abort();
       }
     };
-  }, [gender, brand, category, isNewIn, isOnSale, currentPage, sortBy]);
+  }, [gender, brand, category, isNewIn, isOnSale, currentPage, sortBy, JSON.stringify(filters)]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -123,6 +179,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   return (
     <div className="space-y-4">
       <ProductGridHeader
+        title={title}
         totalProducts={totalCount}
         sortBy={sortBy}
         onSortChange={handleSortChange}

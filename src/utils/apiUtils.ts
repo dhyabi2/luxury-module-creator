@@ -19,6 +19,15 @@ interface ProductQueryParams {
   color?: string;
 }
 
+// Caching mechanism for API responses
+const responseCache = new Map();
+const CACHE_TTL = 60000; // 1 minute cache TTL
+
+// Helper function to check if a cached response is still valid
+const isCacheValid = (timestamp: number) => {
+  return (Date.now() - timestamp) < CACHE_TTL;
+};
+
 export const fetchProducts = async (params: ProductQueryParams): Promise<ProductsResponse> => {
   const queryParams = new URLSearchParams();
   
@@ -38,43 +47,112 @@ export const fetchProducts = async (params: ProductQueryParams): Promise<Product
   if (params.caseColor) queryParams.append('caseColor', params.caseColor);
   if (params.color) queryParams.append('color', params.color);
   
-  const response = await fetch(`/api/products?${queryParams.toString()}`);
+  const queryString = queryParams.toString();
+  const cacheKey = `products_${queryString}`;
+  
+  // Check cache first
+  const cachedData = responseCache.get(cacheKey);
+  if (cachedData && isCacheValid(cachedData.timestamp)) {
+    console.log('Using cached product data for:', queryString);
+    return cachedData.data;
+  }
+  
+  const response = await fetch(`/api/products?${queryString}`);
   
   if (!response.ok) {
     throw new Error(`Error fetching products: ${response.statusText}`);
   }
   
-  return await response.json();
+  const data = await response.json();
+  
+  // Cache the response
+  responseCache.set(cacheKey, {
+    timestamp: Date.now(),
+    data
+  });
+  
+  return data;
 };
 
 export const fetchProductById = async (productId: string): Promise<Product> => {
+  const cacheKey = `product_${productId}`;
+  
+  // Check cache first
+  const cachedData = responseCache.get(cacheKey);
+  if (cachedData && isCacheValid(cachedData.timestamp)) {
+    console.log('Using cached product data for ID:', productId);
+    return cachedData.data;
+  }
+  
   const response = await fetch(`/api/products/${productId}`);
   
   if (!response.ok) {
     throw new Error(`Error fetching product: ${response.statusText}`);
   }
   
-  return await response.json();
+  const data = await response.json();
+  
+  // Cache the response
+  responseCache.set(cacheKey, {
+    timestamp: Date.now(),
+    data: data.product
+  });
+  
+  return data.product;
 };
 
 export const fetchFilters = async (): Promise<FiltersResponse> => {
+  const cacheKey = 'filters';
+  
+  // Check cache first
+  const cachedData = responseCache.get(cacheKey);
+  if (cachedData && isCacheValid(cachedData.timestamp)) {
+    console.log('Using cached filters data');
+    return cachedData.data;
+  }
+  
   const response = await fetch('/api/filters');
   
   if (!response.ok) {
     throw new Error(`Error fetching filters: ${response.statusText}`);
   }
   
-  return await response.json();
+  const data = await response.json();
+  
+  // Cache the response
+  responseCache.set(cacheKey, {
+    timestamp: Date.now(),
+    data
+  });
+  
+  return data;
 };
 
 export const fetchNavigation = async () => {
+  const cacheKey = 'navigation';
+  
+  // Check cache first
+  const cachedData = responseCache.get(cacheKey);
+  if (cachedData && isCacheValid(cachedData.timestamp)) {
+    console.log('Using cached navigation data');
+    return cachedData.data;
+  }
+  
   const response = await fetch('/api/navigation');
   
   if (!response.ok) {
     throw new Error(`Error fetching navigation: ${response.statusText}`);
   }
   
-  return await response.json();
+  const data = await response.json();
+  
+  // Cache the response
+  responseCache.set(cacheKey, {
+    timestamp: Date.now(),
+    data
+  });
+  
+  return data;
 };
 
 // For backward compatibility with existing code
@@ -103,4 +181,10 @@ export const getCombinedBrands = (
   
   // Convert map back to array and return
   return Array.from(uniqueBrands.values());
+};
+
+// Helper function to clear the cache
+export const clearApiCache = () => {
+  responseCache.clear();
+  console.log('API cache cleared');
 };
