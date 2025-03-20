@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useCart } from '../context/CartContext';
+import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, CreditCard, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -23,13 +23,11 @@ export const CartSummary: React.FC = () => {
           </div>
         )}
         
-        {/* Rule 1: Show shipping information */}
         <div className="flex justify-between text-sm">
           <p className="text-gray-500">Shipping</p>
           <p className="font-medium">Free</p>
         </div>
         
-        {/* Rule 2: Show tax information */}
         <div className="flex justify-between text-sm">
           <p className="text-gray-500">Taxes (estimated)</p>
           <p className="font-medium">${(cart.subtotal * 0.1).toFixed(2)}</p>
@@ -41,25 +39,21 @@ export const CartSummary: React.FC = () => {
         </div>
       </div>
       
-      {/* Rule 3: Show secure payment information */}
       <div className="mt-3 flex items-center justify-center space-x-2 text-sm text-gray-500">
         <Shield className="h-4 w-4" />
         <span>Secure checkout</span>
       </div>
       
       <div className="mt-6 space-y-3">
-        {/* Rule 4: Clear checkout button */}
         <Button className="w-full py-5 bg-brand hover:bg-brand/90 flex items-center justify-center">
           <CreditCard className="mr-2 h-4 w-4" /> 
           Checkout
         </Button>
         
-        {/* Rule 5: Continue shopping option */}
         <Link to="/" className="block text-center text-sm text-gray-600 hover:text-gray-800 mt-2">
           Continue shopping
         </Link>
         
-        {/* Rule 6: Clear cart option */}
         {cart.items.length > 0 && (
           <Button 
             variant="outline" 
@@ -70,7 +64,6 @@ export const CartSummary: React.FC = () => {
           </Button>
         )}
         
-        {/* Rule 7: Trust signals */}
         <div className="border-t border-gray-100 pt-4 mt-4">
           <div className="flex justify-center items-center space-x-4 text-xs text-gray-500">
             <div className="flex items-center">

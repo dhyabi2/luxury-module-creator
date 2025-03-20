@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MainLayout from '../modules/layout/MainLayout';
-import { useCart } from '@/modules/cart/context/CartContext';
+import { useCart } from '@/contexts/CartContext';
 import ProductBreadcrumb from '@/modules/products/components/ProductBreadcrumb';
 import ProductDetailImage from '@/modules/products/components/ProductDetailImage';
 import ProductSpecifications from '@/modules/products/components/ProductSpecifications';
 import QuantitySelector from '@/modules/products/components/QuantitySelector';
 import ProductActions from '@/modules/products/components/ProductActions';
-import { toast } from '@/components/ui/use-toast';
+import { fetchProductDetail } from '@/utils/apiUtils';
+import { toast } from 'sonner';
 
 interface ProductDetailData {
   id: string;
@@ -35,9 +36,9 @@ const ProductDetail = () => {
   // Fallback image if the product image fails to load
   const fallbackImage = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=600&h=600&fit=crop&auto=format';
 
-  // Direct API call without custom hooks
+  // Fetch product details
   useEffect(() => {
-    const fetchProduct = async () => {
+    const getProductDetail = async () => {
       if (!productId) {
         setError('Product ID is required');
         setLoading(false);
@@ -48,15 +49,7 @@ const ProductDetail = () => {
       
       try {
         console.log(`Fetching product with ID: ${productId}`);
-        const response = await fetch(`/api/products/${productId}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Error fetching product (${response.status}): ${errorText.substring(0, 150)}...`);
-          throw new Error('Product not found');
-        }
-        
-        const data = await response.json();
+        const data = await fetchProductDetail(productId);
         
         // Map API response to component state
         const productData: ProductDetailData = {
@@ -83,7 +76,7 @@ const ProductDetail = () => {
       }
     };
 
-    fetchProduct();
+    getProductDetail();
   }, [productId]);
 
   const incrementQuantity = () => {
@@ -112,9 +105,8 @@ const ProductDetail = () => {
       
       addItem(formattedProduct, quantity);
       
-      toast({
-        title: "Added to cart",
-        description: `${product.name} x${quantity} added to your cart`,
+      toast.success("Added to cart", {
+        description: `${product.name} x${quantity} added to your cart`
       });
     }
   };

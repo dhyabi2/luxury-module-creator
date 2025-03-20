@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
+import { fetchNavigationData } from '@/utils/apiUtils';
 
 interface MainCategory {
   id: string;
@@ -16,20 +16,13 @@ const MainNavigation = () => {
   
   // Fetch navigation data directly from the API
   useEffect(() => {
-    const fetchNavigationData = async () => {
+    const getNavigationData = async () => {
       setIsLoading(true);
       
       try {
         console.log('Fetching navigation data');
         
-        // Direct API call without hooks
-        const response = await fetch('/api/navigation');
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch navigation data: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const data = await fetchNavigationData();
         
         console.log('Navigation data received:', data);
         
@@ -48,7 +41,7 @@ const MainNavigation = () => {
       }
     };
     
-    fetchNavigationData();
+    getNavigationData();
   }, []);
 
   return (
