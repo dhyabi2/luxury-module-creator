@@ -20,13 +20,15 @@ export const fetchProducts = async (queryParams: string): Promise<ProductsRespon
     
     console.log('Fetching products with params:', queryParams);
     
-    // Strip out case size parameters if on accessories page to avoid 500 errors
+    // Strip out case size parameters for non-watch categories to avoid 500 errors
     let cleanedParams = queryParams;
-    if (queryParams.includes('category=accessories')) {
+    if (queryParams.includes('category=accessories') || 
+        queryParams.includes('category=bags') || 
+        queryParams.includes('category=perfumes')) {
       cleanedParams = queryParams
         .replace(/&minCaseSize=\d+/, '')
         .replace(/&maxCaseSize=\d+/, '');
-      console.log('Using cleaned params for accessories:', cleanedParams);
+      console.log('Using cleaned params for non-watch category:', cleanedParams);
     }
     
     // Make the request with completely open access but include the API key
@@ -44,7 +46,7 @@ export const fetchProducts = async (queryParams: string): Promise<ProductsRespon
       console.error('Failed to fetch products:', response.status, response.statusText);
       
       // If we get a 500 error and have case size parameters, try again without them
-      if (response.status === 500 && queryParams.includes('minCaseSize') && !cleanedParams.includes('accessories')) {
+      if (response.status === 500 && queryParams.includes('minCaseSize')) {
         console.log('Retrying without case size parameters');
         const fallbackParams = queryParams
           .replace(/&minCaseSize=\d+/, '')

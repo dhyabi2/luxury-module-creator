@@ -27,8 +27,11 @@ const callApi = async (endpoint: string, params?: Record<string, any>): Promise<
   const response = await fetch(url, {
     headers: {
       "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`
-    }
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json"
+    },
+    method: "GET",
+    mode: "cors"
   });
   
   if (!response.ok) {
@@ -43,6 +46,17 @@ const callApi = async (endpoint: string, params?: Record<string, any>): Promise<
 // API functions for direct calls to edge functions
 export const fetchProducts = async (params: Record<string, any> = {}): Promise<any> => {
   console.log("Fetching products with params:", params);
+  
+  // Handle non-watch categories by removing case size parameters
+  if (params.category && 
+      (params.category.includes('accessories') || 
+       params.category.includes('bags') || 
+       params.category.includes('perfumes'))) {
+    delete params.minCaseSize;
+    delete params.maxCaseSize;
+    console.log("Removed case size params for non-watch category");
+  }
+  
   return callApi('products', params);
 };
 

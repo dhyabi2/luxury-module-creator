@@ -28,10 +28,13 @@ serve(async (req) => {
     
     // Check if requesting accessories category to skip problematic filters
     const isAccessoryCategory = params.category && 
-      (typeof params.category === 'string' && params.category.toLowerCase().includes('accessories'));
+      (typeof params.category === 'string' && 
+        (params.category.toLowerCase().includes('accessories') || 
+         params.category.toLowerCase().includes('bags') || 
+         params.category.toLowerCase().includes('perfumes')));
     
     if (isAccessoryCategory) {
-      console.log('[API:products] Accessories category detected, will skip watch-specific filters');
+      console.log('[API:products] Non-watch category detected, will skip watch-specific filters');
       // Remove case size parameters to avoid filter errors
       delete params.minCaseSize;
       delete params.maxCaseSize;

@@ -1,4 +1,3 @@
-
 // Apply brand filter
 export const applyBrandFilter = (query: any, params: any) => {
   if (params.brand) {
@@ -9,12 +8,23 @@ export const applyBrandFilter = (query: any, params: any) => {
   return query;
 };
 
-// Apply category filter
+// Apply category filter - Updated to be more resilient
 export const applyCategoryFilter = (query: any, params: any) => {
   if (params.category) {
     const categories = params.category.split(',').map((c: string) => c.trim());
     console.log(`[API:products] Filtering by categories: ${categories.join(', ')}`);
-    query = query.in('category', categories);
+    
+    // First category
+    if (categories.length > 0) {
+      query = query.ilike('category', `%${categories[0]}%`);
+      
+      // Additional categories
+      if (categories.length > 1) {
+        for (let i = 1; i < categories.length; i++) {
+          query = query.or(`category.ilike.%${categories[i]}%`);
+        }
+      }
+    }
   }
   return query;
 };
@@ -52,7 +62,10 @@ export const applyPriceFilter = (query: any, params: any) => {
 // Apply case size filter - FIXED to avoid SQL parse errors
 export const applyCaseSizeFilter = (query: any, params: any) => {
   // Skip this filter for non-watch categories to avoid errors
-  if (params.category && ['accessories', 'bags', 'perfumes'].includes(params.category.toLowerCase())) {
+  if (params.category && 
+      (params.category.toLowerCase().includes('accessories') || 
+       params.category.toLowerCase().includes('bags') || 
+       params.category.toLowerCase().includes('perfumes'))) {
     console.log('[API:products] Skipping case size filter for non-watch category');
     return query;
   }
@@ -60,8 +73,13 @@ export const applyCaseSizeFilter = (query: any, params: any) => {
   if (params.minCaseSize && params.maxCaseSize) {
     console.log(`[API:products] Filtering by case size: ${params.minCaseSize}mm - ${params.maxCaseSize}mm`);
     
-    // Use a simplified approach that won't break with large size ranges
-    query = query.or(`specifications->caseSize.gte.${params.minCaseSize},specifications->caseSize.lte.${params.maxCaseSize}`);
+    try {
+      // Use a simplified approach that won't break with large size ranges
+      query = query.or(`specifications->caseSize.gte.${params.minCaseSize},specifications->caseSize.lte.${params.maxCaseSize}`);
+    } catch (error) {
+      console.error('[API:products] Error applying case size filter:', error);
+      // If filter fails, return the unmodified query
+    }
   }
   return query;
 };
@@ -150,11 +168,16 @@ export const applyAllFilters = (query: any, params: any) => {
   
   query = applyBrandFilter(query, params);
   query = applyCategoryFilter(query, params);
-  query = applyGenderFilter(query, params);
   query = applyPriceFilter(query, params);
   
-  // Skip watch-specific filters for accessory categories
-  if (!params.category || !['accessories', 'bags', 'perfumes'].includes(params.category.toLowerCase())) {
+  // Skip watch-specific filters for non-watch categories
+  const isNonWatchCategory = params.category && 
+    (typeof params.category === 'string' && 
+      (params.category.toLowerCase().includes('accessories') || 
+       params.category.toLowerCase().includes('bags') || 
+       params.category.toLowerCase().includes('perfumes')));
+       
+  if (!isNonWatchCategory) {
     console.log('[API:products] Applying watch-specific filters');
     query = applyCaseSizeFilter(query, params);
     query = applyBandFilter(query, params);
