@@ -20,8 +20,17 @@ export const fetchProducts = async (queryParams: string): Promise<ProductsRespon
     
     console.log('Fetching products with params:', queryParams);
     
+    // Strip out case size parameters if on accessories page to avoid 500 errors
+    let cleanedParams = queryParams;
+    if (queryParams.includes('category=accessories')) {
+      cleanedParams = queryParams
+        .replace(/&minCaseSize=\d+/, '')
+        .replace(/&maxCaseSize=\d+/, '');
+      console.log('Using cleaned params for accessories:', cleanedParams);
+    }
+    
     // Make the request with completely open access but include the API key
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${queryParams}`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${cleanedParams}`, {
       method: 'GET',
       mode: 'cors',
       headers: {
@@ -33,6 +42,31 @@ export const fetchProducts = async (queryParams: string): Promise<ProductsRespon
     
     if (!response.ok) {
       console.error('Failed to fetch products:', response.status, response.statusText);
+      
+      // If we get a 500 error and have case size parameters, try again without them
+      if (response.status === 500 && queryParams.includes('minCaseSize') && !cleanedParams.includes('accessories')) {
+        console.log('Retrying without case size parameters');
+        const fallbackParams = queryParams
+          .replace(/&minCaseSize=\d+/, '')
+          .replace(/&maxCaseSize=\d+/, '');
+          
+        const fallbackResponse = await fetch(`${SUPABASE_URL}/functions/v1/products?${fallbackParams}`, {
+          method: 'GET',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
+        
+        if (fallbackResponse.ok) {
+          const data = await fallbackResponse.json();
+          console.log('Products data received (fallback):', data);
+          return data;
+        }
+      }
+      
       toast.error('Failed to load products', {
         description: 'Please try again later.'
       });

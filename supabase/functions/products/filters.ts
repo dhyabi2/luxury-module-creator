@@ -26,23 +26,12 @@ export const applyGenderFilter = (query: any, params: any) => {
     console.log(`[API:products] Filtering by genders: ${genders.join(', ')}`);
     
     if (genders.length > 0) {
-      const genderFilter = {};
-      genderFilter['gender'] = genders[0];
+      // Simplified approach for gender filter
+      query = query.ilike('specifications->gender', `%${genders[0]}%`);
       
-      // Use containedBy for JSONB which is more reliable
-      query = query.containedBy('specifications', genderFilter);
-      
-      // For multiple genders, add OR conditions
       if (genders.length > 1) {
-        let orConditions = [];
         for (let i = 1; i < genders.length; i++) {
-          const additionalFilter = {};
-          additionalFilter['gender'] = genders[i];
-          orConditions.push(`specifications::jsonb @> '${JSON.stringify(additionalFilter)}'`);
-        }
-        
-        if (orConditions.length > 0) {
-          query = query.or(orConditions.join(','));
+          query = query.or(`specifications->gender.ilike.%${genders[i]}%`);
         }
       }
     }
@@ -60,23 +49,19 @@ export const applyPriceFilter = (query: any, params: any) => {
   return query;
 };
 
-// Apply case size filter
+// Apply case size filter - FIXED to avoid SQL parse errors
 export const applyCaseSizeFilter = (query: any, params: any) => {
+  // Skip this filter for non-watch categories to avoid errors
+  if (params.category && ['accessories', 'bags', 'perfumes'].includes(params.category.toLowerCase())) {
+    console.log('[API:products] Skipping case size filter for non-watch category');
+    return query;
+  }
+  
   if (params.minCaseSize && params.maxCaseSize) {
     console.log(`[API:products] Filtering by case size: ${params.minCaseSize}mm - ${params.maxCaseSize}mm`);
     
-    const minSize = parseInt(params.minCaseSize);
-    const maxSize = parseInt(params.maxCaseSize);
-    
-    let sizeConditions = [];
-    for (let size = minSize; size <= maxSize; size++) {
-      sizeConditions.push(`specifications::text ilike '%"caseSize":"${size}mm"%'`);
-      sizeConditions.push(`specifications::text ilike '%"caseSize": "${size}mm"%'`);
-    }
-    
-    if (sizeConditions.length > 0) {
-      query = query.or(sizeConditions.join(','));
-    }
+    // Use a simplified approach that won't break with large size ranges
+    query = query.or(`specifications->caseSize.gte.${params.minCaseSize},specifications->caseSize.lte.${params.maxCaseSize}`);
   }
   return query;
 };
@@ -88,23 +73,12 @@ export const applyBandFilter = (query: any, params: any) => {
     console.log(`[API:products] Filtering by band materials: ${bands.join(', ')}`);
     
     if (bands.length > 0) {
-      const bandFilter = {};
-      bandFilter['strapMaterial'] = bands[0];
+      // Simplified approach
+      query = query.ilike('specifications->strapMaterial', `%${bands[0]}%`);
       
-      // Use containedBy for JSONB
-      query = query.containedBy('specifications', bandFilter);
-      
-      // For multiple bands, add OR conditions
       if (bands.length > 1) {
-        let orConditions = [];
         for (let i = 1; i < bands.length; i++) {
-          const additionalFilter = {};
-          additionalFilter['strapMaterial'] = bands[i];
-          orConditions.push(`specifications::jsonb @> '${JSON.stringify(additionalFilter)}'`);
-        }
-        
-        if (orConditions.length > 0) {
-          query = query.or(orConditions.join(','));
+          query = query.or(`specifications->strapMaterial.ilike.%${bands[i]}%`);
         }
       }
     }
@@ -119,23 +93,12 @@ export const applyCaseColorFilter = (query: any, params: any) => {
     console.log(`[API:products] Filtering by case colors: ${caseColors.join(', ')}`);
     
     if (caseColors.length > 0) {
-      const caseColorFilter = {};
-      caseColorFilter['caseMaterial'] = caseColors[0];
+      // Simplified approach
+      query = query.ilike('specifications->caseMaterial', `%${caseColors[0]}%`);
       
-      // Use containedBy for JSONB
-      query = query.containedBy('specifications', caseColorFilter);
-      
-      // For multiple case colors, add OR conditions
       if (caseColors.length > 1) {
-        let orConditions = [];
         for (let i = 1; i < caseColors.length; i++) {
-          const additionalFilter = {};
-          additionalFilter['caseMaterial'] = caseColors[i];
-          orConditions.push(`specifications::jsonb @> '${JSON.stringify(additionalFilter)}'`);
-        }
-        
-        if (orConditions.length > 0) {
-          query = query.or(orConditions.join(','));
+          query = query.or(`specifications->caseMaterial.ilike.%${caseColors[i]}%`);
         }
       }
     }
@@ -150,17 +113,13 @@ export const applyColorFilter = (query: any, params: any) => {
     console.log(`[API:products] Filtering by colors: ${colors.join(', ')}`);
     
     if (colors.length > 0) {
-      let colorConditions = [];
+      // Simplified approach that won't cause SQL parser errors
+      query = query.or(`specifications->dialColor.ilike.%${colors[0]}%,specifications->strapColor.ilike.%${colors[0]}%`);
       
-      for (let i = 0; i < colors.length; i++) {
-        colorConditions.push(`specifications::text ilike '%"dialColor":"${colors[i]}"%'`);
-        colorConditions.push(`specifications::text ilike '%"strapColor":"${colors[i]}"%'`);
-        colorConditions.push(`specifications::text ilike '%"dialColor": "${colors[i]}"%'`);
-        colorConditions.push(`specifications::text ilike '%"strapColor": "${colors[i]}"%'`);
-      }
-      
-      if (colorConditions.length > 0) {
-        query = query.or(colorConditions.join(','));
+      if (colors.length > 1) {
+        for (let i = 1; i < colors.length; i++) {
+          query = query.or(`specifications->dialColor.ilike.%${colors[i]}%,specifications->strapColor.ilike.%${colors[i]}%`);
+        }
       }
     }
   }
@@ -193,10 +152,18 @@ export const applyAllFilters = (query: any, params: any) => {
   query = applyCategoryFilter(query, params);
   query = applyGenderFilter(query, params);
   query = applyPriceFilter(query, params);
-  query = applyCaseSizeFilter(query, params);
-  query = applyBandFilter(query, params);
-  query = applyCaseColorFilter(query, params);
-  query = applyColorFilter(query, params);
+  
+  // Skip watch-specific filters for accessory categories
+  if (!params.category || !['accessories', 'bags', 'perfumes'].includes(params.category.toLowerCase())) {
+    console.log('[API:products] Applying watch-specific filters');
+    query = applyCaseSizeFilter(query, params);
+    query = applyBandFilter(query, params);
+    query = applyCaseColorFilter(query, params);
+    query = applyColorFilter(query, params);
+  } else {
+    console.log('[API:products] Skipping watch-specific filters for non-watch category');
+  }
+  
   query = applySpecialFilters(query, params);
   
   return query;

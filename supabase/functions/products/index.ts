@@ -26,6 +26,17 @@ serve(async (req) => {
     console.log('[API:products] Request method:', req.method);
     console.log('[API:products] Request parameters:', params);
     
+    // Check if requesting accessories category to skip problematic filters
+    const isAccessoryCategory = params.category && 
+      (typeof params.category === 'string' && params.category.toLowerCase().includes('accessories'));
+    
+    if (isAccessoryCategory) {
+      console.log('[API:products] Accessories category detected, will skip watch-specific filters');
+      // Remove case size parameters to avoid filter errors
+      delete params.minCaseSize;
+      delete params.maxCaseSize;
+    }
+    
     // Extract pagination and sort parameters
     const page = parseInt(params.page || '1');
     const pageSize = parseInt(params.pageSize || '8');
