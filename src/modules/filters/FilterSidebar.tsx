@@ -1,11 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import FilterCategory from './FilterCategory';
 import FilterHeader from './components/FilterHeader';
-import FilterLoading from './components/FilterLoading';
-import WatchSpecificFilters from './components/WatchSpecificFilters';
-import { FiltersResponse } from '@/types/api';
+import FilterSidebarContent from './components/FilterSidebarContent';
+import { fetchFiltersData } from './apis/filtersApi';
+import { getCombinedBrands, getActiveCategoryName } from './utils/brandUtils';
 
 interface FilterSidebarProps {
   onFilterChange?: (filters: Record<string, any>) => void;
@@ -19,7 +18,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   categoryParam
 }) => {
   // State management
-  const [filtersData, setFiltersData] = useState<FiltersResponse | null>(null);
+  const [filtersData, setFiltersData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOptions, setSelectedOptions] = useState(initialFilters);
   const [priceRange, setPriceRange] = useState({
@@ -30,11 +29,9 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     min: initialFilters.caseSizeRange?.min || 20,
     max: initialFilters.caseSizeRange?.max || 45
   });
-  const [pendingFilters, setPendingFilters] = useState(false);
   
-  // Calculate derived state
+  // Calculate derived values
   const selectedCategories = selectedOptions.categories || [];
-  const showWatchFilters = selectedCategories.includes('watches') && selectedCategories.length === 1;
   
   // Get category-specific brands
   const getCategorySpecificBrands = () => {
@@ -51,76 +48,14 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   };
   
   const categorySpecificBrands = getCategorySpecificBrands();
-  
-  // Get combined brands from multiple categories
-  function getCombinedBrands(categoryBrands: any, categories: string[]): any[] {
-    if (!categories || categories.length === 0) {
-      return [];
-    }
-    
-    const uniqueBrands = new Map<string, any>();
-    
-    categories.forEach(categoryId => {
-      const brandsForCategory = categoryBrands[categoryId] || [];
-      console.log(`Category ${categoryId} has ${brandsForCategory.length} brands`);
-      
-      brandsForCategory.forEach((brand: any) => {
-        if (!uniqueBrands.has(brand.id)) {
-          uniqueBrands.set(brand.id, { ...brand });
-        } else {
-          // If brand already exists, update the count
-          const existingBrand = uniqueBrands.get(brand.id)!;
-          uniqueBrands.set(brand.id, {
-            ...existingBrand,
-            count: (existingBrand.count || 0) + (brand.count || 0)
-          });
-        }
-      });
-    });
-    
-    return Array.from(uniqueBrands.values());
-  }
-  
-  // Brand section title
-  const getActiveCategoryName = () => {
-    if (selectedCategories.length === 0) {
-      return 'Shop by Brand';
-    } else if (selectedCategories.length === 1) {
-      const category = selectedCategories[0];
-      return `${category.charAt(0).toUpperCase() + category.slice(1)} Brands`;
-    } else {
-      return 'Brands';
-    }
-  };
-  
-  const activeCategoryName = getActiveCategoryName();
+  const activeCategoryName = getActiveCategoryName(selectedCategories);
   
   // Fetch filters data
   useEffect(() => {
     const getFiltersData = async () => {
       setIsLoading(true);
       try {
-        console.log('Fetching filters data from API...');
-        
-        // Direct API call to the edge function
-        const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
-        
-        const categoryParam = selectedCategories.length > 0 ? `?category=${selectedCategories.join(',')}` : '';
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/filters${categoryParam}`, {
-          headers: {
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${SUPABASE_KEY}`
-          }
-        });
-        
-        if (!response.ok) {
-          console.error('Failed to fetch filters:', response.status, response.statusText);
-          return;
-        }
-        
-        const data = await response.json();
-        console.log('Filter data received:', Object.keys(data));
+        const data = await fetchFiltersData(selectedCategories.length > 0 ? selectedCategories : undefined);
         setFiltersData(data);
         
         // Initialize ranges if not already set
@@ -160,8 +95,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   
   // Apply filters
   const applyFilters = () => {
-    setPendingFilters(true);
-    
     if (onFilterChange) {
       const filters = {
         ...selectedOptions,
@@ -170,8 +103,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       };
       onFilterChange(filters);
     }
-    
-    setPendingFilters(false);
   };
   
   // Apply filters when state changes
@@ -246,49 +177,18 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     <div className="bg-white p-4 rounded-md shadow-soft">
       <FilterHeader onClearFilters={handleClearFilters} />
       
-      {isLoading ? (
-        <FilterLoading />
-      ) : filtersData ? (
-        <>
-          <FilterCategory
-            title="Price Range"
-            options={[]}
-            type="range"
-            rangeMin={filtersData.priceRange.min}
-            rangeMax={filtersData.priceRange.max}
-            rangeUnit={filtersData.priceRange.unit}
-            currentMin={priceRange.min}
-            currentMax={priceRange.max}
-            onRangeChange={handlePriceRangeChange}
-          />
-          
-          <FilterCategory
-            title="Shop by Category"
-            options={filtersData.categories}
-            type="checkbox"
-            selectedOptions={selectedOptions.categories || []}
-            onSelectionChange={(selected) => handleSelectionChange('categories', selected)}
-          />
-          
-          <FilterCategory
-            title={activeCategoryName}
-            options={categorySpecificBrands}
-            type="checkbox"
-            selectedOptions={selectedOptions.brands || []}
-            onSelectionChange={(selected) => handleSelectionChange('brands', selected)}
-          />
-          
-          {showWatchFilters && (
-            <WatchSpecificFilters
-              filtersData={filtersData}
-              selectedOptions={selectedOptions}
-              caseSizeRange={caseSizeRange}
-              onSelectionChange={handleSelectionChange}
-              onCaseSizeRangeChange={handleCaseSizeRangeChange}
-            />
-          )}
-        </>
-      ) : null}
+      <FilterSidebarContent
+        filtersData={filtersData}
+        isLoading={isLoading}
+        selectedOptions={selectedOptions}
+        priceRange={priceRange}
+        caseSizeRange={caseSizeRange}
+        handleSelectionChange={handleSelectionChange}
+        handlePriceRangeChange={handlePriceRangeChange}
+        handleCaseSizeRangeChange={handleCaseSizeRangeChange}
+        categorySpecificBrands={categorySpecificBrands}
+        activeCategoryName={activeCategoryName}
+      />
     </div>
   );
 };
