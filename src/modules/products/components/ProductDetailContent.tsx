@@ -72,7 +72,8 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
               strapMaterial={specifications.strapMaterial}
               strapColor={specifications.strapColor}
               brand={product.brand}
-              gender={specifications.gender}
+              // Only pass gender if it exists in specifications
+              gender={specifications.gender as string | undefined}
             />
           )}
           

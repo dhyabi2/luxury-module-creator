@@ -1,3 +1,4 @@
+
 // API Response Types
 
 // Product
@@ -19,6 +20,7 @@ export interface Product {
     waterResistance?: string;
     strapMaterial?: string;
     strapColor?: string;
+    gender?: string;
   };
   stock?: number;
   rating?: number;
