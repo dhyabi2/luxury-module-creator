@@ -15,8 +15,11 @@ export const formatProductData = (product: Product | null) => {
     };
   }
   
+  // Handle different currency formats
+  const currencySymbol = product.currency === 'OMR' ? 'OMR ' : '$';
+  
   // Format price
-  const formattedPrice = `$${product.price.toFixed(2)}`;
+  const formattedPrice = `${currencySymbol}${product.price.toFixed(2)}`;
   
   // Calculate discounted price if applicable
   let discountedPrice = null;
@@ -25,7 +28,7 @@ export const formatProductData = (product: Product | null) => {
   
   if (product.discount && product.discount > 0) {
     discountedPrice = product.price - (product.price * (product.discount / 100));
-    formattedDiscountedPrice = `$${discountedPrice.toFixed(2)}`;
+    formattedDiscountedPrice = `${currencySymbol}${discountedPrice.toFixed(2)}`;
     formattedDiscount = `${product.discount}% Off`;
   }
   
@@ -48,6 +51,17 @@ export const formatProductData = (product: Product | null) => {
       stockStatusClass = 'text-green-500';
     }
   }
+  
+  console.log('Formatted product data:', {
+    formattedPrice,
+    formattedDiscount,
+    discountedPrice,
+    formattedDiscountedPrice,
+    specifications,
+    isInStock,
+    stockStatusText,
+    stockStatusClass
+  });
   
   return {
     formattedPrice,

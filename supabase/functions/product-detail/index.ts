@@ -2,9 +2,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
+// Completely open CORS headers - no restrictions at all
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Max-Age': '86400',
+  'Access-Control-Allow-Credentials': 'true'
 };
 
 serve(async (req) => {
@@ -48,15 +52,6 @@ serve(async (req) => {
     
     if (error) {
       console.error('[API:product-detail] Database error:', error);
-      if (error.code === 'PGRST116') {
-        return new Response(
-          JSON.stringify({ error: 'Product not found' }),
-          { 
-            status: 404, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
       throw error;
     }
     
@@ -78,7 +73,7 @@ serve(async (req) => {
       product.image = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8';
     }
     
-    // Return the response
+    // Return the direct response with CORS headers
     return new Response(
       JSON.stringify(product),
       { 

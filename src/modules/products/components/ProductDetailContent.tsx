@@ -27,7 +27,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
     addItem(product, quantity);
   };
   
-  // Extract specifications directly from product
+  // Extract specifications from product
   const specifications = product.specifications || {};
   
   // Log product data for debugging
@@ -74,6 +74,9 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
               strapColor={specifications.strapColor}
               brand={product.brand}
               gender={specifications.gender}
+              type={specifications.type}
+              notes={specifications.notes}
+              volume={specifications.volume}
             />
           )}
           

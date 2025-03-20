@@ -21,6 +21,10 @@ export interface Product {
     strapMaterial?: string;
     strapColor?: string;
     gender?: string;
+    // Perfume specifications
+    type?: string;
+    notes?: string;
+    volume?: string;
   };
   stock?: number;
   rating?: number;
