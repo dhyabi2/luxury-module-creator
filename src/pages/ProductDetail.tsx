@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchProductById } from '@/utils/apiUtils';
 import { Product } from '@/types/api';
 import { useCart } from '@/contexts/CartContext';
 import ProductBreadcrumb from '@/modules/products/components/ProductBreadcrumb';
@@ -19,7 +18,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const { addItem } = useCart();
   
-  // Fetch product data
+  // Fetch product data directly from edge function
   useEffect(() => {
     const getProduct = async () => {
       setLoading(true);
@@ -30,14 +29,27 @@ const ProductDetail = () => {
           throw new Error('Product ID is required');
         }
         
-        const productData = await fetchProductById(productId);
-        setProduct(productData);
+        console.log(`Fetching product details for ID: ${productId}`);
+        const response = await fetch(`/api/product-detail/${productId}`);
+        
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Product data received:', data);
+        
+        if (!data.product) {
+          throw new Error("Product not found");
+        }
+        
+        setProduct(data.product);
       } catch (err) {
         console.error('Error fetching product:', err);
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError('Failed to load product details. Please try again later.');
+          setError('Failed to load product details');
         }
         toast.error('Failed to load product', {
           description: 'Please try again later.',

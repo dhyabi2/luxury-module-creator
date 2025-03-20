@@ -1,6 +1,4 @@
 
-import { ProductsResponse, Product, FiltersResponse } from '@/types/api';
-
 // Helper function for making API calls
 const callApi = async (endpoint: string, params?: Record<string, any>): Promise<any> => {
   let url = `${window.location.origin}/${endpoint}`;
@@ -22,83 +20,36 @@ const callApi = async (endpoint: string, params?: Record<string, any>): Promise<
   
   console.log(`Calling API: ${url}`);
   
-  try {
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`API call failed with status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(`Error calling API ${endpoint}:`, error);
-    throw error;
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    console.error(`API call failed with status: ${response.status}`);
+    throw new Error(`API call failed with status: ${response.status}`);
   }
+  
+  const data = await response.json();
+  return data;
 };
 
 // API functions for direct calls
-export const fetchProducts = async (params: Record<string, any> = {}): Promise<ProductsResponse> => {
+export const fetchProducts = async (params: Record<string, any> = {}): Promise<any> => {
   console.log("Fetching products with params:", params);
-  
-  try {
-    const data = await callApi('api/products', params);
-    return data;
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    
-    // Fallback to mock data if API call fails
-    return {
-      products: [],
-      pagination: {
-        totalCount: 0,
-        totalPages: 0,
-        currentPage: 1,
-        pageSize: 8
-      }
-    };
-  }
+  return callApi('api/products', params);
 };
 
-export const fetchProductById = async (productId: string): Promise<Product> => {
+export const fetchProductById = async (productId: string): Promise<any> => {
   console.log("Fetching product with ID:", productId);
-  
-  try {
-    const data = await callApi(`api/product-detail/${productId}`);
-    
-    if (!data.product) {
-      throw new Error("Product not found");
-    }
-    
-    return data.product;
-  } catch (error) {
-    console.error("Error fetching product:", error);
-    throw error;
-  }
+  return callApi(`api/product-detail/${productId}`);
 };
 
-export const fetchFilters = async (): Promise<FiltersResponse> => {
+export const fetchFilters = async (): Promise<any> => {
   console.log("Fetching filters");
-  
-  try {
-    const data = await callApi('api/filters');
-    return data;
-  } catch (error) {
-    console.error("Error fetching filters:", error);
-    throw error;
-  }
+  return callApi('api/filters');
 };
 
 export const fetchNavigation = async () => {
   console.log("Fetching navigation");
-  
-  try {
-    const data = await callApi('api/navigation');
-    return data;
-  } catch (error) {
-    console.error("Error fetching navigation:", error);
-    throw error;
-  }
+  return callApi('api/navigation');
 };
 
 // Backward compatibility aliases

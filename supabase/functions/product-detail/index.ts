@@ -41,10 +41,12 @@ serve(async (req) => {
       .maybeSingle();
     
     if (error) {
+      console.error("Database error:", error);
       throw error;
     }
     
     if (!data) {
+      console.error(`Product with ID ${productId} not found`);
       return new Response(JSON.stringify({ error: `Product with ID ${productId} not found` }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
