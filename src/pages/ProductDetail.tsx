@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchProductById } from '@/utils/apiUtils';
-import { formatProductDetail } from '@/modules/products/utils/productDetailFormatter';
 import { Product } from '@/types/api';
 import { useCart } from '@/contexts/CartContext';
 import ProductBreadcrumb from '@/modules/products/components/ProductBreadcrumb';
@@ -53,7 +52,67 @@ const ProductDetail = () => {
   }, [productId]);
   
   // Format product data for display
-  const formattedProduct = formatProductDetail(product);
+  const formatProductData = () => {
+    if (!product) {
+      return {
+        formattedPrice: '$0.00',
+        formattedDiscount: null,
+        discountedPrice: null,
+        formattedDiscountedPrice: null,
+        specifications: {},
+        isInStock: false,
+        stockStatusText: 'Out of Stock',
+        stockStatusClass: 'text-red-500'
+      };
+    }
+    
+    // Format price
+    const formattedPrice = `$${product.price.toFixed(2)}`;
+    
+    // Calculate discounted price if applicable
+    let discountedPrice = null;
+    let formattedDiscountedPrice = null;
+    let formattedDiscount = null;
+    
+    if (product.discount && product.discount > 0) {
+      discountedPrice = product.price - (product.price * (product.discount / 100));
+      formattedDiscountedPrice = `$${discountedPrice.toFixed(2)}`;
+      formattedDiscount = `${product.discount}% Off`;
+    }
+    
+    // Extract specifications from product
+    const specifications = product.specifications || {};
+    
+    // Check if product is in stock
+    const isInStock = product.stock ? product.stock > 0 : false;
+    
+    // Format stock status text and class
+    let stockStatusText = 'Out of Stock';
+    let stockStatusClass = 'text-red-500';
+    
+    if (isInStock && product.stock) {
+      if (product.stock < 5) {
+        stockStatusText = `Only ${product.stock} left in stock`;
+        stockStatusClass = 'text-amber-500';
+      } else {
+        stockStatusText = 'In Stock';
+        stockStatusClass = 'text-green-500';
+      }
+    }
+    
+    return {
+      formattedPrice,
+      formattedDiscount,
+      discountedPrice,
+      formattedDiscountedPrice,
+      specifications,
+      isInStock,
+      stockStatusText,
+      stockStatusClass
+    };
+  };
+  
+  const formattedProduct = formatProductData();
   
   const handleQuantityChange = (newQuantity: number) => {
     setQuantity(newQuantity);
@@ -99,7 +158,7 @@ const ProductDetail = () => {
   if (!product) return null;
   
   // Get caseSize as a number if it exists
-  const caseSize = specifications.caseSize ? 
+  const caseSize = specifications && specifications.caseSize ? 
     typeof specifications.caseSize === 'string' ? 
       parseFloat(specifications.caseSize) : 
       specifications.caseSize 

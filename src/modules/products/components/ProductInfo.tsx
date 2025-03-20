@@ -4,96 +4,93 @@ import React from 'react';
 export interface ProductInfoProps {
   brand: string;
   name: string;
-  price?: string;
-  discountPercentage?: string | null;
-  discountedPrice?: string | null;
+  price: number;
+  currency?: string;
+  discount?: number;
+  rating?: number;
+  reviews?: number;
+  discountPercentage?: string;
+  discountedPrice?: string;
   stockStatus?: string;
   stockStatusClass?: string;
   description?: string;
-  rating?: number;
-  reviews?: number;
-  currency?: string;
-  discount?: number;
 }
 
-const ProductInfo: React.FC<ProductInfoProps> = ({ 
-  brand, 
-  name, 
-  price, 
-  currency,
+const ProductInfo: React.FC<ProductInfoProps> = ({
+  brand,
+  name,
+  price,
+  currency = '$',
   discount,
+  rating,
+  reviews,
   discountPercentage,
   discountedPrice,
   stockStatus,
   stockStatusClass,
-  description,
-  rating,
-  reviews
+  description
 }) => {
-  // If we're passed raw price/discount values, calculate formatted values
-  const formattedPrice = price || (currency ? `${currency} ${typeof price === 'number' ? price.toFixed(2) : '0.00'}` : '$0.00');
-  const calculatedDiscountedPrice = discount && typeof price === 'number' 
-    ? `${currency || '$'}${(price - (price * discount / 100)).toFixed(2)}` 
-    : discountedPrice;
+  // Calculate discounted price if not provided but discount is available
+  const calculatedDiscountedPrice = discount 
+    ? price - (price * (discount / 100)) 
+    : null;
+  
+  const displayPrice = `${currency}${price.toFixed(2)}`;
+  const displayDiscountedPrice = discountedPrice || (calculatedDiscountedPrice ? `${currency}${calculatedDiscountedPrice.toFixed(2)}` : null);
+  const displayDiscountPercentage = discountPercentage || (discount ? `${discount}% Off` : null);
   
   return (
-    <div className="space-y-4">
-      <div>
-        <div className="text-sm uppercase tracking-wider text-gray-500 font-medium mb-2">{brand}</div>
-        <h1 className="text-2xl font-medium mb-3">{name}</h1>
-        
-        {/* Price display */}
-        <div className="flex items-center space-x-3 mb-4">
-          {calculatedDiscountedPrice ? (
-            <>
-              <span className="text-xl font-semibold">{calculatedDiscountedPrice}</span>
-              <span className="text-gray-500 line-through">{formattedPrice}</span>
-              {discountPercentage && (
-                <span className="bg-red-100 text-red-700 px-2 py-1 text-xs font-medium rounded">
-                  {discountPercentage}
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="text-xl font-semibold">{formattedPrice}</span>
-          )}
-        </div>
-        
-        {/* Stock status */}
-        {stockStatus && (
-          <div className={`text-sm font-medium mb-4 ${stockStatusClass || ''}`}>
-            {stockStatus}
-          </div>
-        )}
-        
-        {/* Product description */}
-        {description && (
-          <div className="mt-6 text-sm text-gray-600 leading-relaxed">
-            <h3 className="text-gray-800 font-medium mb-2">Description</h3>
-            <p>{description}</p>
-          </div>
+    <div className="mt-2 space-y-1">
+      <div className="text-sm text-gray-500 capitalize">{brand}</div>
+      <h3 className="font-medium text-gray-900 line-clamp-2">{name}</h3>
+      
+      <div className="flex items-baseline space-x-2">
+        {displayDiscountedPrice ? (
+          <>
+            <span className="text-brand font-medium">{displayDiscountedPrice}</span>
+            <span className="text-gray-400 line-through text-sm">{displayPrice}</span>
+            {displayDiscountPercentage && (
+              <span className="text-brand text-xs font-medium">{displayDiscountPercentage}</span>
+            )}
+          </>
+        ) : (
+          <span className="font-medium">{displayPrice}</span>
         )}
       </div>
       
-      {/* Ratings */}
-      {rating !== undefined && (
-        <div className="flex items-center">
-          <div className="flex items-center">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <svg
-                key={i}
-                className={`w-4 h-4 ${i < Math.round(rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                fill="currentColor"
-                viewBox="0 0 20 20"
+      {(rating !== undefined && reviews !== undefined) && (
+        <div className="flex items-center text-sm">
+          <div className="flex text-yellow-400 mr-1">
+            {[...Array(5)].map((_, i) => (
+              <svg 
+                key={i} 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill={i < Math.round(rating) ? "currentColor" : "none"}
+                stroke="currentColor"
+                className="w-3 h-3"
               >
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={i < Math.round(rating) ? 0 : 1.5}
+                  d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" 
+                />
               </svg>
             ))}
           </div>
-          {reviews !== undefined && (
-            <span className="text-gray-500 text-sm ml-2">({reviews} reviews)</span>
-          )}
+          <span className="text-gray-500">({reviews})</span>
         </div>
+      )}
+      
+      {stockStatus && (
+        <div className={`text-sm ${stockStatusClass || 'text-green-500'}`}>
+          {stockStatus}
+        </div>
+      )}
+      
+      {description && (
+        <p className="text-sm text-gray-600 mt-2">{description}</p>
       )}
     </div>
   );

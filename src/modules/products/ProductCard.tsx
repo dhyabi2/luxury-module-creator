@@ -23,7 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <ProductImage 
           image={product.image} 
           name={product.name} 
-          discount={product.discount}
+          discount={product.discount || undefined}
           isHovered={isHovered} 
         />
       </Link>
@@ -32,7 +32,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         brand={product.brand}
         name={product.name}
         price={product.price}
-        currency={product.currency}
+        currency={product.currency || '$'}
         discount={product.discount}
       />
       
