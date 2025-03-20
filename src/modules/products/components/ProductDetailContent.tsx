@@ -35,8 +35,14 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   
   if (specifications && specifications.caseSize) {
     // Make sure we convert the value to a number
-    const parsedSize = parseFloat(specifications.caseSize.toString());
-    if (!isNaN(parsedSize)) {
+    const caseSizeValue = specifications.caseSize;
+    const parsedSize = typeof caseSizeValue === 'string' 
+      ? parseFloat(caseSizeValue) 
+      : typeof caseSizeValue === 'number' 
+        ? caseSizeValue 
+        : undefined;
+        
+    if (parsedSize !== undefined && !isNaN(parsedSize)) {
       caseSizeNumber = parsedSize;
     }
   }

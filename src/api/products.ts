@@ -68,7 +68,7 @@ export default async function productsHandler(req: Request) {
     console.error('[API:products] Error:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {
         status: 500,
         headers: {

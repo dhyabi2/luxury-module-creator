@@ -8,7 +8,7 @@ export default async function productDetailHandler(req: Request) {
     const pathParts = url.pathname.split('/');
     const productId = pathParts[pathParts.length - 1];
 
-    console.log(`API: Fetching product detail for ID: ${productId}`);
+    console.log(`[API:product-detail] Fetching product detail for ID: ${productId}`);
 
     // Direct Supabase query without auth checks
     const { data, error } = await supabase
@@ -18,7 +18,7 @@ export default async function productDetailHandler(req: Request) {
       .maybeSingle();
     
     if (error) {
-      console.error('Error fetching product by ID:', error);
+      console.error('[API:product-detail] Error fetching product by ID:', error);
       return new Response(
         JSON.stringify({ error: error.message }),
         {
@@ -32,7 +32,7 @@ export default async function productDetailHandler(req: Request) {
     }
     
     if (!data) {
-      console.error(`Product with ID ${productId} not found`);
+      console.error(`[API:product-detail] Product with ID ${productId} not found`);
       return new Response(
         JSON.stringify({ error: `Product with ID ${productId} not found` }),
         {
@@ -47,8 +47,11 @@ export default async function productDetailHandler(req: Request) {
     
     // Validate image URL for single product
     if (!data.image || !data.image.startsWith('http')) {
+      console.log(`[API:product-detail] Product ID ${productId} has invalid image URL, using fallback`);
       data.image = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8';
     }
+
+    console.log(`[API:product-detail] Successfully retrieved product data for ID: ${productId}`);
 
     return new Response(
       JSON.stringify({
@@ -63,9 +66,9 @@ export default async function productDetailHandler(req: Request) {
       }
     );
   } catch (error) {
-    console.error('Error in product detail handler:', error);
+    console.error('[API:product-detail] Error in product detail handler:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {
         status: 500,
         headers: {
