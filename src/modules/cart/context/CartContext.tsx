@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Cart, CartItem } from '@/types/cart';
 import { cartDb } from '@/lib/db';
 import { Product } from '@/types/api';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Define the context type
 interface CartContextType {
@@ -39,7 +39,6 @@ const CartContext = createContext<CartContextType>({
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<Cart>(cartDb.getCart());
   const [isOpen, setIsOpen] = useState(false);
-  const { toast } = useToast();
 
   // Load cart from localStorage on initial render
   useEffect(() => {
@@ -51,8 +50,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     console.log('Adding product to cart:', product); // Debug log
     const updatedCart = cartDb.addItemToCart(product, quantity);
     setCart(updatedCart);
-    toast({
-      title: "Added to cart",
+    toast.success("Added to cart", {
       description: `${product.name} has been added to your cart.`,
       duration: 2000
     });
@@ -63,8 +61,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const removeItem = (itemId: string) => {
     const updatedCart = cartDb.removeItemFromCart(itemId);
     setCart(updatedCart);
-    toast({
-      title: "Removed from cart",
+    toast.success("Removed from cart", {
       description: "Item has been removed from your cart.",
       duration: 2000
     });
@@ -80,8 +77,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const clearCart = () => {
     const updatedCart = cartDb.clearCart();
     setCart(updatedCart);
-    toast({
-      title: "Cart cleared",
+    toast.success("Cart cleared", {
       description: "All items have been removed from your cart.",
       duration: 2000
     });
@@ -115,5 +111,5 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-// Custom hook to use the cart context
+// Custom function to use the cart context
 export const useCart = () => useContext(CartContext);

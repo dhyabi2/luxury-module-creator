@@ -1,156 +1,78 @@
 
-/**
- * Utility functions for direct API calls without React hooks
- */
+import { ProductsResponse, Product } from '@/types/api';
 
-/**
- * Fetch products with given filters, pagination and sorting
- */
-export async function fetchProducts(filters: Record<string, any>, page: number, pageSize: number, sortBy: string) {
-  // Build query parameters
-  const urlParams = new URLSearchParams();
+interface ProductQueryParams {
+  gender?: string;
+  brand?: string;
+  category?: string;
+  isNewIn?: boolean;
+  isOnSale?: boolean;
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minCaseSize?: number;
+  maxCaseSize?: number;
+  band?: string;
+  caseColor?: string;
+  color?: string;
+}
+
+export const fetchProducts = async (params: ProductQueryParams): Promise<ProductsResponse> => {
+  const queryParams = new URLSearchParams();
   
-  // Add brand filter
-  if (filters.brands && filters.brands.length > 0) {
-    urlParams.append('brand', filters.brands.join(','));
-  } else if (filters.brand) {
-    urlParams.append('brand', filters.brand);
-  }
+  if (params.gender) queryParams.append('gender', params.gender);
+  if (params.brand) queryParams.append('brand', params.brand);
+  if (params.category) queryParams.append('category', params.category);
+  if (params.isNewIn) queryParams.append('isNewIn', 'true');
+  if (params.isOnSale) queryParams.append('isOnSale', 'true');
+  if (params.page) queryParams.append('page', params.page.toString());
+  if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+  if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString());
+  if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString());
+  if (params.minCaseSize !== undefined) queryParams.append('minCaseSize', params.minCaseSize.toString());
+  if (params.maxCaseSize !== undefined) queryParams.append('maxCaseSize', params.maxCaseSize.toString());
+  if (params.band) queryParams.append('band', params.band);
+  if (params.caseColor) queryParams.append('caseColor', params.caseColor);
+  if (params.color) queryParams.append('color', params.color);
   
-  // Add category filter
-  if (filters.categories && filters.categories.length > 0) {
-    urlParams.append('category', filters.categories.join(','));
-  }
-  
-  // Add gender filter
-  if (filters.genders && filters.genders.length > 0) {
-    urlParams.append('gender', filters.genders.join(','));
-  }
-  
-  // Add band filter
-  if (filters.bands && filters.bands.length > 0) {
-    urlParams.append('band', filters.bands.join(','));
-  }
-  
-  // Add case color filter
-  if (filters.caseColors && filters.caseColors.length > 0) {
-    urlParams.append('caseColor', filters.caseColors.join(','));
-  }
-  
-  // Add color filter
-  if (filters.colors && filters.colors.length > 0) {
-    urlParams.append('color', filters.colors.join(','));
-  }
-  
-  // Add price range filter
-  if (filters.priceRange) {
-    urlParams.append('minPrice', filters.priceRange.min.toString());
-    urlParams.append('maxPrice', filters.priceRange.max.toString());
-  }
-  
-  // Add case size range filter
-  if (filters.caseSizeRange) {
-    urlParams.append('minCaseSize', filters.caseSizeRange.min.toString());
-    urlParams.append('maxCaseSize', filters.caseSizeRange.max.toString());
-  }
-  
-  // Add pagination and sorting
-  urlParams.append('page', page.toString());
-  urlParams.append('pageSize', pageSize.toString());
-  urlParams.append('sortBy', sortBy);
-  
-  // Fetch products
-  const response = await fetch(`/api/products?${urlParams.toString()}`);
+  const response = await fetch(`/api/products?${queryParams.toString()}`);
   
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`API error (${response.status}): ${errorText.substring(0, 150)}...`);
-    throw new Error(`API error: ${response.status}`);
+    throw new Error(`Error fetching products: ${response.statusText}`);
   }
   
   return await response.json();
-}
+};
 
-/**
- * Fetch product detail by ID
- */
-export async function fetchProductDetail(productId: string) {
-  if (!productId) {
-    throw new Error('Product ID is required');
-  }
-  
+export const fetchProductById = async (productId: string): Promise<Product> => {
   const response = await fetch(`/api/products/${productId}`);
   
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Error fetching product (${response.status}): ${errorText.substring(0, 150)}...`);
-    throw new Error('Product not found');
+    throw new Error(`Error fetching product: ${response.statusText}`);
   }
   
   return await response.json();
-}
+};
 
-/**
- * Fetch filters data
- */
-export async function fetchFiltersData() {
+export const fetchFilters = async () => {
   const response = await fetch('/api/filters');
   
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Server responded with error (${response.status}): ${errorText.substring(0, 150)}...`);
-    throw new Error(`Failed to fetch filters: ${response.status}`);
-  }
-  
-  const data = await response.json();
-  
-  // Create category-specific brand mappings if not present
-  if (!data.categoryBrands) {
-    data.categoryBrands = {
-      'watches': data.brands.filter((brand: any) => 
-        ['aigner', 'calvinKlein', 'michaelKors', 'tissot'].includes(brand.id)),
-      'accessories': data.brands.filter((brand: any) => 
-        ['aigner', 'michaelKors'].includes(brand.id)),
-      'bags': data.brands.filter((brand: any) => 
-        ['aigner', 'michaelKors'].includes(brand.id)),
-      'perfumes': data.brands.filter((brand: any) => 
-        ['calvinKlein'].includes(brand.id))
-    };
-  }
-  
-  return data;
-}
-
-/**
- * Fetch navigation data
- */
-export async function fetchNavigationData() {
-  const response = await fetch('/api/navigation');
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch navigation data: ${response.status}`);
+    throw new Error(`Error fetching filters: ${response.statusText}`);
   }
   
   return await response.json();
-}
+};
 
-/**
- * Helper function to get combined brands from multiple categories
- */
-export function getCombinedBrands(categoryBrands: Record<string, any[]>, selectedCategories: string[]) {
-  // Create a map of unique brands
-  const brandMap = new Map();
+export const fetchNavigation = async () => {
+  const response = await fetch('/api/navigation');
   
-  selectedCategories.forEach(category => {
-    if (categoryBrands[category]) {
-      categoryBrands[category].forEach((brand: any) => {
-        if (!brandMap.has(brand.id)) {
-          brandMap.set(brand.id, brand);
-        }
-      });
-    }
-  });
+  if (!response.ok) {
+    throw new Error(`Error fetching navigation: ${response.statusText}`);
+  }
   
-  // Convert map back to array
-  return Array.from(brandMap.values());
-}
+  return await response.json();
+};

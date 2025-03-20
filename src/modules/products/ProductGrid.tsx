@@ -1,124 +1,125 @@
 
 import React, { useState, useEffect } from 'react';
+import ProductCard from './ProductCard';
 import ProductGridHeader from './components/ProductGridHeader';
-import ProductsDisplay from './components/ProductsDisplay';
 import ProductPagination from './components/ProductPagination';
-import { ProductProps } from './ProductCard';
 import { fetchProducts } from '@/utils/apiUtils';
-import { validateProductImages } from './utils/productValidator';
+import { Product } from '@/types/api';
 
 interface ProductGridProps {
-  title?: string;
-  filteredBrand?: string;
-  filters?: Record<string, any>;
-  pageSize?: number;
-}
-
-interface PaginationData {
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
+  gender?: string;
+  brand?: string;
+  category?: string;
+  isNewIn?: boolean;
+  isOnSale?: boolean;
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({ 
-  title = 'Products', 
-  filteredBrand, 
-  filters = {},
-  pageSize = 8 
+  gender = '', 
+  brand = '', 
+  category = '', 
+  isNewIn = false, 
+  isOnSale = false 
 }) => {
-  // State for products and UI
-  const [products, setProducts] = useState<ProductProps[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sortOption, setSortOption] = useState('featured');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState<PaginationData>({
-    totalCount: 0,
-    totalPages: 0,
-    currentPage: 1,
-    pageSize
-  });
-  
-  // Create a combined filters object
-  const combinedFilters = {
-    ...filters,
-    brand: filteredBrand
-  };
-  
-  // Fetch products
-  const loadProducts = async () => {
-    setIsLoading(true);
-    
-    try {
-      const data = await fetchProducts(combinedFilters, currentPage, pageSize, sortOption);
-      
-      // Validate product images
-      const validatedProducts = validateProductImages(data.products);
-      
-      setProducts(validatedProducts);
-      setPagination(data.pagination);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      setProducts([]);
-      setPagination({
-        totalCount: 0,
-        totalPages: 0,
-        currentPage: 1,
-        pageSize
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Load products when dependencies change
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [sortBy, setSortBy] = useState<string>('featured');
+  const pageSize = 8;
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadProducts();
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, [currentPage, sortOption, JSON.stringify(combinedFilters), pageSize]);
-  
-  // Reset to page 1 when filters or sort options change
-  useEffect(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    }
-  }, [JSON.stringify(combinedFilters), sortOption, pageSize]);
-  
-  // Handle sort option change
-  const handleSort = (option: string) => {
-    setSortOption(option);
-  };
-  
-  // Handle page change
+    const loadProducts = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchProducts({
+          gender,
+          brand,
+          category,
+          isNewIn,
+          isOnSale,
+          page: currentPage,
+          pageSize,
+          sortBy
+        });
+        
+        setProducts(response.products);
+        setTotalPages(response.pagination.totalPages);
+      } catch (err) {
+        console.error('Error loading products:', err);
+        setError('Failed to load products. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [gender, brand, category, isNewIn, isOnSale, currentPage, sortBy]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  
+
+  const handleSortChange = (sortValue: string) => {
+    setSortBy(sortValue);
+    setCurrentPage(1); // Reset to first page when sorting changes
+  };
+
+  if (loading && products.length === 0) {
+    return (
+      <div className="space-y-4">
+        <ProductGridHeader
+          totalProducts={0}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
+          loading={true}
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="bg-gray-100 animate-pulse rounded-lg h-80"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center py-8">{error}</div>;
+  }
+
   return (
-    <div>
-      <ProductGridHeader 
-        title={title}
-        pagination={pagination}
-        isLoading={isLoading}
-        sortOption={sortOption}
-        onSortChange={handleSort}
+    <div className="space-y-4">
+      <ProductGridHeader
+        totalProducts={products.length > 0 ? products.length * totalPages : 0}
+        sortBy={sortBy}
+        onSortChange={handleSortChange}
+        loading={loading}
       />
       
-      <ProductsDisplay 
-        products={products}
-        isLoading={isLoading}
-        pageSize={pageSize}
-      />
-      
-      <ProductPagination 
-        pagination={pagination}
-        onPageChange={handlePageChange}
-      />
+      {products.length === 0 && !loading ? (
+        <div className="text-center py-8">
+          <p>No products found. Try adjusting your filters.</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          
+          <ProductPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </>
+      )}
     </div>
   );
 };
 
-export default React.memo(ProductGrid);
+export default ProductGrid;
