@@ -27,12 +27,20 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
     addItem(product, quantity);
   };
   
-  // Extract specifications for display
-  const specifications = formattedProduct.specifications;
+  // Extract specifications directly from product
+  const specifications = product.specifications || {};
+  
+  // Log product data for debugging
+  console.log('Product data:', product);
+  console.log('Formatted product data:', formattedProduct);
+  console.log('Specifications:', specifications);
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <ProductBreadcrumb category={product.category} productName={product.name} />
+      <ProductBreadcrumb 
+        category={product.category} 
+        productName={product.name} 
+      />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
         <ProductDetailImage 

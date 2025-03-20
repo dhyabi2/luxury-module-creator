@@ -4,7 +4,7 @@ import React from 'react';
 export interface ProductInfoProps {
   brand: string;
   name: string;
-  price: number;
+  price: string | number;
   currency?: string;
   discount?: number;
   rating?: number;
@@ -30,12 +30,15 @@ const ProductInfo: React.FC<ProductInfoProps> = ({
   stockStatusClass,
   description
 }) => {
+  // Parse numeric price if it's a string
+  const numericPrice = typeof price === 'string' ? parseFloat(price.replace(/[^\d.]/g, '')) : price;
+  
   // Calculate discounted price if not provided but discount is available
-  const calculatedDiscountedPrice = discount 
-    ? price - (price * (discount / 100)) 
+  const calculatedDiscountedPrice = discount && !isNaN(numericPrice)
+    ? numericPrice - (numericPrice * (discount / 100)) 
     : null;
   
-  const displayPrice = `${currency}${price.toFixed(2)}`;
+  const displayPrice = typeof price === 'string' ? price : `${currency}${numericPrice.toFixed(2)}`;
   const displayDiscountedPrice = discountedPrice || (calculatedDiscountedPrice ? `${currency}${calculatedDiscountedPrice.toFixed(2)}` : null);
   const displayDiscountPercentage = discountPercentage || (discount ? `${discount}% Off` : null);
   
