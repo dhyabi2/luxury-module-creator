@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
@@ -11,7 +12,7 @@ const MainNavigation = () => {
   const [navigationData, setNavigationData] = useState<NavigationResponse | null>(null);
   const [mainCategories, setMainCategories] = useState<MainCategory[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { cartItems } = useCart();
+  const { cart } = useCart();
   
   useEffect(() => {
     const loadNavigationData = async () => {
@@ -76,9 +77,9 @@ const MainNavigation = () => {
             <ShoppingCart className="h-5 w-5" />
             <span className="sr-only">Cart</span>
           </Button>
-          {cartItems.length > 0 && (
+          {cart.items.length > 0 && (
             <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-              {cartItems.length}
+              {cart.items.length}
             </span>
           )}
         </Link>

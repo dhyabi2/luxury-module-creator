@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { CartProvider } from '@/modules/cart/context/CartContext';
 import MainLayout from '@/modules/layout/MainLayout';
@@ -33,7 +32,7 @@ function App() {
         <CartProvider>
           <Routes>
             {/* Existing routes */}
-            <Route path="/" element={<MainLayout />}>
+            <Route path="/" element={<MainLayout><Outlet /></MainLayout>}>
               <Route index element={<IndexPage />} />
               <Route path="watches" element={<WatchesPage />} />
               <Route path="jewellery" element={<JewelleryPage />} />
@@ -41,7 +40,7 @@ function App() {
               <Route path="accessories" element={<AccessoriesPage />} />
               <Route path="perfumes" element={<PerfumesPage />} />
               <Route path="product/:productId" element={<ProductDetailPage />} />
-              <Route path="category/:categoryId" element={<ProductCategoryPage />} />
+              <Route path="category/:categoryId" element={<ProductCategoryPage gender="all" />} />
               <Route path="new-in" element={<NewInPage />} />
               <Route path="brands" element={<BrandsPage />} />
               <Route path="sale" element={<SalePage />} />
