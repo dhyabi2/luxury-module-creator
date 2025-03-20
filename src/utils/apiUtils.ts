@@ -1,5 +1,5 @@
 
-import { ProductsResponse, Product } from '@/types/api';
+import { ProductsResponse, Product, FiltersResponse, FilterOption } from '@/types/api';
 
 interface ProductQueryParams {
   gender?: string;
@@ -57,7 +57,7 @@ export const fetchProductById = async (productId: string): Promise<Product> => {
   return await response.json();
 };
 
-export const fetchFilters = async () => {
+export const fetchFilters = async (): Promise<FiltersResponse> => {
   const response = await fetch('/api/filters');
   
   if (!response.ok) {
@@ -75,4 +75,32 @@ export const fetchNavigation = async () => {
   }
   
   return await response.json();
+};
+
+// For backward compatibility with existing code
+export const fetchFiltersData = fetchFilters;
+export const fetchNavigationData = fetchNavigation;
+export const fetchProductDetail = fetchProductById;
+
+// Utility function to combine brands from multiple categories
+export const getCombinedBrands = (
+  categoryBrands: Record<string, FilterOption[]>,
+  selectedCategories: string[]
+): FilterOption[] => {
+  // Create a map to store unique brands by ID
+  const uniqueBrands = new Map<string, FilterOption>();
+  
+  // Iterate through selected categories
+  selectedCategories.forEach(categoryId => {
+    // Get brands for this category
+    const brandsForCategory = categoryBrands[categoryId] || [];
+    
+    // Add each brand to our map (this automatically deduplicates by ID)
+    brandsForCategory.forEach(brand => {
+      uniqueBrands.set(brand.id, brand);
+    });
+  });
+  
+  // Convert map back to array and return
+  return Array.from(uniqueBrands.values());
 };

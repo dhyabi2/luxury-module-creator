@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import FilterCategory from './FilterCategory';
 import FilterHeader from './components/FilterHeader';
 import FilterLoading from './components/FilterLoading';
 import WatchSpecificFilters from './components/WatchSpecificFilters';
-import { fetchFiltersData, getCombinedBrands } from '@/utils/apiUtils';
+import { fetchFilters, getCombinedBrands } from '@/utils/apiUtils';
 import { FiltersData } from '@/lib/db/filters/types';
 
 interface FilterSidebarProps {
@@ -29,6 +29,11 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     min: initialFilters.caseSizeRange?.min || 20,
     max: initialFilters.caseSizeRange?.max || 45
   });
+  const [pendingFilters, setPendingFilters] = useState(false);
+  
+  // Track if we're batching updates to avoid multiple filter applications
+  const isUpdating = useRef(false);
+  const filterChangeTimeout = useRef<number | null>(null);
   
   // Calculate derived state
   const selectedCategories = selectedOptions.categories || [];
@@ -65,7 +70,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     const getFiltersData = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchFiltersData();
+        const data = await fetchFilters();
         setFiltersData(data);
         
         // Initialize ranges if not already set
@@ -84,6 +89,10 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         }
       } catch (error) {
         console.error('Error fetching filters:', error);
+        toast.error('Failed to load filters', {
+          description: 'Please try again later.',
+          duration: 3000
+        });
       } finally {
         setIsLoading(false);
       }
@@ -92,19 +101,61 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     getFiltersData();
   }, []);
   
+  // Helper function to start a batch update
+  const startBatchUpdate = () => {
+    isUpdating.current = true;
+  };
+  
+  // Helper function to end a batch update
+  const endBatchUpdate = (callback?: () => void) => {
+    setTimeout(() => {
+      isUpdating.current = false;
+      if (callback) {
+        callback();
+      }
+    }, 0);
+  };
+  
   // Apply filters with debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  const applyFilters = () => {
+    if (isUpdating.current) {
+      console.log('Skipping filter update while batch updating');
+      return;
+    }
+    
+    setPendingFilters(true);
+    
+    // Clear any existing timeout
+    if (filterChangeTimeout.current !== null) {
+      window.clearTimeout(filterChangeTimeout.current);
+    }
+    
+    // Set a new timeout for the filter change
+    filterChangeTimeout.current = window.setTimeout(() => {
       if (onFilterChange) {
-        onFilterChange({
+        const filters = {
           ...selectedOptions,
           priceRange,
           caseSizeRange
-        });
+        };
+        onFilterChange(filters);
       }
+      setPendingFilters(false);
+      filterChangeTimeout.current = null;
     }, 500);
+  };
+  
+  // Apply filters when state changes
+  useEffect(() => {
+    if (!isUpdating.current) {
+      applyFilters();
+    }
     
-    return () => clearTimeout(timer);
+    return () => {
+      if (filterChangeTimeout.current !== null) {
+        window.clearTimeout(filterChangeTimeout.current);
+      }
+    };
   }, [selectedOptions, priceRange, caseSizeRange, onFilterChange]);
   
   // Handle selection change
@@ -114,24 +165,32 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       return;
     }
     
+    startBatchUpdate();
     setSelectedOptions(prev => ({
       ...prev,
       [category]: selected || []
     }));
+    endBatchUpdate(applyFilters);
   };
   
   // Handle price range change
   const handlePriceRangeChange = (min: number, max: number) => {
+    startBatchUpdate();
     setPriceRange({ min, max });
+    endBatchUpdate(applyFilters);
   };
   
   // Handle case size range change
   const handleCaseSizeRangeChange = (min: number, max: number) => {
+    startBatchUpdate();
     setCaseSizeRange({ min, max });
+    endBatchUpdate(applyFilters);
   };
   
   // Clear all filters
   const handleClearFilters = () => {
+    startBatchUpdate();
+    
     setSelectedOptions({});
     
     if (filtersData) {
@@ -150,6 +209,8 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       }
     }
     
+    endBatchUpdate(applyFilters);
+    
     toast.success('Filters cleared');
   };
   
@@ -161,8 +222,13 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       
       if (invalidBrands.length > 0) {
         console.log('Removing brands not in selected categories:', invalidBrands);
+        startBatchUpdate();
         const newBrands = selectedOptions.brands.filter(brandId => validBrandIds.has(brandId));
-        handleSelectionChange('brands', newBrands);
+        setSelectedOptions(prev => ({
+          ...prev,
+          brands: newBrands
+        }));
+        endBatchUpdate(applyFilters);
       }
     }
   }, [categorySpecificBrands, selectedOptions.brands, filtersData]);

@@ -4,7 +4,7 @@ import MainLayout from '@/modules/layout/MainLayout';
 import ProductGrid from '@/modules/products/ProductGrid';
 import FilterSidebar from '@/modules/filters/FilterSidebar';
 
-interface ProductCategoryProps {
+export interface ProductCategoryProps {
   gender: string;
 }
 

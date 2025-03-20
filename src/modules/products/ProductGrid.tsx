@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from './ProductCard';
 import ProductGridHeader from './components/ProductGridHeader';
 import ProductPagination from './components/ProductPagination';
 import { fetchProducts } from '@/utils/apiUtils';
 import { Product } from '@/types/api';
+import { toast } from 'sonner';
 
 interface ProductGridProps {
   gender?: string;
@@ -26,12 +27,25 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [sortBy, setSortBy] = useState<string>('featured');
   const pageSize = 8;
+  
+  // Use a ref to track active requests for cleanup
+  const pendingRequest = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    // Function to fetch products
     const loadProducts = async () => {
+      // If there's a pending request, cancel it
+      if (pendingRequest.current) {
+        pendingRequest.current.abort();
+      }
+      
+      // Create a new abort controller for this request
+      pendingRequest.current = new AbortController();
       setLoading(true);
+      
       try {
         const response = await fetchProducts({
           gender,
@@ -46,15 +60,31 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         
         setProducts(response.products);
         setTotalPages(response.pagination.totalPages);
+        setTotalCount(response.pagination.totalCount);
       } catch (err) {
-        console.error('Error loading products:', err);
-        setError('Failed to load products. Please try again later.');
+        // Only handle errors that aren't from aborting
+        if (err instanceof Error && err.name !== 'AbortError') {
+          console.error('Error loading products:', err);
+          setError('Failed to load products. Please try again later.');
+          toast.error('Failed to load products', {
+            description: 'Please try again later.',
+            duration: 3000
+          });
+        }
       } finally {
         setLoading(false);
+        pendingRequest.current = null;
       }
     };
 
     loadProducts();
+    
+    // Cleanup function to abort any pending requests when component unmounts
+    return () => {
+      if (pendingRequest.current) {
+        pendingRequest.current.abort();
+      }
+    };
   }, [gender, brand, category, isNewIn, isOnSale, currentPage, sortBy]);
 
   const handlePageChange = (page: number) => {
@@ -93,7 +123,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   return (
     <div className="space-y-4">
       <ProductGridHeader
-        totalProducts={products.length > 0 ? products.length * totalPages : 0}
+        totalProducts={totalCount}
         sortBy={sortBy}
         onSortChange={handleSortChange}
         loading={loading}
