@@ -65,14 +65,13 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
           {specifications && Object.keys(specifications).length > 0 && (
             <ProductSpecifications 
               caseMaterial={specifications.caseMaterial}
-              caseSize={typeof caseSize === 'number' ? caseSize : undefined}
+              caseSize={typeof caseSize === 'number' && !isNaN(caseSize) ? caseSize : undefined}
               dialColor={specifications.dialColor}
               movement={specifications.movement}
               waterResistance={specifications.waterResistance}
               strapMaterial={specifications.strapMaterial}
               strapColor={specifications.strapColor}
               brand={product.brand}
-              // Only pass gender if it exists in specifications
               gender={specifications.gender as string | undefined}
             />
           )}
