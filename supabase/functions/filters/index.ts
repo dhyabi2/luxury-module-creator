@@ -10,6 +10,7 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('[API:filters] Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -22,27 +23,40 @@ serve(async (req) => {
   const url = new URL(req.url);
   const category = url.searchParams.get('category') || '';
   
+  console.log('[API:filters] Request received from:', req.headers.get('origin') || 'unknown origin');
+  console.log('[API:filters] Request method:', req.method);
   console.log('[API:filters] Request parameters:', {
     category: category || 'not set'
   });
   
   try {
     // Fetch filters directly from Supabase
-    console.log('[API:filters] Fetching filters from Supabase');
+    console.log('[API:filters] Querying database for filters data');
     const { data, error } = await supabase.from('filters').select('data').eq('id', 1).single();
     
     if (error) {
-      console.error('Error fetching filters:', error);
+      console.error('[API:filters] Database error:', error);
+      console.error('[API:filters] Error details:', error.message);
       throw error;
     }
     
     console.log('[API:filters] Filters data retrieved successfully');
+    console.log('[API:filters] Filter data structure:', {
+      categories: Array.isArray(data.data.categories) ? data.data.categories.length : 0,
+      brands: Array.isArray(data.data.brands) ? data.data.brands.length : 0,
+      bands: Array.isArray(data.data.bands) ? data.data.bands.length : 0,
+      priceRange: data.data.priceRange ? `${data.data.priceRange.min}-${data.data.priceRange.max}` : 'not available'
+    });
     
     return new Response(JSON.stringify(data.data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Error in filters function:', error);
+    console.error('[API:filters] Error processing request:', error);
+    console.error('[API:filters] Error details:', error.message);
+    if (error.stack) {
+      console.error('[API:filters] Stack trace:', error.stack);
+    }
     
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,

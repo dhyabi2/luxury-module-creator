@@ -171,9 +171,9 @@ const ProductDetail = () => {
   
   // Get caseSize as a number if it exists
   const caseSize = specifications && specifications.caseSize ? 
-    typeof specifications.caseSize === 'string' ? 
+    (typeof specifications.caseSize === 'string' ? 
       parseFloat(specifications.caseSize) : 
-      specifications.caseSize as number 
+      specifications.caseSize) 
     : undefined;
   
   return (
