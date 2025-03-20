@@ -20,7 +20,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({
   brand,
   name,
   price,
-  currency = '$',
+  currency = 'OMR',
   discount,
   rating,
   reviews,
@@ -38,8 +38,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({
     ? numericPrice - (numericPrice * (discount / 100)) 
     : null;
   
-  const displayPrice = typeof price === 'string' ? price : `${currency}${numericPrice.toFixed(2)}`;
-  const displayDiscountedPrice = discountedPrice || (calculatedDiscountedPrice ? `${currency}${calculatedDiscountedPrice.toFixed(2)}` : null);
+  const displayPrice = typeof price === 'string' ? price : `${currency} ${numericPrice.toFixed(2)}`;
+  const displayDiscountedPrice = discountedPrice || (calculatedDiscountedPrice ? `${currency} ${calculatedDiscountedPrice.toFixed(2)}` : null);
   const displayDiscountPercentage = discountPercentage || (discount ? `${discount}% Off` : null);
   
   return (

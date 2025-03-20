@@ -9,7 +9,7 @@ import { Product } from '@/types/api';
 export const formatProductDetail = (product: Product | null) => {
   if (!product) {
     return {
-      formattedPrice: '$0.00',
+      formattedPrice: 'OMR 0.00',
       formattedDiscount: null,
       discountedPrice: null,
       formattedDiscountedPrice: null,
@@ -21,7 +21,7 @@ export const formatProductDetail = (product: Product | null) => {
   }
 
   // Format price
-  const formattedPrice = `$${product.price.toFixed(2)}`;
+  const formattedPrice = `OMR ${product.price.toFixed(2)}`;
   
   // Calculate discounted price if applicable
   let discountedPrice = null;
@@ -30,7 +30,7 @@ export const formatProductDetail = (product: Product | null) => {
   
   if (product.discount && product.discount > 0) {
     discountedPrice = product.price - (product.price * (product.discount / 100));
-    formattedDiscountedPrice = `$${discountedPrice.toFixed(2)}`;
+    formattedDiscountedPrice = `OMR ${discountedPrice.toFixed(2)}`;
     formattedDiscount = `${product.discount}% Off`;
   }
   

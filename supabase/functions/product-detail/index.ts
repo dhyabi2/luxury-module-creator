@@ -73,6 +73,9 @@ serve(async (req) => {
       product.image = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8';
     }
     
+    // Ensure currency is OMR
+    product.currency = 'OMR';
+    
     // Return the direct response with CORS headers
     return new Response(
       JSON.stringify(product),

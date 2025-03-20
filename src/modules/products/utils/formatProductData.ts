@@ -4,7 +4,7 @@ import { Product } from '@/types/api';
 export const formatProductData = (product: Product | null) => {
   if (!product) {
     return {
-      formattedPrice: '$0.00',
+      formattedPrice: 'OMR 0.00',
       formattedDiscount: null,
       discountedPrice: null,
       formattedDiscountedPrice: null,
@@ -16,7 +16,7 @@ export const formatProductData = (product: Product | null) => {
   }
   
   // Handle different currency formats
-  const currencySymbol = product.currency === 'OMR' ? 'OMR ' : '$';
+  const currencySymbol = 'OMR ';
   
   // Format price
   const formattedPrice = `${currencySymbol}${product.price.toFixed(2)}`;

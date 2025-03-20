@@ -58,7 +58,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
                 {item.name}
               </Link>
             </h3>
-            <p className="ml-4">${(item.price * item.quantity).toFixed(2)}</p>
+            <p className="ml-4">OMR {(item.price * item.quantity).toFixed(2)}</p>
           </div>
           <p className="mt-1 text-sm text-gray-500">{item.brand}</p>
         </div>

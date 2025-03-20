@@ -13,13 +13,13 @@ export const CartSummary: React.FC = () => {
       <div className="space-y-3">
         <div className="flex justify-between text-sm">
           <p className="text-gray-500">Subtotal</p>
-          <p className="font-medium">${cart.subtotal.toFixed(2)}</p>
+          <p className="font-medium">OMR {cart.subtotal.toFixed(2)}</p>
         </div>
         
         {cart.discount > 0 && (
           <div className="flex justify-between text-sm">
             <p className="text-gray-500">Discount</p>
-            <p className="font-medium text-red-500">-${cart.discount.toFixed(2)}</p>
+            <p className="font-medium text-red-500">-OMR {cart.discount.toFixed(2)}</p>
           </div>
         )}
         
@@ -30,12 +30,12 @@ export const CartSummary: React.FC = () => {
         
         <div className="flex justify-between text-sm">
           <p className="text-gray-500">Taxes (estimated)</p>
-          <p className="font-medium">${(cart.subtotal * 0.1).toFixed(2)}</p>
+          <p className="font-medium">OMR {(cart.subtotal * 0.1).toFixed(2)}</p>
         </div>
         
         <div className="border-t border-gray-200 pt-3 flex justify-between">
           <p className="text-base font-medium">Total</p>
-          <p className="text-base font-medium">${cart.total.toFixed(2)}</p>
+          <p className="text-base font-medium">OMR {cart.total.toFixed(2)}</p>
         </div>
       </div>
       
