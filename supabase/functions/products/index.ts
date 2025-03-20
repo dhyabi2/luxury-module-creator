@@ -6,9 +6,9 @@ import { applyAllFilters } from './filters.ts';
 import { applySorting, applyPagination } from './pagination.ts';
 
 serve(async (req) => {
-  // Handle CORS preflight requests with completely open policy
+  // Handle CORS preflight requests with completely unrestricted access
   if (req.method === 'OPTIONS') {
-    console.log('[API:products] Handling CORS preflight request with open policy');
+    console.log('[API:products] Handling CORS preflight request with completely unrestricted access');
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -31,15 +31,15 @@ serve(async (req) => {
     const pageSize = parseInt(params.pageSize || '8');
     const sortBy = params.sortBy || 'featured';
     
-    // Start building the query - no security checks or access validation
-    console.log('[API:products] Building query with unrestricted access');
+    // Start building the query - completely unrestricted, public access
+    console.log('[API:products] Building query with completely unrestricted public access');
     let query = supabase.from('products').select('*', { count: 'exact' });
     
     // Apply filters
     query = applyAllFilters(query, params);
     
     // Execute count query first
-    console.log('[API:products] Executing count query with public access');
+    console.log('[API:products] Executing count query with completely public access');
     const { count, error: countError } = await query;
     
     if (countError) {
@@ -56,7 +56,7 @@ serve(async (req) => {
     query = applyPagination(query, page, pageSize);
     
     // Execute the data query
-    console.log('[API:products] Executing data query with unrestricted access');
+    console.log('[API:products] Executing data query with completely unrestricted public access');
     const { data: products, error } = await query;
     
     if (error) {

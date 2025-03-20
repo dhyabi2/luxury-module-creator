@@ -54,15 +54,18 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         pageSize
       );
       
+      console.log('Fetching products with query params:', queryParams);
       const data = await fetchProducts(queryParams);
       
       if (data) {
+        console.log('Product data received:', data);
         setProducts(data.products);
         setTotalPages(data.pagination.totalPages);
         setTotalCount(data.pagination.totalCount);
         setCurrentPage(data.pagination.currentPage);
         setError(null);
       } else {
+        console.error('Failed to load products - no data returned');
         setError('Failed to load products');
       }
       

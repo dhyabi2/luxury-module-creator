@@ -1,10 +1,11 @@
 
-// CORS headers for all responses - open access with no restrictions
+// CORS headers for all responses - absolutely unrestricted access
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Methods': '*',
   'Access-Control-Allow-Headers': '*',
   'Access-Control-Max-Age': '86400',
+  'Access-Control-Allow-Credentials': 'true'
 };
 
 // Helper for creating standard responses

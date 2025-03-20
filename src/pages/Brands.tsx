@@ -3,6 +3,7 @@ import React from 'react';
 import MainLayout from '../modules/layout/MainLayout';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import ProductGrid from '../modules/products/ProductGrid';
 
 // Brand logo/image interface
 interface Brand {
@@ -14,6 +15,7 @@ interface Brand {
 const Brands = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   
   useEffect(() => {
     // Fetch brands data
@@ -43,6 +45,15 @@ const Brands = () => {
     
     fetchBrands();
   }, []);
+
+  // Extract brand from URL if present
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const brandParam = urlParams.get('brand');
+    if (brandParam) {
+      setSelectedBrand(brandParam);
+    }
+  }, []);
   
   return (
     <MainLayout>
@@ -63,13 +74,29 @@ const Brands = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
             {brands.map(brand => (
               <Link 
-                to={`/brands/${brand.id}`} 
+                to={`/brands?brand=${brand.id}`} 
                 key={brand.id}
-                className="border border-gray-200 hover:border-gray-400 transition-colors rounded-md p-4 flex items-center justify-center h-32"
+                className={`border hover:border-gray-400 transition-colors rounded-md p-4 flex items-center justify-center h-32 ${selectedBrand === brand.id ? 'border-black border-2' : 'border-gray-200'}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedBrand(brand.id);
+                  // Update URL without page reload
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('brand', brand.id);
+                  window.history.pushState({}, '', url);
+                }}
               >
                 <img src={brand.logo} alt={brand.name} className="max-w-full max-h-full" />
               </Link>
             ))}
+          </div>
+        )}
+        
+        {/* Show products for selected brand */}
+        {selectedBrand && (
+          <div className="mt-12">
+            <h2 className="text-xl sm:text-2xl mb-6">{brands.find(b => b.id === selectedBrand)?.name || 'Brand'} Products</h2>
+            <ProductGrid brand={selectedBrand} pageSize={8} />
           </div>
         )}
       </div>
