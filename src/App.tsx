@@ -31,7 +31,6 @@ function App() {
       <ThemeProvider>
         <CartProvider>
           <Routes>
-            {/* Existing routes */}
             <Route path="/" element={<MainLayout><Outlet /></MainLayout>}>
               <Route index element={<IndexPage />} />
               <Route path="watches" element={<WatchesPage />} />
@@ -53,7 +52,6 @@ function App() {
               <Route path="store-locator" element={<StoreLocatorPage />} />
             </Route>
 
-            {/* Admin Routes - New Addition */}
             <Route path="/admin/*" element={<AdminRoutes />} />
             
             <Route path="*" element={<NotFoundPage />} />
