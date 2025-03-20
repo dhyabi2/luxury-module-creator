@@ -1,4 +1,23 @@
 
 project_id = "kkdldvrceqdcgclnvixt"
+
 [api]
-enabled_apis = ["rest", "realtime", "storage", "graphql"]
+port = 54321
+# No longer using enabled_apis as it's not supported
+
+[db]
+port = 54322
+
+[studio]
+port = 54323
+
+[inbucket]
+port = 54324
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+auto_confirm_new_users = true
+
+[storage]
+file_size_limit = "50MiB"
