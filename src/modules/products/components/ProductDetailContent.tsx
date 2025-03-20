@@ -30,12 +30,15 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   // Extract specifications for display
   const specifications = formattedProduct.specifications;
   
-  // Parse caseSize as a number if it exists
-  const caseSize = specifications && specifications.caseSize ? 
-    (typeof specifications.caseSize === 'string' ? 
-      parseFloat(specifications.caseSize) : 
-      specifications.caseSize) 
-    : undefined;
+  // Convert caseSize from string to number if it exists
+  let caseSizeNumber: number | undefined = undefined;
+  
+  if (specifications && specifications.caseSize) {
+    const parsedSize = parseFloat(specifications.caseSize.toString());
+    if (!isNaN(parsedSize)) {
+      caseSizeNumber = parsedSize;
+    }
+  }
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -65,7 +68,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
           {specifications && Object.keys(specifications).length > 0 && (
             <ProductSpecifications 
               caseMaterial={specifications.caseMaterial}
-              caseSize={typeof caseSize === 'number' && !isNaN(caseSize) ? caseSize : undefined}
+              caseSize={caseSizeNumber}
               dialColor={specifications.dialColor}
               movement={specifications.movement}
               waterResistance={specifications.waterResistance}
