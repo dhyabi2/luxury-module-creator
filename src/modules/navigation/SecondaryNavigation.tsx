@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface SecondaryCategory {
   id: string;
@@ -12,7 +12,6 @@ const SecondaryNavigation = () => {
   const [categories, setCategories] = useState<SecondaryCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
-  const navigate = useNavigate();
   
   // Determine which category is active based on current path
   const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -25,15 +24,15 @@ const SecondaryNavigation = () => {
       console.log('Fetching secondary navigation data');
       
       // Direct API call to the navigation edge function
-      const response = await fetch("https://kkdldvrceqdcgclnvixt.supabase.co/functions/navigation", {
+      const response = await fetch("https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/navigation", {
         headers: {
-          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo"
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo"
         }
       });
       
       if (!response.ok) {
         console.log('Error fetching navigation data:', response.status, response.statusText);
-        // Let the error be thrown and bubble up
         throw new Error(`Failed to fetch navigation data: ${response.statusText}`);
       }
       
@@ -41,13 +40,7 @@ const SecondaryNavigation = () => {
       
       console.log('Secondary navigation data received:', data);
       
-      // Filter out any categories that are not part of the main content
-      const indexPageCategories = data.secondaryCategories.filter((category: SecondaryCategory) => {
-        return ['sale', 'new-in', 'brands', 'watches', 'jewellery', 
-                'accessories', 'bags', 'perfumes', 'store-locator'].includes(category.id);
-      });
-      
-      setCategories(indexPageCategories);
+      setCategories(data.secondaryCategories || []);
     } catch (error) {
       console.log('Error fetching secondary navigation data:', error);
       // Let the error bubble up
@@ -70,15 +63,10 @@ const SecondaryNavigation = () => {
       'accessories': '/accessories',
       'bags': '/bags',
       'perfumes': '/perfumes',
-      'store-locator': '/store-locator'
+      'stores': '/stores'
     };
     
     return routeMap[categoryId] || '/';
-  };
-
-  const handleCategoryClick = (categoryId: string, event: React.MouseEvent<HTMLAnchorElement>) => {
-    // Allow normal navigation to occur as well
-    console.log(`Navigation: Category ${categoryId} clicked`);
   };
 
   // Helper function to check if current path is related to the category
@@ -105,7 +93,6 @@ const SecondaryNavigation = () => {
                 className={`category-item whitespace-nowrap tracking-wider ${
                   category.highlight ? 'bg-black text-white px-4 py-1.5 rounded-sm' : ''
                 } ${isCategoryActive(category.id) ? 'font-medium underline' : ''}`}
-                onClick={(e) => handleCategoryClick(category.id, e)}
               >
                 {category.name}
               </Link>

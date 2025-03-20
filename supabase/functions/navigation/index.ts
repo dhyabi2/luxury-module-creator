@@ -24,23 +24,32 @@ serve(async (req) => {
   console.log('[API:navigation] Request method:', req.method);
   
   try {
-    // Fetch navigation data from the database
-    console.log('[API:navigation] Querying database for navigation data');
-    const { data, error } = await supabase
-      .from('navigation')
-      .select('data')
-      .eq('type', 'main')
-      .single();
+    // For demo purposes, we'll return hardcoded navigation data
+    // In a real implementation, this would come from the database
+    console.log('[API:navigation] Returning hardcoded navigation data');
     
-    if (error) {
-      console.error('[API:navigation] Database error:', error);
-      throw error;
-    }
-    
-    console.log('[API:navigation] Navigation data retrieved successfully');
+    const navigationData = {
+      mainCategories: [
+        { id: 'women', name: 'WOMEN', active: true },
+        { id: 'men', name: 'MEN', active: false },
+        { id: 'new-in', name: 'NEW IN', active: false },
+        { id: 'sale', name: 'SALE', active: false }
+      ],
+      secondaryCategories: [
+        { id: 'new-in', name: 'NEW IN' },
+        { id: 'sale', name: 'SALE' },
+        { id: 'brands', name: 'BRANDS' },
+        { id: 'watches', name: 'WATCHES' },
+        { id: 'jewellery', name: 'JEWELLERY' },
+        { id: 'accessories', name: 'ACCESSORIES' },
+        { id: 'bags', name: 'BAGS' },
+        { id: 'perfumes', name: 'PERFUMES' },
+        { id: 'stores', name: 'STORE LOCATOR', highlight: true }
+      ]
+    };
     
     // Return the response
-    return new Response(JSON.stringify(data.data), {
+    return new Response(JSON.stringify(navigationData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
