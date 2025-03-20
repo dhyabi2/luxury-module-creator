@@ -36,21 +36,18 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   if (specifications && specifications.caseSize) {
     // Make sure we convert the value to a number
     const caseSizeValue = specifications.caseSize;
-    let parsedSize: number | undefined = undefined;
     
     if (typeof caseSizeValue === 'string') {
       // Extract numeric values from the string using regex
-      const numericMatch = caseSizeValue.match(/[-+]?[0-9]*\.?[0-9]+/);
-      if (numericMatch) {
-        parsedSize = parseFloat(numericMatch[0]);
+      const numericMatch = caseSizeValue.match(/(\d+(\.\d+)?)/);
+      if (numericMatch && numericMatch[0]) {
+        const parsedValue = parseFloat(numericMatch[0]);
+        if (!isNaN(parsedValue)) {
+          caseSizeNumber = parsedValue;
+        }
       }
     } else if (typeof caseSizeValue === 'number') {
-      parsedSize = caseSizeValue;
-    }
-    
-    // Only assign if it's a valid number
-    if (parsedSize !== undefined && !isNaN(parsedSize)) {
-      caseSizeNumber = parsedSize;
+      caseSizeNumber = caseSizeValue;
     }
   }
   
