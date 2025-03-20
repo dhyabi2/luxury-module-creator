@@ -1,60 +1,66 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from './components/ThemeProvider';
+import { CartProvider } from './modules/cart/CartContext';
+import MainLayout from './layouts/MainLayout';
+import IndexPage from './pages/IndexPage';
+import WatchesPage from './pages/WatchesPage';
+import JewelleryPage from './pages/JewelleryPage';
+import BagsPage from './pages/BagsPage';
+import AccessoriesPage from './pages/AccessoriesPage';
+import PerfumesPage from './pages/PerfumesPage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import ProductCategoryPage from './pages/ProductCategoryPage';
+import NewInPage from './pages/NewInPage';
+import BrandsPage from './pages/BrandsPage';
+import SalePage from './pages/SalePage';
+import AboutUsPage from './pages/AboutUsPage';
+import ContactUsPage from './pages/ContactUsPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsConditionsPage from './pages/TermsConditionsPage';
+import ReturnsPage from './pages/ReturnsPage';
+import ShippingDeliveryPage from './pages/ShippingDeliveryPage';
+import StoreLocatorPage from './pages/StoreLocatorPage';
+import NotFoundPage from './pages/NotFoundPage';
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Index from './pages/Index';
-import ProductDetail from './pages/ProductDetail';
-import ProductCategory from './pages/ProductCategory';
-import Brands from './pages/Brands';
-import NewIn from './pages/NewIn';
-import Sale from './pages/Sale';
-import StoreLocator from './pages/StoreLocator';
-import NotFound from './pages/NotFound';
-import Watches from './pages/Watches';
-import Jewellery from './pages/Jewellery';
-import Accessories from './pages/Accessories';
-import Bags from './pages/Bags';
-import Perfumes from './pages/Perfumes';
-import AboutUs from './pages/AboutUs';
-import ContactUs from './pages/ContactUs';
-import TermsConditions from './pages/TermsConditions';
-import Returns from './pages/Returns';
-import ShippingDelivery from './pages/ShippingDelivery';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import { CartProvider } from './contexts/CartContext';
-import { CartDrawer } from './modules/cart/components/CartDrawer';
-import { Toaster } from 'sonner';
-
-import './App.css';
+import AdminRoutes from './modules/admin/AdminRoutes';
 
 function App() {
   return (
-    <Router>
-      <CartProvider>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/product/:productId" element={<ProductDetail />} />
-          <Route path="/women" element={<ProductCategory gender="women" />} />
-          <Route path="/men" element={<ProductCategory gender="men" />} />
-          <Route path="/brands/:brandId?" element={<Brands />} />
-          <Route path="/new-in" element={<NewIn />} />
-          <Route path="/sale" element={<Sale />} />
-          <Route path="/stores" element={<StoreLocator />} />
-          <Route path="/watches" element={<Watches />} />
-          <Route path="/jewellery" element={<Jewellery />} />
-          <Route path="/accessories" element={<Accessories />} />
-          <Route path="/bags" element={<Bags />} />
-          <Route path="/perfumes" element={<Perfumes />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/terms" element={<TermsConditions />} />
-          <Route path="/returns" element={<Returns />} />
-          <Route path="/shipping" element={<ShippingDelivery />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <CartDrawer />
-        <Toaster position="top-right" richColors />
-      </CartProvider>
-    </Router>
+    <BrowserRouter>
+      <ThemeProvider>
+        <CartProvider>
+          <Routes>
+            {/* Existing routes */}
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<IndexPage />} />
+              <Route path="watches" element={<WatchesPage />} />
+              <Route path="jewellery" element={<JewelleryPage />} />
+              <Route path="bags" element={<BagsPage />} />
+              <Route path="accessories" element={<AccessoriesPage />} />
+              <Route path="perfumes" element={<PerfumesPage />} />
+              <Route path="product/:productId" element={<ProductDetailPage />} />
+              <Route path="category/:categoryId" element={<ProductCategoryPage />} />
+              <Route path="new-in" element={<NewInPage />} />
+              <Route path="brands" element={<BrandsPage />} />
+              <Route path="sale" element={<SalePage />} />
+              <Route path="about-us" element={<AboutUsPage />} />
+              <Route path="contact-us" element={<ContactUsPage />} />
+              <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="terms-conditions" element={<TermsConditionsPage />} />
+              <Route path="returns" element={<ReturnsPage />} />
+              <Route path="shipping-delivery" element={<ShippingDeliveryPage />} />
+              <Route path="store-locator" element={<StoreLocatorPage />} />
+            </Route>
+
+            {/* Admin Routes - New Addition */}
+            <Route path="/admin/*" element={<AdminRoutes />} />
+            
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </CartProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
 

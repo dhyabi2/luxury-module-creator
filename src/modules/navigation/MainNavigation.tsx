@@ -1,107 +1,93 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
-interface MainCategory {
-  id: string;
-  name: string;
-  active: boolean;
-}
+import { ShieldCheck } from 'lucide-react';
+import { fetchNavigationData } from '@/utils/apiUtils';
+import { NavigationResponse, MainCategory } from '@/types/api';
+import { Button } from '@/components/ui/button';
+import { Search, Menu, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/modules/cart/CartContext';
 
 const MainNavigation = () => {
-  const [categories, setCategories] = useState<MainCategory[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('women');
-  const [isLoading, setIsLoading] = useState(true);
+  const [navigationData, setNavigationData] = useState<NavigationResponse | null>(null);
+  const [mainCategories, setMainCategories] = useState<MainCategory[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { cartItems } = useCart();
   
-  // Fetch navigation data directly from the API
   useEffect(() => {
-    const getNavigationData = async () => {
-      setIsLoading(true);
-      
+    const loadNavigationData = async () => {
       try {
-        console.log('Fetching navigation data');
-        
-        // Direct API call to the navigation edge function
-        const response = await fetch("https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/navigation", {
-          headers: {
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo",
-            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo"
-          }
-        });
-        
-        if (!response.ok) {
-          console.log('Error fetching navigation data:', response.status, response.statusText);
-          throw new Error(`Failed to fetch navigation data: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        console.log('Navigation data received:', data);
-        
-        // Update state with fetched data
-        setCategories(data.mainCategories || []);
-        
-        // Set active category based on data
-        const activeFromData = data.mainCategories.find((cat: MainCategory) => cat.active);
-        if (activeFromData) {
-          setActiveCategory(activeFromData.id);
-        }
+        const data = await fetchNavigationData();
+        setNavigationData(data);
+        setMainCategories(data.mainCategories || []);
       } catch (error) {
-        console.error('Error fetching navigation data:', error);
-        // If there's an error, use a default set of categories
-        setCategories([
-          { id: 'women', name: 'WOMEN', active: true },
-          { id: 'men', name: 'MEN', active: false },
-          { id: 'new-in', name: 'NEW IN', active: false },
-          { id: 'sale', name: 'SALE', active: false }
-        ]);
-      } finally {
-        setIsLoading(false);
+        console.error('Failed to load navigation data:', error);
       }
     };
     
-    getNavigationData();
+    loadNavigationData();
   }, []);
 
   return (
-    <nav className="bg-brand text-white border-t border-brand-light">
-      <div className="container mx-auto px-4 md:px-8">
-        {isLoading ? (
-          // Loading skeleton
-          <div className="flex justify-center py-3 space-x-12">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse h-6 w-20 bg-white/20 rounded"></div>
+    <div className="flex-1 flex items-center justify-between md:px-2">
+      <div className="flex items-center space-x-2 md:space-x-6">
+        <div className="font-medium text-base flex items-center">
+          {/* Keep existing logo and brand */}
+          <Link to="/" className="hidden md:flex items-center">
+            <img src="/logo.svg" alt="Brand Logo" className="h-6 w-auto mr-2" />
+            <span className="text-lg font-bold text-primary mr-6">Luxury Watches</span>
+          </Link>
+          
+          {/* Main navigation links */}
+          <nav className="flex items-center space-x-2 md:space-x-4">
+            {/* Existing navigation links will remain here */}
+            {mainCategories.map(category => (
+              <Link
+                key={category.id}
+                to={`/${category.id}`}
+                className={`py-2 px-3 text-sm font-medium rounded-md ${
+                  category.active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+              >
+                {category.name}
+              </Link>
             ))}
-          </div>
-        ) : (
-          <ul className="flex justify-center space-x-12">
-            {categories.map((category) => {
-              // Map category IDs to appropriate routes
-              let routePath = '/';
-              if (category.id === 'women' || category.id === 'men') {
-                routePath = `/${category.id}`;
-              } else if (category.id === 'new-in') {
-                routePath = '/new-in';
-              } else if (category.id === 'sale') {
-                routePath = '/sale';
-              }
-              
-              return (
-                <li key={category.id}>
-                  <Link 
-                    to={routePath}
-                    className={`nav-item py-3 px-6 font-display tracking-widest text-sm inline-block ${activeCategory === category.id ? 'nav-item-active bg-brand-dark' : 'hover:bg-brand-dark'}`}
-                    onClick={() => setActiveCategory(category.id)}
-                  >
-                    {category.name}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+            
+            {/* Admin link - new addition */}
+            <Link 
+              to="/admin" 
+              className="py-2 px-3 text-sm font-medium rounded-md hover:bg-accent flex items-center gap-1"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span>Admin</span>
+            </Link>
+          </nav>
+        </div>
       </div>
-    </nav>
+      
+      <div className="flex items-center space-x-2">
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+        
+        <Button variant="ghost" size="icon">
+          <Search className="h-5 w-5" />
+          <span className="sr-only">Search</span>
+        </Button>
+        
+        <Link to="/cart" className="relative">
+          <Button variant="ghost" size="icon">
+            <ShoppingCart className="h-5 w-5" />
+            <span className="sr-only">Cart</span>
+          </Button>
+          {cartItems.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+              {cartItems.length}
+            </span>
+          )}
+        </Link>
+      </div>
+    </div>
   );
 };
 
