@@ -40,31 +40,34 @@ serve(async (req) => {
     
     // Brand filter
     if (params.brand) {
-      const brands = params.brand.split(',').map((b: string) => b.trim());
+      const brands = params.brand.split(',').map((b) => b.trim());
       console.log(`[API:products] Filtering by brands: ${brands.join(', ')}`);
       query = query.in('brand', brands);
     }
     
     // Category filter
     if (params.category) {
-      const categories = params.category.split(',').map((c: string) => c.trim());
+      const categories = params.category.split(',').map((c) => c.trim());
       console.log(`[API:products] Filtering by categories: ${categories.join(', ')}`);
-      
-      // For exact matches use in operator
       query = query.in('category', categories);
     }
     
     // Gender filter
     if (params.gender) {
-      const genders = params.gender.split(',').map((g: string) => g.trim());
+      const genders = params.gender.split(',').map((g) => g.trim());
       console.log(`[API:products] Filtering by genders: ${genders.join(', ')}`);
       
-      // Build OR conditions for each gender
-      if (genders.length > 1) {
-        const orConditions = genders.map(g => `specifications->gender.eq.${g}`).join(',');
-        query = query.or(orConditions);
-      } else {
-        query = query.eq('specifications->gender', genders[0]);
+      // FIX: Using contains for JSON data instead of eq
+      if (genders.length > 0) {
+        // Use contains which is safer for JSON fields
+        query = query.contains('specifications', { gender: genders[0] });
+        
+        // For multiple genders, use OR conditions
+        if (genders.length > 1) {
+          for (let i = 1; i < genders.length; i++) {
+            query = query.or(`specifications->gender.eq.${genders[i]}`);
+          }
+        }
       }
     }
     
@@ -79,55 +82,69 @@ serve(async (req) => {
     if (params.minCaseSize && params.maxCaseSize) {
       console.log(`[API:products] Filtering by case size: ${params.minCaseSize}mm - ${params.maxCaseSize}mm`);
       
-      // Filter for case size within specifications
-      query = query.gte('specifications->caseSize', `${params.minCaseSize}mm`)
-               .lte('specifications->caseSize', `${params.maxCaseSize}mm`);
+      // FIX: Use more lenient filtering for case size - just check if it contains the mm values
+      const minSize = parseInt(params.minCaseSize);
+      const maxSize = parseInt(params.maxCaseSize);
+      
+      // Use a range-based approach rather than exact matching
+      for (let size = minSize; size <= maxSize; size++) {
+        query = query.or(`specifications->caseSize.like.%${size}mm%`);
+      }
     }
     
     // Band material filter
     if (params.band) {
-      const bands = params.band.split(',').map((b: string) => b.trim());
+      const bands = params.band.split(',').map((b) => b.trim());
       console.log(`[API:products] Filtering by band materials: ${bands.join(', ')}`);
       
-      // For the first band, use contains
-      const firstBand = bands[0];
-      query = query.contains('specifications', { strapMaterial: firstBand });
-      
-      // For additional bands, use or conditions
-      if (bands.length > 1) {
-        const orConditions = bands.slice(1).map(b => `specifications->strapMaterial.eq.${b}`).join(',');
-        query = query.or(orConditions);
+      // FIX: Use contains operator for JSON fields
+      if (bands.length > 0) {
+        // Use contains which is safer for JSON fields
+        query = query.contains('specifications', { strapMaterial: bands[0] });
+        
+        // For additional bands, use OR conditions with contains
+        if (bands.length > 1) {
+          for (let i = 1; i < bands.length; i++) {
+            query = query.or(`specifications->strapMaterial.eq.${bands[i]}`);
+          }
+        }
       }
     }
     
     // Case color filter
     if (params.caseColor) {
-      const caseColors = params.caseColor.split(',').map((c: string) => c.trim());
+      const caseColors = params.caseColor.split(',').map((c) => c.trim());
       console.log(`[API:products] Filtering by case colors: ${caseColors.join(', ')}`);
       
-      // For the first case color, use contains
-      const firstCaseColor = caseColors[0];
-      query = query.contains('specifications', { caseMaterial: firstCaseColor });
-      
-      // For additional case colors, use or conditions
-      if (caseColors.length > 1) {
-        const orConditions = caseColors.slice(1).map(c => `specifications->caseMaterial.eq.${c}`).join(',');
-        query = query.or(orConditions);
+      // FIX: Use contains operator for JSON fields
+      if (caseColors.length > 0) {
+        // Use contains which is safer for JSON fields
+        query = query.contains('specifications', { caseMaterial: caseColors[0] });
+        
+        // For additional case colors, use OR conditions with contains
+        if (caseColors.length > 1) {
+          for (let i = 1; i < caseColors.length; i++) {
+            query = query.or(`specifications->caseMaterial.eq.${caseColors[i]}`);
+          }
+        }
       }
     }
     
     // Dial/strap color filter
     if (params.color) {
-      const colors = params.color.split(',').map((c: string) => c.trim());
+      const colors = params.color.split(',').map((c) => c.trim());
       console.log(`[API:products] Filtering by colors: ${colors.join(', ')}`);
       
-      // Build OR conditions for dial color or strap color
-      const orConditions = colors.flatMap(c => [
-        `specifications->dialColor.eq.${c}`,
-        `specifications->strapColor.eq.${c}`
-      ]).join(',');
-      
-      query = query.or(orConditions);
+      // FIX: Use more reliable OR conditions for JSON fields
+      if (colors.length > 0) {
+        // Start with first color
+        query = query.or(`specifications->dialColor.eq.${colors[0]},specifications->strapColor.eq.${colors[0]}`);
+        
+        // Add OR conditions for additional colors
+        for (let i = 1; i < colors.length; i++) {
+          query = query.or(`specifications->dialColor.eq.${colors[i]},specifications->strapColor.eq.${colors[i]}`);
+        }
+      }
     }
     
     // New arrivals filter
