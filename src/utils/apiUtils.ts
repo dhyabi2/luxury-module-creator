@@ -1,7 +1,9 @@
 
 // Helper function for making API calls
 const callApi = async (endpoint: string, params?: Record<string, any>): Promise<any> => {
-  let url = `${window.location.origin}/${endpoint}`;
+  // Use the Supabase URL directly instead of window.location.origin
+  const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
+  let url = `${SUPABASE_URL}/functions/${endpoint}`;
   
   if (params) {
     const queryParams = new URLSearchParams();
@@ -31,25 +33,25 @@ const callApi = async (endpoint: string, params?: Record<string, any>): Promise<
   return data;
 };
 
-// API functions for direct calls
+// API functions for direct calls to edge functions
 export const fetchProducts = async (params: Record<string, any> = {}): Promise<any> => {
   console.log("Fetching products with params:", params);
-  return callApi('api/products', params);
+  return callApi('products', params);
 };
 
 export const fetchProductById = async (productId: string): Promise<any> => {
   console.log("Fetching product with ID:", productId);
-  return callApi(`api/product-detail/${productId}`);
+  return callApi(`product-detail/${productId}`);
 };
 
 export const fetchFilters = async (): Promise<any> => {
   console.log("Fetching filters");
-  return callApi('api/filters');
+  return callApi('filters');
 };
 
 export const fetchNavigation = async () => {
   console.log("Fetching navigation");
-  return callApi('api/navigation');
+  return callApi('navigation');
 };
 
 // Backward compatibility aliases
