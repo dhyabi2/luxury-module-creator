@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MainLayout from '../modules/layout/MainLayout';
 import { useCart } from '@/modules/cart/context/CartContext';
@@ -8,17 +8,83 @@ import ProductDetailImage from '@/modules/products/components/ProductDetailImage
 import ProductSpecifications from '@/modules/products/components/ProductSpecifications';
 import QuantitySelector from '@/modules/products/components/QuantitySelector';
 import ProductActions from '@/modules/products/components/ProductActions';
-import { useProductDetail } from '@/modules/products/hooks/useProductDetail';
+import { toast } from '@/components/ui/use-toast';
+
+interface ProductDetailData {
+  id: string;
+  name: string;
+  brand: string;
+  price: number;
+  originalPrice?: number;
+  onSale?: boolean;
+  image: string;
+  description?: string;
+  category?: string;
+  gender?: string;
+  caseSize?: number;
+}
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
-  const { product, loading, error } = useProductDetail(productId);
+  const [product, setProduct] = useState<ProductDetailData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [imageError, setImageError] = useState(false);
   const { addItem } = useCart();
 
   // Fallback image if the product image fails to load
   const fallbackImage = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=600&h=600&fit=crop&auto=format';
+
+  // Direct API call without custom hooks
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!productId) {
+        setError('Product ID is required');
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      
+      try {
+        console.log(`Fetching product with ID: ${productId}`);
+        const response = await fetch(`/api/products/${productId}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Error fetching product (${response.status}): ${errorText.substring(0, 150)}...`);
+          throw new Error('Product not found');
+        }
+        
+        const data = await response.json();
+        
+        // Map API response to component state
+        const productData: ProductDetailData = {
+          id: data.product.id,
+          name: data.product.name,
+          brand: data.product.brand,
+          price: Number(data.product.price),
+          image: data.product.image,
+          description: data.product.description,
+          category: data.product.category,
+          gender: data.product.specifications?.gender,
+          caseSize: data.product.specifications?.caseSize,
+          onSale: data.product.discount > 0,
+          originalPrice: data.product.discount ? Number(data.product.price) * (100 / (100 - data.product.discount)) : undefined
+        };
+        
+        setProduct(productData);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        setError('Failed to load product details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [productId]);
 
   const incrementQuantity = () => {
     setQuantity(prev => prev + 1);
@@ -32,17 +98,24 @@ const ProductDetail = () => {
     if (product) {
       // Format product to match the expected type
       const formattedProduct = {
-        id: product.id || productId || '',  // Use product.id first, fallback to route param
+        id: product.id,
         name: product.name,
         price: product.price,
-        image: imageError ? fallbackImage : product.imageUrl,
+        image: product.image || fallbackImage,
         brand: product.brand,
         currency: '$',
         category: product.category || '',
-        discount: product.onSale ? Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100) : undefined
+        discount: product.onSale && product.originalPrice 
+          ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
+          : undefined
       };
       
       addItem(formattedProduct, quantity);
+      
+      toast({
+        title: "Added to cart",
+        description: `${product.name} x${quantity} added to your cart`,
+      });
     }
   };
 
@@ -76,7 +149,7 @@ const ProductDetail = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Product Image */}
             <ProductDetailImage 
-              imageUrl={product.imageUrl} 
+              imageUrl={product.image} 
               productName={product.name} 
             />
             

@@ -1,6 +1,6 @@
 
 // Edge API for filters data
-import { filtersDb } from '../lib/db';
+import { supabase } from '../integrations/supabase/client';
 import { FiltersResponse } from '../types/api';
 
 // Edge function handler
@@ -15,14 +15,19 @@ export default async (req: Request) => {
     category: category || 'not set'
   });
   
-  console.log('[API:filters] Calling filtersDb.getAll');
-  // Query the database - let errors propagate naturally
-  const responseData = await filtersDb.getAll();
+  // Fetch filters directly from Supabase
+  console.log('[API:filters] Fetching filters from Supabase');
+  const { data, error } = await supabase.from('filters').select('data').eq('id', 1).single();
+  
+  if (error) {
+    console.error('Error fetching filters:', error);
+    throw error;
+  }
   
   console.log('[API:filters] Filters data retrieved successfully');
   
   // Make sure we're dealing with the right type of data
-  const filtersData: FiltersResponse = responseData as unknown as FiltersResponse;
+  const filtersData: FiltersResponse = data.data as unknown as FiltersResponse;
     
   // Log response data details for debugging
   console.log('[API:filters] Response data summary:', {

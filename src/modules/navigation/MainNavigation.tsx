@@ -14,36 +14,39 @@ const MainNavigation = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   // Fetch navigation data directly from the API
-  const fetchNavigationData = async () => {
-    setIsLoading(true);
-    
-    try {
-      console.log('Fetching navigation data');
-      
-      // Direct API call without hooks or middleware
-      const response = await fetch('/api/navigation');
-      const data = await response.json();
-      
-      console.log('Navigation data received:', data);
-      
-      // Update state with fetched data
-      setCategories(data.mainCategories);
-      
-      // Set active category based on data
-      const activeFromData = data.mainCategories.find((cat: MainCategory) => cat.active);
-      if (activeFromData) {
-        setActiveCategory(activeFromData.id);
-      }
-    } catch (error) {
-      // No error handling as per requirements - errors will throw themselves
-      console.log('Error fetching navigation data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Fetch navigation data when component mounts
   useEffect(() => {
+    const fetchNavigationData = async () => {
+      setIsLoading(true);
+      
+      try {
+        console.log('Fetching navigation data');
+        
+        // Direct API call without hooks
+        const response = await fetch('/api/navigation');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch navigation data: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        console.log('Navigation data received:', data);
+        
+        // Update state with fetched data
+        setCategories(data.mainCategories || []);
+        
+        // Set active category based on data
+        const activeFromData = data.mainCategories.find((cat: MainCategory) => cat.active);
+        if (activeFromData) {
+          setActiveCategory(activeFromData.id);
+        }
+      } catch (error) {
+        console.error('Error fetching navigation data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
     fetchNavigationData();
   }, []);
 

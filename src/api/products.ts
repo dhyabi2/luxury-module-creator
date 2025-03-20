@@ -1,7 +1,6 @@
 
 // Edge API for products data
-// Now uses Supabase database instead of in-memory data
-import { productsDb } from '../lib/db';
+import { supabase } from '../integrations/supabase/client';
 
 // Edge function handler
 export default async (req: Request) => {
@@ -39,29 +38,90 @@ export default async (req: Request) => {
     color: color || 'not set'
   });
   
-  // Query the database - let errors propagate naturally
-  const result = await productsDb.getAll(
-    { 
-      brand, 
-      category,
-      gender,
-      minPrice,
-      maxPrice,
-      minCaseSize,
-      maxCaseSize,
-      band,
-      caseColor,
-      color
-    },
-    { page, pageSize },
-    { sortBy }
-  );
+  // Build the query
+  let query = supabase.from('products').select('*', { count: 'exact' });
   
-  console.log(`[API:products] Database returned ${result.products.length} products (page ${result.pagination.currentPage}/${result.pagination.totalPages})`);
+  // Apply filters
+  if (brand) {
+    query = query.eq('brand', brand);
+  }
+  
+  if (category) {
+    query = query.eq('category', category);
+  }
+  
+  if (gender && gender !== 'all') {
+    query = query.eq('gender', gender);
+  }
+  
+  if (minPrice !== undefined && maxPrice !== undefined) {
+    query = query.gte('price', minPrice).lte('price', maxPrice);
+  }
+  
+  // Apply watch-specific filters if available
+  if (band) {
+    query = query.eq('band', band);
+  }
+  
+  if (caseColor) {
+    query = query.eq('case_color', caseColor);
+  }
+  
+  if (color) {
+    query = query.eq('color', color);
+  }
+  
+  if (minCaseSize !== undefined && maxCaseSize !== undefined) {
+    query = query.gte('case_size', minCaseSize).lte('case_size', maxCaseSize);
+  }
+  
+  // Apply sorting
+  switch (sortBy) {
+    case 'price-asc':
+      query = query.order('price', { ascending: true });
+      break;
+    case 'price-desc':
+      query = query.order('price', { ascending: false });
+      break;
+    case 'newest':
+      query = query.order('created_at', { ascending: false });
+      break;
+    case 'rating':
+      query = query.order('rating', { ascending: false });
+      break;
+    default: // 'featured'
+      query = query.order('rating', { ascending: false });
+      break;
+  }
+  
+  // Apply pagination
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  query = query.range(from, to);
+  
+  // Execute the query
+  const { data: products, count, error } = await query;
+  
+  if (error) {
+    console.error('Error fetching products:', error);
+    throw error;
+  }
+  
+  const totalPages = count ? Math.ceil(count / pageSize) : 0;
+  
+  console.log(`[API:products] Database returned ${products?.length || 0} products (page ${page}/${totalPages})`);
   
   // Return the response
   return new Response(
-    JSON.stringify(result),
+    JSON.stringify({
+      products: products || [],
+      pagination: {
+        currentPage: page,
+        pageSize,
+        totalPages,
+        totalCount: count || 0
+      }
+    }),
     {
       headers: {
         'Content-Type': 'application/json',
