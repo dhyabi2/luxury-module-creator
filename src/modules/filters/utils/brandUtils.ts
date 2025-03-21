@@ -29,7 +29,7 @@ export function getCombinedBrands(categoryBrands: CategoryBrands | undefined, ca
     });
   });
   
-  return Array.from(uniqueBrands.values());
+  return Array.from(uniqueBrands.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**

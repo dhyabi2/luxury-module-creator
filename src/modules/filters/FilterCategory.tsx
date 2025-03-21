@@ -25,6 +25,13 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
   const [minValue, setMinValue] = useState(currentMin ?? rangeMin);
   const [maxValue, setMaxValue] = useState(currentMax ?? rangeMax);
   
+  // Log the options to debug
+  useEffect(() => {
+    if (title.includes('Brand')) {
+      console.log(`${title} options:`, options.length > 0 ? options.slice(0, 3) : 'No options');
+    }
+  }, [title, options]);
+  
   // Synchronize with external selected options when they change
   useEffect(() => {
     if (JSON.stringify(selectedOptions) !== JSON.stringify(selected)) {
@@ -47,14 +54,12 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
   
   // Handle selection change with debounce to prevent multiple API calls
   const handleSelectionChange = (newSelected: string[]) => {
+    console.log(`Selection changed in ${title}:`, newSelected);
     setSelected(newSelected);
     
-    // Use setTimeout to batch multiple selections before triggering the callback
-    setTimeout(() => {
-      if (onSelectionChange) {
-        onSelectionChange(newSelected);
-      }
-    }, 0);
+    if (onSelectionChange) {
+      onSelectionChange(newSelected);
+    }
   };
   
   // Handle range change
@@ -102,6 +107,10 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
               selectedOptions={selected}
               onSelectionChange={handleSelectionChange}
             />
+          )}
+          
+          {type !== 'range' && options.length === 0 && (
+            <div className="text-sm text-gray-500 italic">No options available</div>
           )}
         </div>
       )}

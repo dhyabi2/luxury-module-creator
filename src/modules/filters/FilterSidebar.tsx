@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import FilterHeader from './components/FilterHeader';
 import FilterSidebarContent from './components/FilterSidebarContent';
-import { fetchFiltersData } from './apis/filtersApi';
 import { getCombinedBrands, getActiveCategoryName } from './utils/brandUtils';
 
 interface FilterSidebarProps {
@@ -35,15 +34,25 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   
   // Get category-specific brands
   const getCategorySpecificBrands = () => {
-    if (!filtersData || !filtersData.categoryBrands || selectedCategories.length === 0) {
-      return [];
+    if (!filtersData || !filtersData.categoryBrands) {
+      // If no filter data or no category brands, return all brands
+      return filtersData?.brands || [];
+    }
+    
+    if (selectedCategories.length === 0) {
+      // If no categories selected, return all brands
+      return filtersData.brands || [];
     }
     
     if (selectedCategories.length === 1) {
       const categoryId = selectedCategories[0];
-      return filtersData.categoryBrands[categoryId] || [];
+      const result = filtersData.categoryBrands[categoryId] || [];
+      console.log(`Getting brands for single category ${categoryId}:`, result.length);
+      return result;
     } else {
-      return getCombinedBrands(filtersData.categoryBrands, selectedCategories);
+      const result = getCombinedBrands(filtersData.categoryBrands, selectedCategories);
+      console.log(`Getting combined brands for ${selectedCategories.length} categories:`, result.length);
+      return result;
     }
   };
   
@@ -55,7 +64,29 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     const getFiltersData = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchFiltersData(selectedCategories.length > 0 ? selectedCategories : undefined);
+        // Direct API call to the edge function
+        const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
+        
+        const categoryQueryParam = selectedCategories.length > 0 ? 
+          selectedCategories.join(',') : '';
+        
+        const queryString = categoryQueryParam ? `?category=${categoryQueryParam}` : '';
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/filters${queryString}`, {
+          headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json"
+          }
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to fetch filters:', response.status, response.statusText);
+          throw new Error(`Failed to fetch filters: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Filter data received:', data);
         setFiltersData(data);
         
         // Initialize ranges if not already set
@@ -91,7 +122,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     };
     
     getFiltersData();
-  }, []);
+  }, [selectedCategories]); // Refetch when categories change
   
   // Apply filters
   const applyFilters = () => {
@@ -101,6 +132,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         priceRange,
         caseSizeRange
       };
+      console.log('Applying filters:', filters);
       onFilterChange(filters);
     }
   };
@@ -117,6 +149,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       return;
     }
     
+    console.log(`Selection change for ${category}:`, selected);
     setSelectedOptions(prev => ({
       ...prev,
       [category]: selected || []
@@ -156,22 +189,15 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     toast.success('Filters cleared');
   };
   
-  // Validate brand selection against available brands
+  // Debug brands information
   useEffect(() => {
-    if (filtersData && categorySpecificBrands.length > 0 && selectedOptions.brands && selectedOptions.brands.length > 0) {
-      const validBrandIds = new Set(categorySpecificBrands.map((brand: any) => brand.id));
-      const invalidBrands = selectedOptions.brands.filter((brandId: string) => !validBrandIds.has(brandId));
-      
-      if (invalidBrands.length > 0) {
-        console.log('Removing brands not in selected categories:', invalidBrands);
-        const newBrands = selectedOptions.brands.filter((brandId: string) => validBrandIds.has(brandId));
-        setSelectedOptions(prev => ({
-          ...prev,
-          brands: newBrands
-        }));
-      }
+    if (filtersData) {
+      console.log('All brands count:', filtersData.brands?.length || 0);
+      console.log('Category brands:', Object.keys(filtersData.categoryBrands || {}).length);
+      console.log('Selected categories:', selectedCategories);
+      console.log('Available brands for current selection:', categorySpecificBrands.length);
     }
-  }, [categorySpecificBrands, selectedOptions.brands, filtersData]);
+  }, [filtersData, selectedCategories, categorySpecificBrands]);
 
   return (
     <div className="bg-white p-4 rounded-md shadow-soft">

@@ -1,67 +1,73 @@
 
-import React, { useState } from 'react';
-import { CheckboxFilterProps, FilterOption } from '../types/filterTypes';
+import React from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+
+interface FilterOption {
+  id: string;
+  name: string;
+  count?: number;
+}
+
+interface CheckboxFilterProps {
+  options: FilterOption[];
+  selectedOptions: string[];
+  onSelectionChange: (selectedIds: string[]) => void;
+}
 
 const CheckboxFilter: React.FC<CheckboxFilterProps> = ({
   options,
   selectedOptions,
   onSelectionChange
 }) => {
-  const [showAll, setShowAll] = useState(false);
+  // Sort options by count (descending) then alphabetically
+  const sortedOptions = [...options].sort((a, b) => {
+    // First by count (descending)
+    if ((b.count || 0) !== (a.count || 0)) {
+      return (b.count || 0) - (a.count || 0);
+    }
+    // Then alphabetically
+    return a.name.localeCompare(b.name);
+  });
   
-  // Limit number of visible options when collapsed
-  const visibleOptions = showAll ? options : options.slice(0, 5);
-  
-  // Toggle show more/less
-  const toggleShowAll = () => {
-    setShowAll(prev => !prev);
-  };
-  
-  // Handle checkbox change
-  const handleSelectionChange = (optionId: string) => {
+  const handleCheckboxChange = (id: string) => {
     let newSelected: string[];
     
-    if (selectedOptions.includes(optionId)) {
-      newSelected = selectedOptions.filter(id => id !== optionId);
+    if (selectedOptions.includes(id)) {
+      // Remove from selection
+      newSelected = selectedOptions.filter(item => item !== id);
     } else {
-      newSelected = [...selectedOptions, optionId];
+      // Add to selection
+      newSelected = [...selectedOptions, id];
     }
     
     onSelectionChange(newSelected);
   };
-  
+
+  if (options.length === 0) {
+    return <div className="text-sm text-gray-500 italic">No options available</div>;
+  }
+
   return (
-    <>
-      {visibleOptions.map((option: FilterOption) => (
-        <div key={option.id} className="flex items-center">
-          <input
-            type="checkbox"
+    <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+      {sortedOptions.map((option) => (
+        <div key={option.id} className="flex items-center space-x-2">
+          <Checkbox
             id={`filter-option-${option.id}`}
-            value={option.id}
             checked={selectedOptions.includes(option.id)}
-            onChange={() => handleSelectionChange(option.id)}
-            className="filter-checkbox"
+            onCheckedChange={() => handleCheckboxChange(option.id)}
           />
           <label 
             htmlFor={`filter-option-${option.id}`}
-            className="ml-2 text-sm text-gray-700 cursor-pointer"
+            className="text-sm text-gray-700 flex-1 cursor-pointer"
           >
-            {option.name} {option.count !== undefined && (
-              <span className="text-gray-500">({option.count})</span>
+            {option.name}
+            {option.count !== undefined && (
+              <span className="text-gray-400 ml-1">({option.count})</span>
             )}
           </label>
         </div>
       ))}
-      
-      {options.length > 5 && (
-        <button
-          className="text-xs text-brand hover:underline mt-1"
-          onClick={toggleShowAll}
-        >
-          {showAll ? 'Show Less' : 'Show More'}
-        </button>
-      )}
-    </>
+    </div>
   );
 };
 

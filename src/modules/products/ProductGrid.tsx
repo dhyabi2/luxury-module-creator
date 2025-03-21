@@ -4,8 +4,6 @@ import ProductGridHeader from './components/ProductGridHeader';
 import ProductGridLoading from './components/ProductGridLoading';
 import ProductGridEmpty from './components/ProductGridEmpty';
 import ProductGridContent from './components/ProductGridContent';
-import { buildQueryParams } from './utils/queryBuilder';
-import { fetchProducts } from './services/productService';
 import { Product } from '@/types/api';
 
 interface ProductGridProps {
@@ -42,34 +40,94 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     const loadProducts = async () => {
       setLoading(true);
       
-      const queryParams = buildQueryParams(
-        gender, 
-        brand, 
-        category, 
-        isNewIn, 
-        isOnSale, 
-        filters, 
-        currentPage, 
-        sortBy, 
-        pageSize
-      );
+      // Build query params
+      const urlParams = new URLSearchParams();
       
-      console.log('Fetching products with query params:', queryParams);
-      const data = await fetchProducts(queryParams);
+      // Add page navigation filters
+      if (gender) urlParams.append('gender', gender);
+      if (brand) urlParams.append('brand', brand);
+      if (category) urlParams.append('category', category);
+      if (isNewIn) urlParams.append('isNewIn', 'true');
+      if (isOnSale) urlParams.append('isOnSale', 'true');
       
-      if (data) {
+      // Add user-selected filters
+      if (filters.brands && filters.brands.length > 0) {
+        urlParams.append('brand', filters.brands.join(','));
+        console.log('Filtering by brands:', filters.brands.join(','));
+      }
+      
+      if (filters.categories && filters.categories.length > 0) {
+        urlParams.append('category', filters.categories.join(','));
+        console.log('Filtering by categories:', filters.categories.join(','));
+      }
+      
+      if (filters.genders && filters.genders.length > 0) {
+        urlParams.append('gender', filters.genders.join(','));
+      }
+      
+      if (filters.bands && filters.bands.length > 0) {
+        urlParams.append('band', filters.bands.join(','));
+      }
+      
+      if (filters.caseColors && filters.caseColors.length > 0) {
+        urlParams.append('caseColor', filters.caseColors.join(','));
+      }
+      
+      if (filters.colors && filters.colors.length > 0) {
+        urlParams.append('color', filters.colors.join(','));
+      }
+      
+      if (filters.priceRange) {
+        urlParams.append('minPrice', filters.priceRange.min.toString());
+        urlParams.append('maxPrice', filters.priceRange.max.toString());
+      }
+      
+      if (filters.caseSizeRange) {
+        urlParams.append('minCaseSize', filters.caseSizeRange.min.toString());
+        urlParams.append('maxCaseSize', filters.caseSizeRange.max.toString());
+      }
+      
+      // Add pagination and sorting
+      urlParams.append('page', currentPage.toString());
+      urlParams.append('pageSize', pageSize.toString());
+      urlParams.append('sortBy', sortBy);
+      
+      const queryString = urlParams.toString();
+      
+      try {
+        console.log('Fetching products with query params:', queryString);
+        
+        // Make direct API call
+        const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
+        
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${queryString}`, {
+          headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json"
+          }
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to fetch products:', response.status, response.statusText);
+          throw new Error(`Failed to fetch products: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
         console.log('Product data received:', data);
         setProducts(data.products);
         setTotalPages(data.pagination.totalPages);
         setTotalCount(data.pagination.totalCount);
         setCurrentPage(data.pagination.currentPage);
         setError(null);
-      } else {
-        console.error('Failed to load products - no data returned');
+      } catch (error) {
+        console.error('Failed to load products:', error);
         setError('Failed to load products');
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     loadProducts();

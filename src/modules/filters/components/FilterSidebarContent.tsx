@@ -34,6 +34,14 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
   const selectedCategories = selectedOptions.categories || [];
   const showWatchFilters = selectedCategories.includes('watches') && selectedCategories.length === 1;
 
+  // Debug the brands being passed to the filter
+  if (categorySpecificBrands && categorySpecificBrands.length > 0) {
+    console.log(`Rendering ${categorySpecificBrands.length} brands in filter`, 
+      categorySpecificBrands.slice(0, 3).map(b => b.name));
+  } else {
+    console.log('No brands available to display in filter');
+  }
+
   return (
     <>
       {isLoading ? (
@@ -54,7 +62,7 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
           
           <FilterCategory
             title="Shop by Category"
-            options={filtersData.categories}
+            options={filtersData.categories || []}
             type="checkbox"
             selectedOptions={selectedOptions.categories || []}
             onSelectionChange={(selected) => handleSelectionChange('categories', selected)}
@@ -62,7 +70,7 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
           
           <FilterCategory
             title={activeCategoryName}
-            options={categorySpecificBrands}
+            options={categorySpecificBrands || []}
             type="checkbox"
             selectedOptions={selectedOptions.brands || []}
             onSelectionChange={(selected) => handleSelectionChange('brands', selected)}

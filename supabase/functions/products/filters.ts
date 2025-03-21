@@ -1,9 +1,15 @@
+
 // Apply brand filter
 export const applyBrandFilter = (query: any, params: any) => {
   if (params.brand) {
     const brands = params.brand.split(',').map((b: string) => b.trim());
     console.log(`[API:products] Filtering by brands: ${brands.join(', ')}`);
-    query = query.in('brand', brands);
+    
+    if (brands.length === 1) {
+      query = query.eq('brand', brands[0]);
+    } else {
+      query = query.in('brand', brands);
+    }
   }
   return query;
 };
@@ -164,7 +170,7 @@ export const applySpecialFilters = (query: any, params: any) => {
 
 // Apply all filters to a query
 export const applyAllFilters = (query: any, params: any) => {
-  console.log('[API:products] Building Supabase query with filters');
+  console.log('[API:products] Building Supabase query with filters:', params);
   
   query = applyBrandFilter(query, params);
   query = applyCategoryFilter(query, params);
