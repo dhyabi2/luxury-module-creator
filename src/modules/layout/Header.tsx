@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [logoUrl, setLogoUrl] = useState('/logo.svg');
+  const [logoUrl, setLogoUrl] = useState('https://cdn-iicfd.nitrocdn.com/HlkbfeOkMsuGJIhigodBlPxupvwkWuYp/assets/images/optimized/rev-4b911b6/mnkwatches.store/wp-content/uploads/2022/03/ezgif.com-gif-maker-3-1.png');
 
   useEffect(() => {
     const fetchLogoUrl = async () => {
@@ -25,7 +25,7 @@ const Header = () => {
           return;
         }
         
-        if (data && data.logo_url) {
+        if (data && data.logo_url && data.logo_url !== '/logo.svg') {
           setLogoUrl(data.logo_url);
         }
       } catch (err) {
@@ -52,7 +52,7 @@ const Header = () => {
               className="h-8 sm:h-12 w-auto"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = '/logo.svg'; // Fallback to default logo
+                target.src = 'https://cdn-iicfd.nitrocdn.com/HlkbfeOkMsuGJIhigodBlPxupvwkWuYp/assets/images/optimized/rev-4b911b6/mnkwatches.store/wp-content/uploads/2022/03/ezgif.com-gif-maker-3-1.png'; // Fallback to new default logo
                 console.error('Error loading logo image:', logoUrl);
               }}
             />

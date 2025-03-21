@@ -18,12 +18,12 @@ const Settings = () => {
     enableNotifications: true,
     enableGuestCheckout: true,
     maintenanceMode: false,
-    logoUrl: '/logo.svg'
+    logoUrl: 'https://cdn-iicfd.nitrocdn.com/HlkbfeOkMsuGJIhigodBlPxupvwkWuYp/assets/images/optimized/rev-4b911b6/mnkwatches.store/wp-content/uploads/2022/03/ezgif.com-gif-maker-3-1.png'
   });
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [logoPreview, setLogoPreview] = useState('/logo.svg');
+  const [logoPreview, setLogoPreview] = useState('https://cdn-iicfd.nitrocdn.com/HlkbfeOkMsuGJIhigodBlPxupvwkWuYp/assets/images/optimized/rev-4b911b6/mnkwatches.store/wp-content/uploads/2022/03/ezgif.com-gif-maker-3-1.png');
   const [newLogoUrl, setNewLogoUrl] = useState('');
 
   useEffect(() => {
@@ -58,9 +58,9 @@ const Settings = () => {
           enableNotifications: data.enable_notifications,
           enableGuestCheckout: data.enable_guest_checkout,
           maintenanceMode: data.maintenance_mode,
-          logoUrl: data.logo_url || '/logo.svg'
+          logoUrl: data.logo_url || 'https://cdn-iicfd.nitrocdn.com/HlkbfeOkMsuGJIhigodBlPxupvwkWuYp/assets/images/optimized/rev-4b911b6/mnkwatches.store/wp-content/uploads/2022/03/ezgif.com-gif-maker-3-1.png'
         });
-        setLogoPreview(data.logo_url || '/logo.svg');
+        setLogoPreview(data.logo_url || 'https://cdn-iicfd.nitrocdn.com/HlkbfeOkMsuGJIhigodBlPxupvwkWuYp/assets/images/optimized/rev-4b911b6/mnkwatches.store/wp-content/uploads/2022/03/ezgif.com-gif-maker-3-1.png');
       }
     } catch (err) {
       console.error('Failed to fetch settings:', err);

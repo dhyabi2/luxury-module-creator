@@ -35,7 +35,7 @@ const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
                 className="max-w-full max-h-full p-2"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = '/logo.svg'; // Fallback to default logo
+                  target.src = 'https://cdn-iicfd.nitrocdn.com/HlkbfeOkMsuGJIhigodBlPxupvwkWuYp/assets/images/optimized/rev-4b911b6/mnkwatches.store/wp-content/uploads/2022/03/ezgif.com-gif-maker-3-1.png'; // Fallback to new default logo
                   console.error('Error loading logo image:', logoPreview);
                 }}
               />
