@@ -61,6 +61,14 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
           />
           
           <FilterCategory
+            title="Gender"
+            options={filtersData.genders || []}
+            type="checkbox"
+            selectedOptions={selectedOptions.genders || []}
+            onSelectionChange={(selected) => handleSelectionChange('genders', selected)}
+          />
+          
+          <FilterCategory
             title="Shop by Category"
             options={filtersData.categories || []}
             type="checkbox"

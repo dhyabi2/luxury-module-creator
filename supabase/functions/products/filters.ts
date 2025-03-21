@@ -8,48 +8,38 @@ export const applyBrandFilter = (query: any, params: any) => {
     if (brands.length === 1) {
       query = query.eq('brand', brands[0]);
     } else {
-      query = query.in('brand', brands);
+      // Use OR logic for multiple brands
+      query = query.or(brands.map((brand: string) => `brand.eq.${brand}`).join(','));
     }
   }
   return query;
 };
 
-// Apply category filter - Updated to be more resilient
+// Apply category filter - Updated to use OR logic
 export const applyCategoryFilter = (query: any, params: any) => {
   if (params.category) {
     const categories = params.category.split(',').map((c: string) => c.trim());
     console.log(`[API:products] Filtering by categories: ${categories.join(', ')}`);
     
-    // First category
+    // Use OR logic for multiple categories
     if (categories.length > 0) {
-      query = query.ilike('category', `%${categories[0]}%`);
-      
-      // Additional categories
-      if (categories.length > 1) {
-        for (let i = 1; i < categories.length; i++) {
-          query = query.or(`category.ilike.%${categories[i]}%`);
-        }
-      }
+      const orConditions = categories.map(cat => `category.ilike.%${cat}%`).join(',');
+      query = query.or(orConditions);
     }
   }
   return query;
 };
 
-// Apply gender filter
+// Apply gender filter with OR logic
 export const applyGenderFilter = (query: any, params: any) => {
   if (params.gender) {
     const genders = params.gender.split(',').map((g: string) => g.trim());
     console.log(`[API:products] Filtering by genders: ${genders.join(', ')}`);
     
     if (genders.length > 0) {
-      // Simplified approach for gender filter
-      query = query.ilike('specifications->gender', `%${genders[0]}%`);
-      
-      if (genders.length > 1) {
-        for (let i = 1; i < genders.length; i++) {
-          query = query.or(`specifications->gender.ilike.%${genders[i]}%`);
-        }
-      }
+      // Use OR logic for multiple genders
+      const orConditions = genders.map(gender => `specifications->gender.ilike.%${gender}%`).join(',');
+      query = query.or(orConditions);
     }
   }
   return query;
@@ -90,61 +80,48 @@ export const applyCaseSizeFilter = (query: any, params: any) => {
   return query;
 };
 
-// Apply band material filter
+// Apply band material filter with OR logic
 export const applyBandFilter = (query: any, params: any) => {
   if (params.band) {
     const bands = params.band.split(',').map((b: string) => b.trim());
     console.log(`[API:products] Filtering by band materials: ${bands.join(', ')}`);
     
     if (bands.length > 0) {
-      // Simplified approach
-      query = query.ilike('specifications->strapMaterial', `%${bands[0]}%`);
-      
-      if (bands.length > 1) {
-        for (let i = 1; i < bands.length; i++) {
-          query = query.or(`specifications->strapMaterial.ilike.%${bands[i]}%`);
-        }
-      }
+      // Use OR logic for multiple bands
+      const orConditions = bands.map(band => `specifications->strapMaterial.ilike.%${band}%`).join(',');
+      query = query.or(orConditions);
     }
   }
   return query;
 };
 
-// Apply case color filter
+// Apply case color filter with OR logic
 export const applyCaseColorFilter = (query: any, params: any) => {
   if (params.caseColor) {
     const caseColors = params.caseColor.split(',').map((c: string) => c.trim());
     console.log(`[API:products] Filtering by case colors: ${caseColors.join(', ')}`);
     
     if (caseColors.length > 0) {
-      // Simplified approach
-      query = query.ilike('specifications->caseMaterial', `%${caseColors[0]}%`);
-      
-      if (caseColors.length > 1) {
-        for (let i = 1; i < caseColors.length; i++) {
-          query = query.or(`specifications->caseMaterial.ilike.%${caseColors[i]}%`);
-        }
-      }
+      // Use OR logic for multiple case colors
+      const orConditions = caseColors.map(color => `specifications->caseMaterial.ilike.%${color}%`).join(',');
+      query = query.or(orConditions);
     }
   }
   return query;
 };
 
-// Apply dial/strap color filter
+// Apply dial/strap color filter with OR logic
 export const applyColorFilter = (query: any, params: any) => {
   if (params.color) {
     const colors = params.color.split(',').map((c: string) => c.trim());
     console.log(`[API:products] Filtering by colors: ${colors.join(', ')}`);
     
     if (colors.length > 0) {
-      // Simplified approach that won't cause SQL parser errors
-      query = query.or(`specifications->dialColor.ilike.%${colors[0]}%,specifications->strapColor.ilike.%${colors[0]}%`);
-      
-      if (colors.length > 1) {
-        for (let i = 1; i < colors.length; i++) {
-          query = query.or(`specifications->dialColor.ilike.%${colors[i]}%,specifications->strapColor.ilike.%${colors[i]}%`);
-        }
-      }
+      // Use OR logic for multiple colors
+      const orConditions = colors.map(color => 
+        `specifications->dialColor.ilike.%${color}%,specifications->strapColor.ilike.%${color}%`
+      ).join(',');
+      query = query.or(orConditions);
     }
   }
   return query;
@@ -192,6 +169,9 @@ export const applyAllFilters = (query: any, params: any) => {
   } else {
     console.log('[API:products] Skipping watch-specific filters for non-watch category');
   }
+  
+  // Apply gender filter - always include, not watch-specific
+  query = applyGenderFilter(query, params);
   
   query = applySpecialFilters(query, params);
   

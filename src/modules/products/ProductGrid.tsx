@@ -50,7 +50,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       if (isNewIn) urlParams.append('isNewIn', 'true');
       if (isOnSale) urlParams.append('isOnSale', 'true');
       
-      // Add user-selected filters
+      // Add user-selected filters (using OR logic within each category)
       if (filters.brands && filters.brands.length > 0) {
         urlParams.append('brand', filters.brands.join(','));
         console.log('Filtering by brands:', filters.brands.join(','));
@@ -63,28 +63,34 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       
       if (filters.genders && filters.genders.length > 0) {
         urlParams.append('gender', filters.genders.join(','));
+        console.log('Filtering by genders:', filters.genders.join(','));
       }
       
       if (filters.bands && filters.bands.length > 0) {
         urlParams.append('band', filters.bands.join(','));
+        console.log('Filtering by bands:', filters.bands.join(','));
       }
       
       if (filters.caseColors && filters.caseColors.length > 0) {
         urlParams.append('caseColor', filters.caseColors.join(','));
+        console.log('Filtering by case colors:', filters.caseColors.join(','));
       }
       
       if (filters.colors && filters.colors.length > 0) {
         urlParams.append('color', filters.colors.join(','));
+        console.log('Filtering by colors:', filters.colors.join(','));
       }
       
       if (filters.priceRange) {
         urlParams.append('minPrice', filters.priceRange.min.toString());
         urlParams.append('maxPrice', filters.priceRange.max.toString());
+        console.log('Filtering by price range:', `${filters.priceRange.min}-${filters.priceRange.max}`);
       }
       
       if (filters.caseSizeRange) {
         urlParams.append('minCaseSize', filters.caseSizeRange.min.toString());
         urlParams.append('maxCaseSize', filters.caseSizeRange.max.toString());
+        console.log('Filtering by case size range:', `${filters.caseSizeRange.min}-${filters.caseSizeRange.max}`);
       }
       
       // Add pagination and sorting
@@ -93,6 +99,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       urlParams.append('sortBy', sortBy);
       
       const queryString = urlParams.toString();
+      console.log('Final query string:', queryString);
       
       try {
         console.log('Fetching products with query params:', queryString);
