@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface SecondaryCategory {
@@ -9,49 +9,25 @@ interface SecondaryCategory {
 }
 
 const SecondaryNavigation = () => {
-  const [categories, setCategories] = useState<SecondaryCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Static categories data
+  const [categories] = useState<SecondaryCategory[]>([
+    { id: 'new-in', name: 'NEW IN' },
+    { id: 'sale', name: 'SALE' },
+    { id: 'brands', name: 'BRANDS' },
+    { id: 'watches', name: 'WATCHES' },
+    { id: 'jewellery', name: 'JEWELLERY' },
+    { id: 'accessories', name: 'ACCESSORIES' },
+    { id: 'bags', name: 'BAGS' },
+    { id: 'perfumes', name: 'PERFUMES' },
+    { id: 'stores', name: 'STORE LOCATOR', highlight: true }
+  ]);
+  
+  const [isLoading] = useState(false);
   const location = useLocation();
   
   // Determine which category is active based on current path
   const pathSegments = location.pathname.split('/').filter(Boolean);
   const activeCategory = pathSegments.length > 0 ? pathSegments[0] : '';
-  
-  const fetchNavigationData = async () => {
-    setIsLoading(true);
-    
-    try {
-      console.log('Fetching secondary navigation data');
-      
-      // Direct API call to the navigation edge function
-      const response = await fetch("https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/navigation", {
-        headers: {
-          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo",
-          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo"
-        }
-      });
-      
-      if (!response.ok) {
-        console.log('Error fetching navigation data:', response.status, response.statusText);
-        throw new Error(`Failed to fetch navigation data: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      console.log('Secondary navigation data received:', data);
-      
-      setCategories(data.secondaryCategories || []);
-    } catch (error) {
-      console.log('Error fetching secondary navigation data:', error);
-      // Let the error bubble up
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchNavigationData();
-  }, []);
 
   const getCategoryRoutePath = (categoryId: string): string => {
     const routeMap: Record<string, string> = {
@@ -85,7 +61,7 @@ const SecondaryNavigation = () => {
           ))}
         </div>
       ) : (
-        <ul className="flex space-x-5 md:space-x-8 min-w-max">
+        <ul className="flex space-x-5 md:space-x-8 min-w-max overflow-x-auto pb-2 scrollbar-hide">
           {categories.map((category) => (
             <li key={category.id}>
               <Link

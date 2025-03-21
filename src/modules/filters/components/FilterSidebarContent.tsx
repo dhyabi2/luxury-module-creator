@@ -3,10 +3,9 @@ import React from 'react';
 import FilterCategory from '../FilterCategory';
 import FilterLoading from './FilterLoading';
 import WatchSpecificFilters from './WatchSpecificFilters';
-import { FiltersResponse } from '@/types/api';
 
 interface FilterSidebarContentProps {
-  filtersData: FiltersResponse | null;
+  filtersData: any | null;
   isLoading: boolean;
   selectedOptions: Record<string, any>;
   priceRange: { min: number; max: number };
@@ -49,6 +48,14 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
       ) : filtersData ? (
         <>
           <FilterCategory
+            title="Gender"
+            options={filtersData.genders || []}
+            type="checkbox"
+            selectedOptions={selectedOptions.genders || []}
+            onSelectionChange={(selected) => handleSelectionChange('genders', selected)}
+          />
+          
+          <FilterCategory
             title="Price Range"
             options={[]}
             type="range"
@@ -58,14 +65,6 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
             currentMin={priceRange.min}
             currentMax={priceRange.max}
             onRangeChange={handlePriceRangeChange}
-          />
-          
-          <FilterCategory
-            title="Gender"
-            options={filtersData.genders || []}
-            type="checkbox"
-            selectedOptions={selectedOptions.genders || []}
-            onSelectionChange={(selected) => handleSelectionChange('genders', selected)}
           />
           
           <FilterCategory
@@ -94,7 +93,11 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
             />
           )}
         </>
-      ) : null}
+      ) : (
+        <div className="text-gray-500 italic text-center py-4">
+          No filter options available
+        </div>
+      )}
     </>
   );
 };

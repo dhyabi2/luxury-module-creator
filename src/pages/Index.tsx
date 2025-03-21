@@ -58,8 +58,8 @@ const Index = () => {
         
         {/* Products with Sidebar - Mobile First Approach */}
         <div className="flex flex-col lg:flex-row gap-6 sm:gap-10">
-          {/* Sidebar - Order first on mobile but last on desktop */}
-          <div className="w-full lg:w-1/4 order-first">
+          {/* Sidebar - Fixed position on mobile */}
+          <div className="w-full lg:w-1/4 lg:sticky lg:top-24 lg:h-fit">
             <FilterSidebar 
               initialFilters={{
                 priceRange: { min: 0, max: 1225 }
@@ -69,7 +69,7 @@ const Index = () => {
           </div>
           
           {/* Main Content */}
-          <div className="w-full lg:w-3/4 order-last lg:order-first mt-6 lg:mt-0">
+          <div className="w-full lg:w-3/4 mt-6 lg:mt-0">
             <ProductGrid 
               title="Luxury Lifestyle" 
               filters={activeFilters}

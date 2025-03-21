@@ -1,32 +1,22 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
-import { fetchNavigationData } from '@/utils/apiUtils';
-import { NavigationResponse, MainCategory } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Search, Menu, ShoppingCart } from 'lucide-react';
 import { useCart } from '@/modules/cart/context/CartContext';
 
 const MainNavigation = () => {
-  const [navigationData, setNavigationData] = useState<NavigationResponse | null>(null);
-  const [mainCategories, setMainCategories] = useState<MainCategory[]>([]);
+  // Static navigation data
+  const [mainCategories] = useState([
+    { id: 'women', name: 'WOMEN', active: true },
+    { id: 'men', name: 'MEN', active: false },
+    { id: 'new-in', name: 'NEW IN', active: false },
+    { id: 'sale', name: 'SALE', active: false }
+  ]);
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { cart } = useCart();
-  
-  useEffect(() => {
-    const loadNavigationData = async () => {
-      try {
-        const data = await fetchNavigationData();
-        setNavigationData(data);
-        setMainCategories(data.mainCategories || []);
-      } catch (error) {
-        console.error('Failed to load navigation data:', error);
-      }
-    };
-    
-    loadNavigationData();
-  }, []);
 
   return (
     <div className="flex-1 flex items-center justify-between md:px-2">
