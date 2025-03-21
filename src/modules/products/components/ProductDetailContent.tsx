@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Phone } from 'lucide-react';
 import { Product } from '@/types/api';
 import { useCart } from '@/contexts/CartContext';
 import ProductBreadcrumb from './ProductBreadcrumb';
@@ -62,6 +63,18 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
             stockStatusClass={formattedProduct.stockStatusClass}
             description={product.description || ""}
           />
+          
+          <div className="mt-4 mb-6">
+            <a 
+              href="https://wa.me/96899999999" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+            >
+              <Phone size={18} className="mr-2" />
+              Contact us on WhatsApp
+            </a>
+          </div>
           
           {specifications && Object.keys(specifications).length > 0 && (
             <ProductSpecifications 
