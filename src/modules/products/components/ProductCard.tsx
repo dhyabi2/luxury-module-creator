@@ -41,12 +41,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           discount={product.discount}
         />
         
-        <div className="mt-2">
+        <div className="mt-3 mb-1">
           <a 
             href="https://wa.me/96899999999" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="inline-flex items-center text-green-600 text-sm hover:text-green-700"
+            className="inline-flex items-center text-green-600 text-sm hover:text-green-700 transition-colors"
           >
             <Phone size={14} className="mr-1" />
             WhatsApp Call

@@ -1,6 +1,15 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationEllipsis,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface ProductPaginationProps {
@@ -51,39 +60,54 @@ const ProductPagination: React.FC<ProductPaginationProps> = ({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex justify-center items-center space-x-2 mt-8">
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      
-      {pageNumbers.map((page, index) => (
-        page === '...' ? (
-          <span key={`ellipsis-${index}`} className="px-2">...</span>
-        ) : (
-          <Button
-            key={`page-${page}`}
-            variant={currentPage === page ? "default" : "outline"}
-            className={`w-8 h-8 ${currentPage === page ? 'bg-primary text-primary-foreground' : ''}`}
-            onClick={() => page !== '...' && onPageChange(page as number)}
-          >
-            {page}
-          </Button>
-        )
-      ))}
-      
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+    <div className="my-12">
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="h-9 w-9"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </PaginationItem>
+          
+          {pageNumbers.map((page, index) => (
+            page === '...' ? (
+              <PaginationItem key={`ellipsis-${index}`}>
+                <PaginationEllipsis />
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={`page-${page}`}>
+                <PaginationLink
+                  isActive={currentPage === page}
+                  onClick={() => page !== '...' && onPageChange(page as number)}
+                  className={`h-9 w-9 p-0 flex items-center justify-center ${
+                    currentPage === page ? 'bg-primary text-primary-foreground' : ''
+                  }`}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            )
+          ))}
+          
+          <PaginationItem>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="h-9 w-9"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 };
