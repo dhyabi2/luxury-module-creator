@@ -1,11 +1,11 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone } from 'lucide-react';
 import ProductImage from './components/ProductImage';
 import ProductInfo from './components/ProductInfo';
 import ViewDetailsButton from './components/ViewDetailsButton';
 import { Product } from '@/types/api';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 export interface ProductCardProps {
   product: Product;
@@ -13,10 +13,49 @@ export interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const { currency } = useCurrency();
+  const [convertedProduct, setConvertedProduct] = useState<Product>(product);
   
-  // Create WhatsApp message with product details
+  useEffect(() => {
+    const convertCurrency = async () => {
+      if (currency === 'OMR') {
+        setConvertedProduct(product);
+        return;
+      }
+      
+      console.log(`Converting prices from OMR to ${currency}`);
+      
+      try {
+        const response = await fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/convert-currency', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo'
+          },
+          body: JSON.stringify({
+            product: product,
+            targetCurrency: currency
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Converted product data:', data);
+        setConvertedProduct(data.convertedProduct);
+      } catch (err) {
+        console.error('Error converting currency:', err);
+        setConvertedProduct(product);
+      }
+    };
+    
+    convertCurrency();
+  }, [currency, product]);
+  
   const createWhatsAppMessage = () => {
-    const message = `I'm interested in: ${product.brand} ${product.name} (${product.currency} ${product.price})`;
+    const message = `I'm interested in: ${convertedProduct.brand} ${convertedProduct.name} (${convertedProduct.currency} ${convertedProduct.price})`;
     return encodeURIComponent(message);
   };
   
@@ -26,21 +65,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link to={`/product/${product.id}`} className="block">
+      <Link to={`/product/${convertedProduct.id}`} className="block">
         <ProductImage 
-          image={product.image} 
-          name={product.name} 
-          discount={product.discount || undefined}
+          image={convertedProduct.image} 
+          name={convertedProduct.name} 
+          discount={convertedProduct.discount || undefined}
           isHovered={isHovered} 
         />
       </Link>
       
       <ProductInfo
-        brand={product.brand}
-        name={product.name}
-        price={product.price}
-        currency={product.currency || '$'}
-        discount={product.discount}
+        brand={convertedProduct.brand}
+        name={convertedProduct.name}
+        price={convertedProduct.price}
+        currency={convertedProduct.currency || '$'}
+        discount={convertedProduct.discount}
       />
       
       <div className="mt-2">
@@ -55,7 +94,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </a>
       </div>
       
-      <ViewDetailsButton isHovered={isHovered} productId={product.id} />
+      <ViewDetailsButton isHovered={isHovered} productId={convertedProduct.id} />
     </article>
   );
 };

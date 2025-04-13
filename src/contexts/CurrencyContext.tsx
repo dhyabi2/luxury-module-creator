@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
 export type Currency = 'OMR' | '$';
 
@@ -14,7 +14,17 @@ const CurrencyContext = createContext<CurrencyContextType>({
 });
 
 export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currency, setCurrency] = useState<Currency>('OMR');
+  // Default to OMR, but try to load from localStorage if available
+  const [currency, setCurrency] = useState<Currency>(() => {
+    const saved = localStorage.getItem('preferredCurrency');
+    return (saved === 'OMR' || saved === '$') ? saved as Currency : 'OMR';
+  });
+
+  // Save currency preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('preferredCurrency', currency);
+    console.log('Currency preference saved:', currency);
+  }, [currency]);
 
   return (
     <CurrencyContext.Provider value={{ currency, setCurrency }}>

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone } from 'lucide-react';
 import { Product } from '@/types/api';
 import { useCart } from '@/contexts/CartContext';
@@ -11,6 +10,7 @@ import ProductActions from './ProductActions';
 import { formatProductData } from '../utils/formatProductData';
 import QuantitySelector from './QuantitySelector';
 import { toast } from 'sonner';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface ProductDetailContentProps {
   product: Product;
@@ -19,8 +19,48 @@ interface ProductDetailContentProps {
 const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) => {
   const [quantity, setQuantity] = useState<number>(1);
   const { addItem } = useCart();
+  const { currency } = useCurrency();
+  const [convertedProduct, setConvertedProduct] = useState<Product>(product);
   
-  const formattedProduct = formatProductData(product);
+  useEffect(() => {
+    const convertCurrency = async () => {
+      if (currency === 'OMR') {
+        setConvertedProduct(product);
+        return;
+      }
+      
+      console.log(`Converting prices from OMR to ${currency}`);
+      
+      try {
+        const response = await fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/convert-currency', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo'
+          },
+          body: JSON.stringify({
+            product: product,
+            targetCurrency: currency
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Converted product data:', data);
+        setConvertedProduct(data.convertedProduct);
+      } catch (err) {
+        console.error('Error converting currency:', err);
+        setConvertedProduct(product);
+      }
+    };
+    
+    convertCurrency();
+  }, [currency, product]);
+  
+  const formattedProduct = formatProductData(convertedProduct, currency);
   
   const handleQuantityChange = (newQuantity: number) => {
     setQuantity(newQuantity);
@@ -37,14 +77,12 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   };
   
   const handleAddToCart = () => {
-    addItem(product, quantity);
+    addItem(convertedProduct, quantity);
   };
   
-  // Direct checkout handler - now completely separate from cart
   const handleDirectCheckout = () => {
-    console.log('Processing direct checkout for:', product, 'Quantity:', quantity);
+    console.log('Processing direct checkout for:', convertedProduct, 'Quantity:', quantity);
     
-    // Direct API call to create checkout session
     fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/create-checkout', {
       method: 'POST',
       headers: {
@@ -53,13 +91,13 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
       },
       body: JSON.stringify({
         items: [{
-          id: product.id,
-          name: product.name,
-          brand: product.brand,
-          price: product.price,
-          currency: product.currency,
+          id: convertedProduct.id,
+          name: convertedProduct.name,
+          brand: convertedProduct.brand,
+          price: convertedProduct.price,
+          currency: convertedProduct.currency,
           quantity: quantity,
-          image: product.image
+          image: convertedProduct.image
         }],
         mode: 'payment',
         successUrl: window.location.origin + '/checkout/success',
@@ -75,7 +113,6 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
     .then(data => {
       console.log('Checkout session created:', data);
       if (data.url) {
-        // Redirect to Stripe checkout
         window.location.href = data.url;
       } else {
         toast.error('Could not redirect to checkout');
@@ -87,11 +124,10 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
     });
   };
   
-  // Create WhatsApp message with detailed product information
   const createWhatsAppMessage = () => {
     let specDetails = '';
-    if (product.specifications) {
-      const specs = product.specifications;
+    if (convertedProduct.specifications) {
+      const specs = convertedProduct.specifications;
       specDetails = '\n\nSpecifications:';
       if (specs.caseMaterial) specDetails += `\n- Case: ${specs.caseMaterial}`;
       if (specs.caseSize) specDetails += `\n- Size: ${specs.caseSize}`;
@@ -102,47 +138,45 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
       if (specs.volume) specDetails += `\n- Volume: ${specs.volume}`;
     }
     
-    const message = `I'm interested in purchasing:\n${product.brand} ${product.name}\nPrice: ${product.currency} ${product.price}${
+    const message = `I'm interested in purchasing:\n${convertedProduct.brand} ${convertedProduct.name}\nPrice: ${convertedProduct.currency} ${convertedProduct.price}${
       formattedProduct.formattedDiscount ? ` (${formattedProduct.formattedDiscount} off)` : ''
-    }${specDetails}\nProduct ID: ${product.id}`;
+    }${specDetails}\nProduct ID: ${convertedProduct.id}`;
     
     return encodeURIComponent(message);
   };
   
-  // Extract specifications from product
-  const specifications = product.specifications || {};
+  const specifications = convertedProduct.specifications || {};
   
-  // Log product data for debugging
-  console.log('Product data:', product);
+  console.log('Product data:', convertedProduct);
   console.log('Formatted product data:', formattedProduct);
   console.log('Specifications:', specifications);
   
   return (
     <div className="container mx-auto px-4 py-8">
       <ProductBreadcrumb 
-        category={product.category} 
-        productName={product.name} 
+        category={convertedProduct.category} 
+        productName={convertedProduct.name} 
       />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
         <ProductDetailImage 
-          image={product.image} 
-          name={product.name} 
-          brand={product.brand}
+          image={convertedProduct.image} 
+          name={convertedProduct.name} 
+          brand={convertedProduct.brand}
         />
         
         <div className="space-y-8">
           <ProductInfo 
-            name={product.name}
-            brand={product.brand}
-            rating={product.rating}
-            reviews={product.reviews}
+            name={convertedProduct.name}
+            brand={convertedProduct.brand}
+            rating={convertedProduct.rating}
+            reviews={convertedProduct.reviews}
             price={formattedProduct.formattedPrice}
             discountPercentage={formattedProduct.formattedDiscount}
             discountedPrice={formattedProduct.formattedDiscountedPrice}
             stockStatus={formattedProduct.stockStatusText}
             stockStatusClass={formattedProduct.stockStatusClass}
-            description={product.description || ""}
+            description={convertedProduct.description || ""}
           />
           
           <div className="mt-4 mb-6">
@@ -172,7 +206,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
               waterResistance={specifications.waterResistance}
               strapMaterial={specifications.strapMaterial}
               strapColor={specifications.strapColor}
-              brand={product.brand}
+              brand={convertedProduct.brand}
               gender={specifications.gender}
               type={specifications.type}
               notes={specifications.notes}

@@ -13,6 +13,7 @@ const CurrencySelector: React.FC = () => {
   const { currency, setCurrency } = useCurrency();
 
   const handleCurrencyChange = (value: string) => {
+    console.log(`Currency changed to ${value}`);
     setCurrency(value as Currency);
   };
 
