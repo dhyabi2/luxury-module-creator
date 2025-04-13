@@ -31,7 +31,7 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
 }) => {
   // Calculate if we should show watch filters
   const selectedCategories = selectedOptions.categories || [];
-  const showWatchFilters = selectedCategories.includes('watches') && selectedCategories.length === 1;
+  const showWatchFilters = selectedCategories.includes('watches') && !selectedCategories.includes('all');
 
   // Debug the brands being passed to the filter
   if (categorySpecificBrands && categorySpecificBrands.length > 0) {
@@ -53,6 +53,7 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
             type="checkbox"
             selectedOptions={selectedOptions.genders || []}
             onSelectionChange={(selected) => handleSelectionChange('genders', selected)}
+            showAllOption={true}
           />
           
           <FilterCategory
@@ -73,6 +74,7 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
             type="checkbox"
             selectedOptions={selectedOptions.categories || []}
             onSelectionChange={(selected) => handleSelectionChange('categories', selected)}
+            showAllOption={true}
           />
           
           <FilterCategory
@@ -81,6 +83,7 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
             type="checkbox"
             selectedOptions={selectedOptions.brands || []}
             onSelectionChange={(selected) => handleSelectionChange('brands', selected)}
+            showAllOption={true}
           />
           
           {showWatchFilters && (

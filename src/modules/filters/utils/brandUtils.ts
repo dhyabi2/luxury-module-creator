@@ -1,4 +1,3 @@
-
 /**
  * Helper functions for brand filtering
  */
@@ -12,13 +11,24 @@ export const getCombinedBrands = (
 ) => {
   const uniqueBrands = new Map();
   
-  selectedCategories.forEach(categoryId => {
-    const brandsForCategory = categoryBrands[categoryId] || [];
-    
-    brandsForCategory.forEach(brand => {
-      uniqueBrands.set(brand.id, brand);
+  // If we have an "all" option or empty selection, return all brands from all categories
+  if (selectedCategories.includes("all") || selectedCategories.length === 0) {
+    // Combine all brands from all categories
+    Object.values(categoryBrands).forEach(brandsArray => {
+      brandsArray.forEach(brand => {
+        uniqueBrands.set(brand.id, brand);
+      });
     });
-  });
+  } else {
+    // Otherwise, get brands only for selected categories
+    selectedCategories.forEach(categoryId => {
+      const brandsForCategory = categoryBrands[categoryId] || [];
+      
+      brandsForCategory.forEach(brand => {
+        uniqueBrands.set(brand.id, brand);
+      });
+    });
+  }
   
   return Array.from(uniqueBrands.values());
 };
@@ -27,7 +37,7 @@ export const getCombinedBrands = (
  * Get active category name for display
  */
 export const getActiveCategoryName = (selectedCategories: string[]) => {
-  if (selectedCategories.length === 0) {
+  if (selectedCategories.includes("all") || selectedCategories.length === 0) {
     return "Shop by Brand";
   }
   

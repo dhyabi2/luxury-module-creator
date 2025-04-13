@@ -18,7 +18,8 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
   currentMax,
   selectedOptions = [],
   onSelectionChange,
-  onRangeChange
+  onRangeChange,
+  showAllOption = false
 }) => {
   const [isExpanded, setIsExpanded] = useState(initialExpanded);
   const [selected, setSelected] = useState<string[]>(selectedOptions);
@@ -106,6 +107,7 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
               options={options}
               selectedOptions={selected}
               onSelectionChange={handleSelectionChange}
+              showAllOption={showAllOption}
             />
           )}
           

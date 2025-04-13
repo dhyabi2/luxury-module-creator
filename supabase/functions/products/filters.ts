@@ -5,6 +5,12 @@ export const applyBrandFilter = (query: any, params: any) => {
     const brands = params.brand.split(',').map((b: string) => b.trim());
     console.log(`[API:products] Filtering by brands: ${brands.join(', ')}`);
     
+    // If "all" is included or empty, don't filter by brand
+    if (brands.includes('all') || brands.length === 0) {
+      console.log('[API:products] Skipping brand filter due to "all" selection');
+      return query;
+    }
+    
     if (brands.length === 1) {
       query = query.eq('brand', brands[0]);
     } else {
@@ -20,6 +26,12 @@ export const applyCategoryFilter = (query: any, params: any) => {
   if (params.category) {
     const categories = params.category.split(',').map((c: string) => c.trim());
     console.log(`[API:products] Filtering by categories: ${categories.join(', ')}`);
+    
+    // If "all" is included or empty, don't filter by category
+    if (categories.includes('all') || categories.length === 0) {
+      console.log('[API:products] Skipping category filter due to "all" selection');
+      return query;
+    }
     
     // Use OR logic for multiple categories
     if (categories.length > 0) {
@@ -37,6 +49,12 @@ export const applyGenderFilter = (query: any, params: any) => {
     const genders = params.gender.split(',').map((g: string) => g.trim());
     console.log(`[API:products] Filtering by genders (standard): ${genders.join(', ')}`);
     
+    // If "all" is included or empty, don't filter by gender
+    if (genders.includes('all') || genders.length === 0) {
+      console.log('[API:products] Skipping gender filter due to "all" selection');
+      return query;
+    }
+    
     if (genders.length > 0) {
       // Use text search for multiple genders which is more reliable
       const textConditions = [];
@@ -53,6 +71,12 @@ export const applyGenderFilter = (query: any, params: any) => {
   if (params.genderSearch) {
     const genders = params.genderSearch.split(',').map((g: string) => g.trim());
     console.log(`[API:products] Filtering by genders (text search): ${genders.join(', ')}`);
+    
+    // If "all" is included or empty, don't filter by gender
+    if (genders.includes('all') || genders.length === 0) {
+      console.log('[API:products] Skipping gender text search due to "all" selection');
+      return query;
+    }
     
     const watchesCategory = params.category && params.category.includes('watches');
     
@@ -118,6 +142,12 @@ export const applyBandFilter = (query: any, params: any) => {
     const bands = params.band.split(',').map((b: string) => b.trim());
     console.log(`[API:products] Filtering by band materials: ${bands.join(', ')}`);
     
+    // If "all" is included or empty, don't filter
+    if (bands.includes('all') || bands.length === 0) {
+      console.log('[API:products] Skipping band filter due to "all" selection');
+      return query;
+    }
+    
     if (bands.length > 0) {
       // Use OR logic for multiple bands
       const orConditions = bands.map(band => `specifications->strapMaterial.ilike.%${band}%`).join(',');
@@ -133,6 +163,12 @@ export const applyCaseColorFilter = (query: any, params: any) => {
     const caseColors = params.caseColor.split(',').map((c: string) => c.trim());
     console.log(`[API:products] Filtering by case colors: ${caseColors.join(', ')}`);
     
+    // If "all" is included or empty, don't filter
+    if (caseColors.includes('all') || caseColors.length === 0) {
+      console.log('[API:products] Skipping case color filter due to "all" selection');
+      return query;
+    }
+    
     if (caseColors.length > 0) {
       // Use OR logic for multiple case colors
       const orConditions = caseColors.map(color => `specifications->caseMaterial.ilike.%${color}%`).join(',');
@@ -147,6 +183,12 @@ export const applyColorFilter = (query: any, params: any) => {
   if (params.color) {
     const colors = params.color.split(',').map((c: string) => c.trim());
     console.log(`[API:products] Filtering by colors: ${colors.join(', ')}`);
+    
+    // If "all" is included or empty, don't filter
+    if (colors.includes('all') || colors.length === 0) {
+      console.log('[API:products] Skipping color filter due to "all" selection');
+      return query;
+    }
     
     if (colors.length > 0) {
       // Use OR logic for multiple colors

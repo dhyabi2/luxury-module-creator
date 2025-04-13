@@ -12,12 +12,14 @@ interface CheckboxFilterProps {
   options: FilterOption[];
   selectedOptions: string[];
   onSelectionChange: (selectedIds: string[]) => void;
+  showAllOption?: boolean;
 }
 
 const CheckboxFilter: React.FC<CheckboxFilterProps> = ({
   options,
   selectedOptions,
-  onSelectionChange
+  onSelectionChange,
+  showAllOption = false
 }) => {
   // Sort options by count (descending) then alphabetically
   const sortedOptions = [...options].sort((a, b) => {
@@ -32,12 +34,26 @@ const CheckboxFilter: React.FC<CheckboxFilterProps> = ({
   const handleCheckboxChange = (id: string) => {
     let newSelected: string[];
     
-    if (selectedOptions.includes(id)) {
-      // Remove from selection
-      newSelected = selectedOptions.filter(item => item !== id);
+    // Special handling for "All" option
+    if (id === "all") {
+      if (selectedOptions.includes("all")) {
+        // If "All" is already selected, unselect everything
+        newSelected = [];
+      } else {
+        // If selecting "All", clear other selections
+        newSelected = ["all"];
+      }
     } else {
-      // Add to selection
-      newSelected = [...selectedOptions, id];
+      // Remove "all" option if any specific option is selected
+      const withoutAll = selectedOptions.filter(item => item !== "all");
+      
+      if (selectedOptions.includes(id)) {
+        // Remove from selection
+        newSelected = withoutAll.filter(item => item !== id);
+      } else {
+        // Add to selection
+        newSelected = [...withoutAll, id];
+      }
     }
     
     onSelectionChange(newSelected);
@@ -49,6 +65,22 @@ const CheckboxFilter: React.FC<CheckboxFilterProps> = ({
 
   return (
     <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+      {showAllOption && (
+        <div key="all" className="flex items-center space-x-2">
+          <Checkbox
+            id={`filter-option-all`}
+            checked={selectedOptions.includes("all")}
+            onCheckedChange={() => handleCheckboxChange("all")}
+          />
+          <label 
+            htmlFor={`filter-option-all`}
+            className="text-sm text-gray-700 flex-1 cursor-pointer font-medium"
+          >
+            All
+          </label>
+        </div>
+      )}
+      
       {sortedOptions.map((option) => (
         <div key={option.id} className="flex items-center space-x-2">
           <Checkbox

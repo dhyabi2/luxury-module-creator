@@ -4,6 +4,7 @@ import ProductGridLoading from './components/ProductGridLoading';
 import ProductGridEmpty from './components/ProductGridEmpty';
 import ProductGridContent from './components/ProductGridContent';
 import { Product } from '@/types/api';
+import { toast } from 'sonner';
 
 interface ProductGridProps {
   gender?: string;
@@ -38,6 +39,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   useEffect(() => {
     const loadProducts = async () => {
       setLoading(true);
+      console.log('Loading products with filters:', filters);
       
       // Build query params
       const urlParams = new URLSearchParams();
@@ -50,32 +52,32 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       if (isOnSale) urlParams.append('isOnSale', 'true');
       
       // Add user-selected filters (using OR logic within each category)
-      if (filters.brands && filters.brands.length > 0) {
+      if (filters.brands && filters.brands.length > 0 && !filters.brands.includes('all')) {
         urlParams.append('brand', filters.brands.join(','));
         console.log('Filtering by brands:', filters.brands.join(','));
       }
       
-      if (filters.categories && filters.categories.length > 0) {
+      if (filters.categories && filters.categories.length > 0 && !filters.categories.includes('all')) {
         urlParams.append('category', filters.categories.join(','));
         console.log('Filtering by categories:', filters.categories.join(','));
       }
       
-      if (filters.genders && filters.genders.length > 0) {
+      if (filters.genders && filters.genders.length > 0 && !filters.genders.includes('all')) {
         urlParams.append('gender', filters.genders.join(','));
         console.log('Filtering by genders:', filters.genders.join(','));
       }
       
-      if (filters.bands && filters.bands.length > 0) {
+      if (filters.bands && filters.bands.length > 0 && !filters.bands.includes('all')) {
         urlParams.append('band', filters.bands.join(','));
         console.log('Filtering by bands:', filters.bands.join(','));
       }
       
-      if (filters.caseColors && filters.caseColors.length > 0) {
+      if (filters.caseColors && filters.caseColors.length > 0 && !filters.caseColors.includes('all')) {
         urlParams.append('caseColor', filters.caseColors.join(','));
         console.log('Filtering by case colors:', filters.caseColors.join(','));
       }
       
-      if (filters.colors && filters.colors.length > 0) {
+      if (filters.colors && filters.colors.length > 0 && !filters.colors.includes('all')) {
         urlParams.append('color', filters.colors.join(','));
         console.log('Filtering by colors:', filters.colors.join(','));
       }
@@ -117,7 +119,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         let finalUrl = `${SUPABASE_URL}/functions/v1/products?${queryString}`;
         
         // Fix for watches + gender filter issue - use a specialized endpoint format
-        if (hasWatchesCategory && filters.genders && filters.genders.length > 0) {
+        if (hasWatchesCategory && filters.genders && filters.genders.length > 0 && !filters.genders.includes('all')) {
           console.log('Using modified query format for watches + gender combination');
           
           // Remove gender from URL parameters to rebuild it in a different format
@@ -129,6 +131,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           console.log('Modified URL:', finalUrl);
         }
         
+        console.log('Making API call to:', finalUrl);
         const response = await fetch(finalUrl, {
           headers: {
             "apikey": SUPABASE_KEY,
@@ -151,8 +154,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({
               fallbackParams.append('category', 'watches');
             } else if (category) {
               fallbackParams.append('category', category);
-            } else if (filters.categories && filters.categories.length > 0) {
+            } else if (filters.categories && filters.categories.length > 0 && !filters.categories.includes('all')) {
               fallbackParams.append('category', filters.categories.join(','));
+            }
+            
+            // Keep brand filter as it's important
+            if (filters.brands && filters.brands.length > 0 && !filters.brands.includes('all')) {
+              fallbackParams.append('brand', filters.brands.join(','));
             }
             
             // Add pagination and sorting
@@ -160,7 +168,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
             fallbackParams.append('pageSize', pageSize.toString());
             fallbackParams.append('sortBy', sortBy);
             
-            const fallbackResponse = await fetch(`${SUPABASE_URL}/functions/v1/products?${fallbackParams.toString()}`, {
+            const fallbackUrl = `${SUPABASE_URL}/functions/v1/products?${fallbackParams.toString()}`;
+            console.log('Fallback URL:', fallbackUrl);
+            
+            const fallbackResponse = await fetch(fallbackUrl, {
               headers: {
                 "apikey": SUPABASE_KEY,
                 "Authorization": `Bearer ${SUPABASE_KEY}`,
@@ -196,6 +207,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       } catch (error) {
         console.error('Failed to load products:', error);
         setError('Failed to load products');
+        toast.error('Failed to load products');
       } finally {
         setLoading(false);
       }

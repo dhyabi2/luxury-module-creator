@@ -59,7 +59,8 @@ export function useFilterState({
       // If there's a category parameter, add it to the selected categories
       if (categoryParam && 
           selectedOptions.categories && 
-          !selectedOptions.categories.includes(categoryParam)) {
+          !selectedOptions.categories.includes(categoryParam) && 
+          !selectedOptions.categories.includes("all")) {
         setSelectedOptions(prev => ({
           ...prev,
           categories: [...(prev.categories || []), categoryParam]
@@ -70,6 +71,7 @@ export function useFilterState({
   
   // Calculate derived values
   const selectedCategories = selectedOptions.categories || [];
+  const hasAllCategoriesSelected = selectedCategories.includes("all");
   
   // Get category-specific brands
   const getCategorySpecificBrands = () => {
@@ -77,7 +79,7 @@ export function useFilterState({
       return filtersData?.brands || [];
     }
     
-    if (selectedCategories.length === 0) {
+    if (selectedCategories.length === 0 || hasAllCategoriesSelected) {
       return filtersData.brands || [];
     }
     
@@ -101,7 +103,7 @@ export function useFilterState({
       return getActiveCategoryName(selectedCategories);
     }
     
-    if (selectedCategories.length === 0) {
+    if (selectedCategories.length === 0 || hasAllCategoriesSelected) {
       return "Shop by Brand";
     }
     
@@ -119,8 +121,26 @@ export function useFilterState({
   // Apply filters when selection changes
   const applyFilters = () => {
     if (onFilterChange) {
+      const filtersCopy = {...selectedOptions};
+      
+      // Handle "all" selection special cases
+      if (filtersCopy.categories?.includes("all")) {
+        // When "all" is selected, we need to send an empty array to the API instead
+        filtersCopy.categories = [];
+      }
+      
+      if (filtersCopy.brands?.includes("all")) {
+        // When "all" is selected for brands, we need to send an empty array
+        filtersCopy.brands = [];
+      }
+      
+      if (filtersCopy.genders?.includes("all")) {
+        // When "all" is selected for genders, we need to send an empty array
+        filtersCopy.genders = [];
+      }
+      
       onFilterChange({
-        ...selectedOptions,
+        ...filtersCopy,
         priceRange,
         caseSizeRange
       });

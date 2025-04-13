@@ -18,6 +18,7 @@ export interface FilterCategoryProps {
   selectedOptions?: string[];
   onSelectionChange?: (selected: string[]) => void;
   onRangeChange?: (min: number, max: number) => void;
+  showAllOption?: boolean;
 }
 
 export interface RangeFilterProps {
@@ -33,6 +34,7 @@ export interface CheckboxFilterProps {
   options: FilterOption[];
   selectedOptions: string[];
   onSelectionChange: (selectedIds: string[]) => void;
+  showAllOption?: boolean;
 }
 
 export interface FiltersData {
