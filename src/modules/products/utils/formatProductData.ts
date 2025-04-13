@@ -1,7 +1,7 @@
 
 import { Product } from '@/types/api';
 
-export const formatProductData = (product: Product | null) => {
+export const formatProductData = (product: Product | null, overrideCurrency?: string) => {
   if (!product) {
     return {
       formattedPrice: 'OMR 0.00',
@@ -16,7 +16,7 @@ export const formatProductData = (product: Product | null) => {
   }
   
   // Handle different currency formats
-  const currencySymbol = 'OMR ';
+  const currencySymbol = overrideCurrency || 'OMR ';
   
   // Format price
   const formattedPrice = `${currencySymbol}${product.price.toFixed(2)}`;

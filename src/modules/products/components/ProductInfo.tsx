@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 export interface ProductInfoProps {
   brand: string;
@@ -30,6 +31,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({
   stockStatusClass,
   description
 }) => {
+  const { currency: selectedCurrency } = useCurrency();
+  
   // Parse numeric price if it's a string
   const numericPrice = typeof price === 'string' ? parseFloat(price.replace(/[^\d.]/g, '')) : price;
   
@@ -38,8 +41,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({
     ? numericPrice - (numericPrice * (discount / 100)) 
     : null;
   
-  const displayPrice = typeof price === 'string' ? price : `${currency} ${numericPrice.toFixed(2)}`;
-  const displayDiscountedPrice = discountedPrice || (calculatedDiscountedPrice ? `${currency} ${calculatedDiscountedPrice.toFixed(2)}` : null);
+  const displayPrice = typeof price === 'string' ? price : `${selectedCurrency} ${numericPrice.toFixed(2)}`;
+  const displayDiscountedPrice = discountedPrice || (calculatedDiscountedPrice ? `${selectedCurrency} ${calculatedDiscountedPrice.toFixed(2)}` : null);
   const displayDiscountPercentage = discountPercentage || (discount ? `${discount}% Off` : null);
   
   return (

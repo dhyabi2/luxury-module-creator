@@ -6,7 +6,7 @@ import { Product } from '@/types/api';
  * @param product - The product data to format
  * @returns Formatted product data with display-ready values
  */
-export const formatProductDetail = (product: Product | null) => {
+export const formatProductDetail = (product: Product | null, overrideCurrency?: string) => {
   if (!product) {
     return {
       formattedPrice: 'OMR 0.00',
@@ -20,8 +20,9 @@ export const formatProductDetail = (product: Product | null) => {
     };
   }
 
-  // Format price
-  const formattedPrice = `OMR ${product.price.toFixed(2)}`;
+  // Format price with optional currency override
+  const currencySymbol = overrideCurrency || 'OMR ';
+  const formattedPrice = `${currencySymbol}${product.price.toFixed(2)}`;
   
   // Calculate discounted price if applicable
   let discountedPrice = null;
@@ -30,7 +31,7 @@ export const formatProductDetail = (product: Product | null) => {
   
   if (product.discount && product.discount > 0) {
     discountedPrice = product.price - (product.price * (product.discount / 100));
-    formattedDiscountedPrice = `OMR ${discountedPrice.toFixed(2)}`;
+    formattedDiscountedPrice = `${currencySymbol}${discountedPrice.toFixed(2)}`;
     formattedDiscount = `${product.discount}% Off`;
   }
   

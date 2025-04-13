@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import MainNavigation from '@/modules/navigation/MainNavigation';
@@ -6,6 +7,7 @@ import SearchBar from '@/modules/navigation/SearchBar';
 import MobileMenu from '@/modules/navigation/MobileMenu';
 import { CartIcon } from '@/modules/cart/components/CartIcon';
 import { supabase } from '@/integrations/supabase/client';
+import CurrencySelector from '@/modules/currency/CurrencySelector';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -64,6 +66,8 @@ const Header = () => {
             <div className="hidden md:block">
               <SearchBar />
             </div>
+            
+            <CurrencySelector />
             
             <CartIcon />
             
