@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Phone } from 'lucide-react';
 import { Product } from '@/types/api';
@@ -125,6 +126,17 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   };
   
   const createWhatsAppMessage = () => {
+    // Get the full absolute URL to the product image
+    const imageUrl = convertedProduct.image;
+    const absoluteImageUrl = imageUrl.startsWith('http') 
+      ? imageUrl 
+      : `${window.location.origin}${imageUrl}`;
+    
+    // Create message with product details and image URL
+    const message = `I'm interested in purchasing:\n${convertedProduct.brand} ${convertedProduct.name}\nPrice: ${convertedProduct.currency} ${convertedProduct.price}${
+      formattedProduct.formattedDiscount ? ` (${formattedProduct.formattedDiscount} off)` : ''
+    }\nProduct image: ${absoluteImageUrl}\nProduct link: ${window.location.origin}/product/${convertedProduct.id}`;
+    
     let specDetails = '';
     if (convertedProduct.specifications) {
       const specs = convertedProduct.specifications;
@@ -138,11 +150,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
       if (specs.volume) specDetails += `\n- Volume: ${specs.volume}`;
     }
     
-    const message = `I'm interested in purchasing:\n${convertedProduct.brand} ${convertedProduct.name}\nPrice: ${convertedProduct.currency} ${convertedProduct.price}${
-      formattedProduct.formattedDiscount ? ` (${formattedProduct.formattedDiscount} off)` : ''
-    }${specDetails}\nProduct ID: ${convertedProduct.id}`;
-    
-    return encodeURIComponent(message);
+    return encodeURIComponent(message + specDetails);
   };
   
   const specifications = convertedProduct.specifications || {};
