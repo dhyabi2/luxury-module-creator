@@ -1,141 +1,89 @@
 
-import { FilterOption, CategoryBrands } from "@/types/api";
-import { ProductType } from "../types";
+import { FilterOption, ProductType } from "../types";
 
 /**
- * Extract unique categories from products with counts
+ * Extract unique categories from products
  */
 export function extractCategories(products: ProductType[]): FilterOption[] {
-  return products.reduce((acc, product) => {
-    // Skip if category is already in the accumulator
-    if (acc.some(cat => cat.id === product.category.toLowerCase())) {
-      return acc;
+  const categories = new Map<string, { name: string; count: number }>();
+  
+  products.forEach(product => {
+    const categoryId = product.category.toLowerCase().replace(/\s+/g, '-');
+    const name = product.category;
+    
+    if (categories.has(categoryId)) {
+      categories.get(categoryId)!.count++;
+    } else {
+      categories.set(categoryId, { name, count: 1 });
     }
-    
-    // Count products in this category
-    const count = products.filter(p => 
-      p.category.toLowerCase() === product.category.toLowerCase()
-    ).length;
-    
-    // Add category with count
-    acc.push({
-      id: product.category.toLowerCase(),
-      name: product.category.charAt(0).toUpperCase() + product.category.slice(1),
-      count
-    });
-    
-    return acc;
-  }, [] as FilterOption[]);
+  });
+  
+  return Array.from(categories.entries()).map(([id, { name, count }]) => ({
+    id,
+    name,
+    count
+  }));
 }
 
 /**
- * Extract unique brands from products with counts
+ * Extract unique brands from products
  */
 export function extractBrands(products: ProductType[]): FilterOption[] {
-  return products.reduce((acc, product) => {
-    // Skip if brand is already in the accumulator
-    if (acc.some(brand => brand.id === product.brand)) {
-      return acc;
+  const brands = new Map<string, { name: string; count: number }>();
+  
+  products.forEach(product => {
+    const brandId = product.brand.toLowerCase().replace(/\s+/g, '-');
+    const name = product.brand;
+    
+    if (brands.has(brandId)) {
+      brands.get(brandId)!.count++;
+    } else {
+      brands.set(brandId, { name, count: 1 });
     }
-    
-    // Count products with this brand
-    const count = products.filter(p => p.brand === product.brand).length;
-    
-    // Add brand with count
-    acc.push({
-      id: product.brand,
-      name: product.brand.charAt(0).toUpperCase() + product.brand.slice(1).replace(/([A-Z])/g, ' $1').trim(),
-      count
-    });
-    
-    return acc;
-  }, [] as FilterOption[]);
+  });
+  
+  return Array.from(brands.entries()).map(([id, { name, count }]) => ({
+    id,
+    name,
+    count
+  }));
 }
 
 /**
  * Group brands by category
  */
-export function groupBrandsByCategory(products: ProductType[], allBrands: FilterOption[]): CategoryBrands {
-  const categoryBrands = products.reduce((acc, product) => {
-    const category = product.category.toLowerCase();
-    const brand = {
-      id: product.brand,
-      name: product.brand.charAt(0).toUpperCase() + product.brand.slice(1).replace(/([A-Z])/g, ' $1').trim(),
-      count: products.filter(p => p.brand === product.brand && p.category.toLowerCase() === category).length
-    };
-    
-    // Initialize category array if it doesn't exist
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    
-    // Add brand to category if not already present
-    if (!acc[category].some(b => b.id === brand.id)) {
-      acc[category].push(brand);
-    }
-    
-    return acc;
-  }, {} as CategoryBrands);
-
-  // Ensure each category has at least one brand
-  const categories = [...new Set(products.map(p => p.category.toLowerCase()))];
-  categories.forEach(category => {
-    const categoryId = category.toLowerCase();
-    if (!categoryBrands[categoryId] || categoryBrands[categoryId].length === 0) {
-      console.log(`[DB:filters:generator] Adding default brands to category: ${categoryId}`);
-      // Add some default brands if none exist for this category
-      categoryBrands[categoryId] = allBrands.slice(0, 3).map(brand => ({
-        ...brand,
-        count: 1
-      }));
-    }
+export function groupBrandsByCategory(
+  products: ProductType[],
+  allBrands: FilterOption[]
+): Record<string, FilterOption[]> {
+  const result: Record<string, FilterOption[]> = {};
+  
+  // Create a map for faster lookups
+  const brandMap = new Map<string, FilterOption>();
+  allBrands.forEach(brand => {
+    brandMap.set(brand.id, brand);
   });
   
-  // Ensure all our categories have valid entries in categoryBrands
-  const requiredCategories = ['watches', 'accessories', 'bags', 'perfumes'];
-  requiredCategories.forEach(category => {
-    if (!categoryBrands[category]) {
-      console.log(`[DB:filters:generator] Creating missing category brands for: ${category}`);
-      categoryBrands[category] = allBrands.slice(0, 3).map(brand => ({
-        ...brand,
-        count: 1
-      }));
-    }
-  });
+  // Group products by category
+  const productsByCategory = new Map<string, Set<string>>();
   
-  return categoryBrands;
-}
-
-/**
- * Get combined brands from multiple categories
- */
-export function getCombinedBrands(categoryBrands: CategoryBrands, categories: string[]): FilterOption[] {
-  if (!categories || categories.length === 0) {
-    return [];
-  }
-  
-  const uniqueBrands = new Map<string, FilterOption>();
-  
-  categories.forEach(categoryId => {
-    const brandsForCategory = categoryBrands[categoryId] || [];
-    console.log(`[getCombinedBrands] Category ${categoryId} has ${brandsForCategory.length} brands`);
+  products.forEach(product => {
+    const categoryId = product.category.toLowerCase().replace(/\s+/g, '-');
+    const brandId = product.brand.toLowerCase().replace(/\s+/g, '-');
     
-    brandsForCategory.forEach(brand => {
-      if (!uniqueBrands.has(brand.id)) {
-        uniqueBrands.set(brand.id, { ...brand });
-      } else {
-        // If brand already exists, update the count
-        const existingBrand = uniqueBrands.get(brand.id)!;
-        uniqueBrands.set(brand.id, {
-          ...existingBrand,
-          count: (existingBrand.count || 0) + (brand.count || 0)
-        });
-      }
-    });
+    if (!productsByCategory.has(categoryId)) {
+      productsByCategory.set(categoryId, new Set<string>());
+    }
+    
+    productsByCategory.get(categoryId)!.add(brandId);
   });
   
-  const result = Array.from(uniqueBrands.values());
-  console.log(`[getCombinedBrands] Combined ${result.length} unique brands from ${categories.length} categories`);
+  // Convert sets to arrays and map to brand objects
+  productsByCategory.forEach((brandIds, categoryId) => {
+    result[categoryId] = Array.from(brandIds)
+      .map(id => brandMap.get(id))
+      .filter((brand): brand is FilterOption => brand !== undefined);
+  });
   
   return result;
 }

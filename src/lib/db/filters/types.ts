@@ -1,54 +1,34 @@
 
-import { FilterOption, FiltersResponse, CategoryBrands } from "@/types/api";
-
-// Define interfaces for filter-related type safety
-export interface SpecificationsType {
-  strapMaterial?: string;
-  caseMaterial?: string;
-  dialColor?: string;
-  strapColor?: string;
-  caseSize?: string;
-  gender?: string;
-  [key: string]: string | undefined;
+export interface FilterOption {
+  id: string;
+  name: string;
+  count?: number;
 }
 
-export interface ProductType {
-  category: string;
-  brand: string;
-  price: number;
-  gender?: string;
-  specifications?: SpecificationsType;
+export interface RangeFilter {
+  min: number;
+  max: number;
+  unit: string;
 }
 
 export interface FiltersData {
-  priceRange: {
-    min: number;
-    max: number;
-    unit: string;
-  };
+  priceRange: RangeFilter;
+  caseSizeRange: RangeFilter;
   categories: FilterOption[];
   brands: FilterOption[];
-  categoryBrands: CategoryBrands;
+  genders: FilterOption[];
   bands: FilterOption[];
   caseColors: FilterOption[];
   colors: FilterOption[];
-  genders: FilterOption[];
-  caseSizeRange: {
-    min: number;
-    max: number;
-    unit: string;
-  };
+  categoryBrands: Record<string, FilterOption[]>;
 }
 
-// Type for default filter values
-export interface DefaultFilters {
-  priceRange: { min: number; max: number; unit: string };
-  categories: FilterOption[];
-  brands: FilterOption[];
-  categoryBrands: CategoryBrands;
-  bands: FilterOption[];
-  caseColors: FilterOption[];
-  colors: FilterOption[];
-  genders: FilterOption[];
-  caseSizeRange: { min: number; max: number; unit: string };
+export interface ProductType {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  price: number;
+  specifications: Record<string, any>;
+  [key: string]: any;
 }

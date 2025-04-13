@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { FiltersResponse } from '@/types/api';
 import { getCombinedBrands, getActiveCategoryName } from '../utils/brandUtils';
 
 interface FilterState {
@@ -13,7 +12,7 @@ interface FilterState {
 
 interface UseFilterStateProps {
   initialFilters: Record<string, any>;
-  filtersData: FiltersResponse | null;
+  filtersData: any | null;
   categoryParam?: string;
   onFilterChange?: (filters: Record<string, any>) => void;
 }
@@ -67,7 +66,7 @@ export function useFilterState({
         }));
       }
     }
-  }, [filtersData, initialFilters, categoryParam]);
+  }, [filtersData, initialFilters, categoryParam, selectedOptions.categories]);
   
   // Calculate derived values
   const selectedCategories = selectedOptions.categories || [];
@@ -95,20 +94,38 @@ export function useFilterState({
   };
   
   const categorySpecificBrands = getCategorySpecificBrands();
-  const activeCategoryName = getActiveCategoryName(selectedCategories);
   
-  // Apply filters when state changes
-  useEffect(() => {
+  // Get active category name for display
+  const getActiveCategoryNameFromData = () => {
+    if (!filtersData) {
+      return getActiveCategoryName(selectedCategories);
+    }
+    
+    if (selectedCategories.length === 0) {
+      return "Shop by Brand";
+    }
+    
+    if (selectedCategories.length === 1) {
+      const categoryId = selectedCategories[0];
+      const category = filtersData?.categories?.find(c => c.id === categoryId);
+      return category ? `${category.name} Brands` : "Shop by Brand";
+    }
+    
+    return "Shop by Brand";
+  };
+  
+  const activeCategoryName = getActiveCategoryNameFromData();
+  
+  // Apply filters when selection changes
+  const applyFilters = () => {
     if (onFilterChange) {
-      const filters = {
+      onFilterChange({
         ...selectedOptions,
         priceRange,
         caseSizeRange
-      };
-      console.log('Applying filters:', filters);
-      onFilterChange(filters);
+      });
     }
-  }, [selectedOptions, priceRange, caseSizeRange, onFilterChange]);
+  };
   
   // Debug brands information
   useEffect(() => {
@@ -119,6 +136,11 @@ export function useFilterState({
       console.log('Available brands for current selection:', categorySpecificBrands.length);
     }
   }, [filtersData, selectedCategories, categorySpecificBrands]);
+  
+  // Apply filters when state changes
+  useEffect(() => {
+    applyFilters();
+  }, [selectedOptions, priceRange, caseSizeRange]);
   
   // Handle selection change
   const handleSelectionChange = (category: string, selected: string[]) => {
