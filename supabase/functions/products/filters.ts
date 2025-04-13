@@ -30,35 +30,50 @@ export const applyCategoryFilter = (query: any, params: any) => {
   return query;
 };
 
-// Apply gender filter with OR logic - FIXED
+// Apply gender filter with better text search
 export const applyGenderFilter = (query: any, params: any) => {
+  // Check for standard gender parameter
   if (params.gender) {
     const genders = params.gender.split(',').map((g: string) => g.trim());
-    console.log(`[API:products] Filtering by genders: ${genders.join(', ')}`);
+    console.log(`[API:products] Filtering by genders (standard): ${genders.join(', ')}`);
     
     if (genders.length > 0) {
-      // For non-watch categories, use simplified approach without JSONB operators
-      if (params.category && 
-          (params.category.toLowerCase().includes('accessories') || 
-           params.category.toLowerCase().includes('bags') || 
-           params.category.toLowerCase().includes('perfumes'))) {
-        // Skip gender filter for non-watch categories
-        console.log('[API:products] Skipping detailed gender filter for non-watch category');
-        return query;
-      } else {
-        // Fixed approach for watches - use containedBy for each gender with OR
-        if (genders.length === 1) {
-          query = query.contains('specifications', { gender: genders[0] });
-        } else {
-          // For multiple genders, build an OR condition string with contains for each
-          const orConditions = genders.map(gender => 
-            `specifications->gender.eq.${gender}`
-          ).join(',');
-          query = query.or(orConditions);
-        }
+      // Use text search for multiple genders which is more reliable
+      const textConditions = [];
+      for (const gender of genders) {
+        textConditions.push(`specifications::text ilike '%"gender":"${gender}"%'`);
+        textConditions.push(`specifications::text ilike '%"gender": "${gender}"%'`);
+      }
+      query = query.or(textConditions.join(','));
+    }
+    return query;
+  }
+  
+  // Special handling for gender search parameter - this fixes the watches + gender issue
+  if (params.genderSearch) {
+    const genders = params.genderSearch.split(',').map((g: string) => g.trim());
+    console.log(`[API:products] Filtering by genders (text search): ${genders.join(', ')}`);
+    
+    const watchesCategory = params.category && params.category.includes('watches');
+    
+    if (genders.length > 0 && watchesCategory) {
+      console.log('[API:products] Using optimized text search for watches + gender combination');
+      
+      // Direct text search on the JSON column as text
+      const textConditions = [];
+      for (const gender of genders) {
+        // Add multiple variations to catch different JSON formats
+        textConditions.push(`specifications::text ilike '%"gender":"${gender}"%'`);
+        textConditions.push(`specifications::text ilike '%"gender": "${gender}"%'`);
+      }
+      
+      if (textConditions.length > 0) {
+        // Use OR for any gender match
+        query = query.or(textConditions.join(','));
       }
     }
   }
+  
   return query;
 };
 
@@ -170,14 +185,14 @@ export const applyAllFilters = (query: any, params: any) => {
   query = applyCategoryFilter(query, params);
   query = applyPriceFilter(query, params);
   
-  // Skip watch-specific filters for non-watch categories
+  // Check for watch-specific category
+  const isWatchCategory = params.category && params.category.includes('watches');
   const isNonWatchCategory = params.category && 
-    (typeof params.category === 'string' && 
-      (params.category.toLowerCase().includes('accessories') || 
-       params.category.toLowerCase().includes('bags') || 
-       params.category.toLowerCase().includes('perfumes')));
+    (params.category.toLowerCase().includes('accessories') || 
+     params.category.toLowerCase().includes('bags') || 
+     params.category.toLowerCase().includes('perfumes'));
        
-  if (!isNonWatchCategory) {
+  if (isWatchCategory || !isNonWatchCategory) {
     console.log('[API:products] Applying watch-specific filters');
     query = applyCaseSizeFilter(query, params);
     query = applyBandFilter(query, params);
@@ -187,7 +202,7 @@ export const applyAllFilters = (query: any, params: any) => {
     console.log('[API:products] Skipping watch-specific filters for non-watch category');
   }
   
-  // Apply gender filter - always include, but with special handling
+  // Apply gender filter (with special handling using better text search)
   query = applyGenderFilter(query, params);
   
   query = applySpecialFilters(query, params);

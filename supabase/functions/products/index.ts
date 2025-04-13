@@ -26,6 +26,14 @@ serve(async (req) => {
     console.log('[API:products] Request method:', req.method);
     console.log('[API:products] Request parameters:', params);
     
+    // Check for watch category and gender search (special handling)
+    const isWatchCategory = params.category && params.category.includes('watches');
+    const hasGenderSearch = params.genderSearch !== undefined;
+    
+    if (isWatchCategory && hasGenderSearch) {
+      console.log('[API:products] Watch + gender search detected - using optimized query');
+    }
+    
     // Check if requesting accessories category to skip problematic filters
     const isAccessoryCategory = params.category && 
       (typeof params.category === 'string' && 
@@ -108,6 +116,62 @@ serve(async (req) => {
       return createResponse(response);
     } catch (queryError) {
       console.error('[API:products] Query error:', queryError);
+      
+      // Special handling for watch + gender combination
+      if (isWatchCategory && (params.gender || params.genderSearch)) {
+        console.log('[API:products] Trying simplified query for watches + gender');
+        
+        // Create a simplified query using text search for gender
+        let simpleQuery = supabase.from('products')
+          .select('*', { count: 'exact' })
+          .ilike('category', '%watches%');
+          
+        // Add gender text search if present
+        const genders = params.gender ? 
+          params.gender.split(',').map((g: string) => g.trim()) : 
+          params.genderSearch ? 
+            params.genderSearch.split(',').map((g: string) => g.trim()) : 
+            [];
+            
+        if (genders.length > 0) {
+          const firstGender = genders[0];
+          simpleQuery = simpleQuery.filter('specifications::text', 'ilike', `%"gender":"${firstGender}"%`);
+          
+          if (genders.length > 1) {
+            console.log('[API:products] Using only first gender for compatibility');
+          }
+        }
+        
+        // Execute simplified count query
+        const { count: simpleCount } = await simpleQuery;
+        
+        // Apply pagination
+        const simplePaginatedQuery = simpleQuery
+          .order('id', { ascending: false })
+          .range((page - 1) * pageSize, page * pageSize - 1);
+        
+        // Execute simplified data query
+        const { data: simpleProducts } = await simplePaginatedQuery;
+        
+        if (simpleProducts) {
+          console.log(`[API:products] Retrieved ${simpleProducts.length} products with simplified query for watches + gender`);
+          
+          const processedProducts = processProducts(simpleProducts);
+          
+          // Prepare the response
+          const response = {
+            products: processedProducts,
+            pagination: {
+              totalCount: simpleCount || 0,
+              totalPages: Math.ceil((simpleCount || 0) / pageSize),
+              currentPage: page,
+              pageSize: pageSize
+            }
+          };
+          
+          return createResponse(response);
+        }
+      }
       
       // Special handling for non-watch categories with problematic filters
       if (isAccessoryCategory) {

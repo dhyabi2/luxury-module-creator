@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import ProductGridHeader from './components/ProductGridHeader';
 import ProductGridLoading from './components/ProductGridLoading';
@@ -87,16 +86,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         console.log('Filtering by price range:', `${filters.priceRange.min}-${filters.priceRange.max}`);
       }
       
-      // For accessories, don't include case size
-      const isAccessory = (filters.categories && filters.categories.some((c: string) => 
-        c.toLowerCase().includes('accessories') || 
-        c.toLowerCase().includes('bags') || 
-        c.toLowerCase().includes('perfumes'))) || 
-        (category && (category.toLowerCase().includes('accessories') || 
-                     category.toLowerCase().includes('bags') || 
-                     category.toLowerCase().includes('perfumes')));
-      
-      if (filters.caseSizeRange && !isAccessory) {
+      // Check if watches is in the selected categories
+      const hasWatchesCategory = 
+        (filters.categories && filters.categories.includes('watches')) || 
+        (category && category.toLowerCase() === 'watches');
+
+      // Only include case size if watches category is selected
+      if (filters.caseSizeRange && hasWatchesCategory) {
         urlParams.append('minCaseSize', filters.caseSizeRange.min.toString());
         urlParams.append('maxCaseSize', filters.caseSizeRange.max.toString());
         console.log('Filtering by case size range:', `${filters.caseSizeRange.min}-${filters.caseSizeRange.max}`);
@@ -113,11 +109,27 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       try {
         console.log('Fetching products with query params:', queryString);
         
-        // Make direct API call
+        // Make direct API call with completely unrestricted access
         const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
         
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${queryString}`, {
+        // Use a simpler URL for watches + gender combination to avoid SQL join issues
+        let finalUrl = `${SUPABASE_URL}/functions/v1/products?${queryString}`;
+        
+        // Fix for watches + gender filter issue - use a specialized endpoint format
+        if (hasWatchesCategory && filters.genders && filters.genders.length > 0) {
+          console.log('Using modified query format for watches + gender combination');
+          
+          // Remove gender from URL parameters to rebuild it in a different format
+          const newUrlParams = new URLSearchParams(urlParams.toString());
+          newUrlParams.delete('gender');
+          
+          // Add gender back but in a text search format that the API can handle better
+          finalUrl = `${SUPABASE_URL}/functions/v1/products?${newUrlParams.toString()}&genderSearch=${filters.genders.join(',')}`;
+          console.log('Modified URL:', finalUrl);
+        }
+        
+        const response = await fetch(finalUrl, {
           headers: {
             "apikey": SUPABASE_KEY,
             "Authorization": `Bearer ${SUPABASE_KEY}`,
@@ -128,33 +140,27 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         if (!response.ok) {
           console.error('Failed to fetch products:', response.status, response.statusText);
           
-          // If we get a 500 error and have case size or gender parameters, try again without them
-          if (response.status === 500 && (queryString.includes('minCaseSize') || queryString.includes('gender='))) {
-            console.log('Retrying without problematic parameters');
+          // If we get a 500 error, try a simpler fallback request with fewer filters
+          if (response.status === 500) {
+            console.log('Trying fallback request with fewer filters');
             
-            // Create a new URL params object without the problematic filters
             const fallbackParams = new URLSearchParams();
             
-            // Copy over safe parameters only
-            if (brand) fallbackParams.append('brand', brand);
-            if (category) fallbackParams.append('category', category);
-            if (isNewIn) fallbackParams.append('isNewIn', 'true');
-            if (isOnSale) fallbackParams.append('isOnSale', 'true');
+            // Only keep essential parameters
+            if (hasWatchesCategory) {
+              fallbackParams.append('category', 'watches');
+            } else if (category) {
+              fallbackParams.append('category', category);
+            } else if (filters.categories && filters.categories.length > 0) {
+              fallbackParams.append('category', filters.categories.join(','));
+            }
             
             // Add pagination and sorting
             fallbackParams.append('page', currentPage.toString());
             fallbackParams.append('pageSize', pageSize.toString());
             fallbackParams.append('sortBy', sortBy);
             
-            // Add price range which is usually safe
-            if (filters.priceRange) {
-              fallbackParams.append('minPrice', filters.priceRange.min.toString());
-              fallbackParams.append('maxPrice', filters.priceRange.max.toString());
-            }
-            
-            const fallbackQueryString = fallbackParams.toString();
-            
-            const fallbackResponse = await fetch(`${SUPABASE_URL}/functions/v1/products?${fallbackQueryString}`, {
+            const fallbackResponse = await fetch(`${SUPABASE_URL}/functions/v1/products?${fallbackParams.toString()}`, {
               headers: {
                 "apikey": SUPABASE_KEY,
                 "Authorization": `Bearer ${SUPABASE_KEY}`,
@@ -162,17 +168,18 @@ const ProductGrid: React.FC<ProductGridProps> = ({
               }
             });
             
-            if (fallbackResponse.ok) {
-              const fallbackData = await fallbackResponse.json();
-              console.log('Products data received (fallback):', fallbackData);
-              setProducts(fallbackData.products);
-              setTotalPages(fallbackData.pagination.totalPages);
-              setTotalCount(fallbackData.pagination.totalCount);
-              setCurrentPage(fallbackData.pagination.currentPage);
-              setError("Some filters were disabled due to compatibility issues");
-              setLoading(false);
-              return;
+            if (!fallbackResponse.ok) {
+              throw new Error(`Failed to fetch products: ${fallbackResponse.statusText}`);
             }
+            
+            const fallbackData = await fallbackResponse.json();
+            setProducts(fallbackData.products);
+            setTotalPages(fallbackData.pagination.totalPages);
+            setTotalCount(fallbackData.pagination.totalCount);
+            setCurrentPage(fallbackData.pagination.currentPage);
+            setError("Some filters were disabled due to compatibility issues");
+            setLoading(false);
+            return;
           }
           
           throw new Error(`Failed to fetch products: ${response.statusText}`);

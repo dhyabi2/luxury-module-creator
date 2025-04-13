@@ -18,25 +18,18 @@ export const applyGenderFilter = (query: any, gender: string) => {
     
     // Create a more robust filter that works with multiple genders
     if (genders.length > 0) {
-      if (genders.length === 1) {
-        // For single gender, simple containment check works
-        const genderFilter: any = {};
-        genderFilter['gender'] = genders[0];
-        query = query.contains('specifications', genderFilter);
-      } else {
-        // For multiple genders, need to use OR conditions with individual contains
-        let orConditions = [];
-        
-        for (let i = 0; i < genders.length; i++) {
-          const genderValue = genders[i];
-          // Use text search which is more reliable for multiple values
-          orConditions.push(`specifications::text ilike '%"gender":"${genderValue}"%'`);
-          orConditions.push(`specifications::text ilike '%"gender": "${genderValue}"%'`);
-        }
-        
-        if (orConditions.length > 0) {
-          query = query.or(orConditions.join(','));
-        }
+      // Use text search for all cases - much more reliable for mixed data types
+      const textConditions = [];
+      
+      for (const gender of genders) {
+        // Use multiple variations to catch different JSON formats
+        textConditions.push(`specifications::text ilike '%"gender":"${gender}"%'`);
+        textConditions.push(`specifications::text ilike '%"gender": "${gender}"%'`);
+      }
+      
+      if (textConditions.length > 0) {
+        // Use OR for any gender match
+        query = query.or(textConditions.join(','));
       }
     }
   }
