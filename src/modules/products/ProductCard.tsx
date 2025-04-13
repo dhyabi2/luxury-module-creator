@@ -14,6 +14,12 @@ export interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   
+  // Create WhatsApp message with product details
+  const createWhatsAppMessage = () => {
+    const message = `I'm interested in: ${product.brand} ${product.name} (${product.currency} ${product.price})`;
+    return encodeURIComponent(message);
+  };
+  
   return (
     <article 
       className="product-card h-full"
@@ -39,7 +45,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       
       <div className="mt-2">
         <a 
-          href="https://wa.me/96899999999" 
+          href={`https://wa.me/96899999999?text=${createWhatsAppMessage()}`}
           target="_blank" 
           rel="noopener noreferrer"
           className="inline-flex items-center text-green-600 text-sm hover:text-green-700"

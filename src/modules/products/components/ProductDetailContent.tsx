@@ -28,6 +28,28 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
     addItem(product, quantity);
   };
   
+  // Create WhatsApp message with detailed product information
+  const createWhatsAppMessage = () => {
+    let specDetails = '';
+    if (product.specifications) {
+      const specs = product.specifications;
+      specDetails = '\n\nSpecifications:';
+      if (specs.caseMaterial) specDetails += `\n- Case: ${specs.caseMaterial}`;
+      if (specs.caseSize) specDetails += `\n- Size: ${specs.caseSize}`;
+      if (specs.movement) specDetails += `\n- Movement: ${specs.movement}`;
+      if (specs.waterResistance) specDetails += `\n- Water Resistance: ${specs.waterResistance}`;
+      if (specs.gender) specDetails += `\n- Gender: ${specs.gender}`;
+      if (specs.type) specDetails += `\n- Type: ${specs.type}`;
+      if (specs.volume) specDetails += `\n- Volume: ${specs.volume}`;
+    }
+    
+    const message = `I'm interested in purchasing:\n${product.brand} ${product.name}\nPrice: ${product.currency} ${product.price}${
+      formattedProduct.formattedDiscount ? ` (${formattedProduct.formattedDiscount} off)` : ''
+    }${specDetails}\nProduct ID: ${product.id}`;
+    
+    return encodeURIComponent(message);
+  };
+  
   // Extract specifications from product
   const specifications = product.specifications || {};
   
@@ -66,7 +88,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
           
           <div className="mt-4 mb-6">
             <a 
-              href="https://wa.me/96899999999" 
+              href={`https://wa.me/96899999999?text=${createWhatsAppMessage()}`} 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
