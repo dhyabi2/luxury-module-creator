@@ -22,6 +22,8 @@ import TermsConditions from './pages/TermsConditions';
 import Returns from './pages/Returns';
 import ShippingDelivery from './pages/ShippingDelivery';
 import NotFound from './pages/NotFound';
+import CheckoutSuccess from './pages/CheckoutSuccess';
+import CheckoutCanceled from './pages/CheckoutCanceled';
 
 import { CartProvider } from '@/contexts/CartContext';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
@@ -55,6 +57,8 @@ function App() {
               <Route path="/terms-conditions" element={<TermsConditions />} />
               <Route path="/returns" element={<Returns />} />
               <Route path="/shipping-delivery" element={<ShippingDelivery />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+              <Route path="/checkout/canceled" element={<CheckoutCanceled />} />
               <Route path="*" element={<NotFound />} />
               
               {/* Admin Routes */}

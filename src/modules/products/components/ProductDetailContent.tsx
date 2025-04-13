@@ -9,6 +9,8 @@ import ProductInfo from './ProductInfo';
 import ProductSpecifications from './ProductSpecifications';
 import ProductActions from './ProductActions';
 import { formatProductData } from '../utils/formatProductData';
+import QuantitySelector from './QuantitySelector';
+import { toast } from 'sonner';
 
 interface ProductDetailContentProps {
   product: Product;
@@ -23,9 +25,69 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   const handleQuantityChange = (newQuantity: number) => {
     setQuantity(newQuantity);
   };
+
+  const handleIncrement = () => {
+    setQuantity(prevQuantity => prevQuantity + 1);
+  };
+
+  const handleDecrement = () => {
+    if (quantity > 1) {
+      setQuantity(prevQuantity => prevQuantity - 1);
+    }
+  };
   
   const handleAddToCart = () => {
     addItem(product, quantity);
+  };
+  
+  // Direct checkout handler
+  const handleDirectCheckout = () => {
+    console.log('Processing direct checkout for:', product, 'Quantity:', quantity);
+    
+    // First add the item to cart to ensure it's there
+    addItem(product, quantity);
+    
+    // Direct API call to create checkout session
+    fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/create-checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo'
+      },
+      body: JSON.stringify({
+        items: [{
+          id: product.id,
+          name: product.name,
+          brand: product.brand,
+          price: product.price,
+          currency: product.currency,
+          quantity: quantity,
+          image: product.image
+        }],
+        mode: 'payment',
+        successUrl: window.location.origin + '/checkout/success',
+        cancelUrl: window.location.origin + '/checkout/canceled'
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Checkout session created:', data);
+      if (data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        toast.error('Could not redirect to checkout');
+      }
+    })
+    .catch(error => {
+      console.error('Error creating checkout session:', error);
+      toast.error('Failed to initialize checkout');
+    });
   };
   
   // Create WhatsApp message with detailed product information
@@ -98,6 +160,12 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
             </a>
           </div>
           
+          <QuantitySelector
+            quantity={quantity}
+            onIncrement={handleIncrement}
+            onDecrement={handleDecrement}
+          />
+          
           {specifications && Object.keys(specifications).length > 0 && (
             <ProductSpecifications 
               caseMaterial={specifications.caseMaterial}
@@ -120,6 +188,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
             quantity={quantity}
             onQuantityChange={handleQuantityChange}
             onAddToCart={handleAddToCart}
+            onDirectCheckout={handleDirectCheckout}
           />
         </div>
       </div>
