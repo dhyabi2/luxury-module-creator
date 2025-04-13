@@ -1,6 +1,6 @@
 
 import React from 'react';
-import ProductCard from '../ProductCard';
+import ProductGrid from './ProductGrid';
 import ProductPagination from './ProductPagination';
 import { Product } from '@/types/api';
 
@@ -19,11 +19,7 @@ const ProductGridContent: React.FC<ProductGridContentProps> = ({
 }) => {
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      <ProductGrid products={products} />
       
       <ProductPagination
         currentPage={currentPage}
