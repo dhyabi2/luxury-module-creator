@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import MainNavigation from '@/modules/navigation/MainNavigation';
@@ -41,10 +40,9 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm fixed w-full top-0 left-0 z-50">
+    <header className="bg-white/95 shadow-sm fixed w-full top-0 left-0 z-50 text-brand-dark">
       <div className="container mx-auto px-4">
         <div className="flex justify-between h-16 sm:h-20 items-center">
-          {/* Left section: Logo */}
           <Link to="/" className="flex-shrink-0">
             <img 
               src={logoUrl} 
@@ -58,21 +56,17 @@ const Header = () => {
             />
           </Link>
           
-          {/* Center section: Main nav (show on desktop) */}
           <div className="hidden lg:block">
             <MainNavigation />
           </div>
           
-          {/* Right section: Search and mobile menu */}
           <div className="flex items-center gap-1 sm:gap-4">
             <div className="hidden md:block">
               <SearchBar />
             </div>
             
-            {/* Add CartIcon component here */}
             <CartIcon />
             
-            {/* Mobile menu button */}
             <button
               onClick={toggleMobileMenu}
               className="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none"
@@ -86,14 +80,12 @@ const Header = () => {
         </div>
       </div>
       
-      {/* Secondary navigation */}
       <div className="hidden lg:block border-t border-gray-100">
         <div className="container mx-auto px-4">
           <SecondaryNavigation />
         </div>
       </div>
       
-      {/* Mobile menu */}
       <MobileMenu isOpen={isMobileMenuOpen} onClose={toggleMobileMenu} />
     </header>
   );

@@ -68,9 +68,9 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				brand: {
-					dark: '#000000',
 					DEFAULT: '#222222',
-					light: '#333333'
+					light: '#333333',
+					dark: '#000000'
 				},
 				sale: {
 					DEFAULT: '#000000',
@@ -127,9 +127,12 @@ export default {
 				'scale-out': 'scale-out 0.2s ease-out'
 			},
 			fontFamily: {
-				sans: ['Inter', 'sans-serif'],
-				serif: ['Playfair Display', 'serif'],
-				display: ['Montserrat', 'sans-serif']
+				'sans': ['Inter', 'system-ui', 'sans-serif'],
+				'serif': ['Playfair Display', 'serif'],
+				'display': ['Montserrat', 'sans-serif']
+			},
+			fontSize: {
+				'page-title': ['2.5rem', { lineHeight: '1.2', fontWeight: '700' }]
 			},
 			transitionProperty: {
 				'height': 'height',

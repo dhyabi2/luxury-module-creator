@@ -17,7 +17,7 @@ const Watches = () => {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Watches Collection</h1>
+        <h1 className="text-page-title font-display text-brand-dark mb-6">Watches Collection</h1>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
             <FilterSidebar 
