@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone } from 'lucide-react';
@@ -55,7 +56,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   }, [currency, product]);
   
   const createWhatsAppMessage = () => {
-    const message = `I'm interested in: ${convertedProduct.brand} ${convertedProduct.name} (${convertedProduct.currency} ${convertedProduct.price})`;
+    // Get the full absolute URL to the product image
+    const imageUrl = convertedProduct.image;
+    const absoluteImageUrl = imageUrl.startsWith('http') 
+      ? imageUrl 
+      : `${window.location.origin}${imageUrl}`;
+    
+    // Create message with product details and image URL
+    const message = `I'm interested in: ${convertedProduct.brand} ${convertedProduct.name} (${convertedProduct.currency} ${convertedProduct.price})\n\nProduct image: ${absoluteImageUrl}\n\nProduct link: ${window.location.origin}/product/${convertedProduct.id}`;
+    
     return encodeURIComponent(message);
   };
   

@@ -17,9 +17,17 @@ export interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   
-  // Create WhatsApp message with product details
+  // Create WhatsApp message with product details including image URL
   const createWhatsAppMessage = () => {
-    const message = `I'm interested in: ${product.brand} ${product.name} (${product.currency} ${product.price})`;
+    // Get the full absolute URL to the product image
+    const imageUrl = product.image;
+    const absoluteImageUrl = imageUrl.startsWith('http') 
+      ? imageUrl 
+      : `${window.location.origin}${imageUrl}`;
+    
+    // Create message with product details and image URL
+    const message = `I'm interested in: ${product.brand} ${product.name} (${product.currency} ${product.price})\n\nProduct image: ${absoluteImageUrl}\n\nProduct link: ${window.location.origin}/product/${product.id}`;
+    
     return encodeURIComponent(message);
   };
   
