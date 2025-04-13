@@ -3,12 +3,15 @@ import React, { useState } from 'react';
 import MainLayout from '@/modules/layout/MainLayout';
 import ProductGrid from '@/modules/products/ProductGrid';
 import FilterSidebar from '@/modules/filters/FilterSidebar';
+import { useParams } from 'react-router-dom';
 
 export interface ProductCategoryProps {
   gender: string;
 }
 
-const ProductCategory: React.FC<ProductCategoryProps> = ({ gender }) => {
+const ProductCategory: React.FC = () => {
+  const { categoryId } = useParams<{ categoryId: string }>();
+  const gender = categoryId || 'all';
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
   
   const handleFilterChange = (filters: Record<string, any>) => {
