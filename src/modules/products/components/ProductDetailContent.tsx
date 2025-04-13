@@ -40,12 +40,9 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
     addItem(product, quantity);
   };
   
-  // Direct checkout handler
+  // Direct checkout handler - now completely separate from cart
   const handleDirectCheckout = () => {
     console.log('Processing direct checkout for:', product, 'Quantity:', quantity);
-    
-    // First add the item to cart to ensure it's there
-    addItem(product, quantity);
     
     // Direct API call to create checkout session
     fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/create-checkout', {
