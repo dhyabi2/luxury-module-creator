@@ -16,21 +16,22 @@ export const applyGenderFilter = (query: any, gender: string) => {
     
     const genders = gender.split(',').map(g => g.trim());
     
-    // Use containedBy for JSONB which is more reliable
+    // Create a more robust filter that works with multiple genders
     if (genders.length > 0) {
-      const genderFilter: any = {};
-      genderFilter['gender'] = genders[0];
-      
-      // Use containedBy for JSONB
-      query = query.containedBy('specifications', genderFilter);
-      
-      // For multiple genders, add OR conditions
-      if (genders.length > 1) {
+      if (genders.length === 1) {
+        // For single gender, simple containment check works
+        const genderFilter: any = {};
+        genderFilter['gender'] = genders[0];
+        query = query.contains('specifications', genderFilter);
+      } else {
+        // For multiple genders, need to use OR conditions with individual contains
         let orConditions = [];
-        for (let i = 1; i < genders.length; i++) {
-          const additionalFilter: any = {};
-          additionalFilter['gender'] = genders[i];
-          orConditions.push(`specifications::jsonb @> '${JSON.stringify(additionalFilter)}'`);
+        
+        for (let i = 0; i < genders.length; i++) {
+          const genderValue = genders[i];
+          // Use text search which is more reliable for multiple values
+          orConditions.push(`specifications::text ilike '%"gender":"${genderValue}"%'`);
+          orConditions.push(`specifications::text ilike '%"gender": "${genderValue}"%'`);
         }
         
         if (orConditions.length > 0) {
@@ -86,26 +87,17 @@ export const applyBandFilter = (query: any, band: string) => {
     
     const bands = band.split(',').map(b => b.trim());
     
-    // Use containedBy for JSONB
+    // Use text search which is more reliable than JSONB for multiple values
     if (bands.length > 0) {
-      const bandFilter: any = {};
-      bandFilter['strapMaterial'] = bands[0];
+      const orConditions = [];
       
-      // Use containedBy for JSONB
-      query = query.containedBy('specifications', bandFilter);
+      for (let i = 0; i < bands.length; i++) {
+        orConditions.push(`specifications::text ilike '%"strapMaterial":"${bands[i]}"%'`);
+        orConditions.push(`specifications::text ilike '%"strapMaterial": "${bands[i]}"%'`);
+      }
       
-      // For multiple bands, add OR conditions
-      if (bands.length > 1) {
-        let orConditions = [];
-        for (let i = 1; i < bands.length; i++) {
-          const additionalFilter: any = {};
-          additionalFilter['strapMaterial'] = bands[i];
-          orConditions.push(`specifications::jsonb @> '${JSON.stringify(additionalFilter)}'`);
-        }
-        
-        if (orConditions.length > 0) {
-          query = query.or(orConditions.join(','));
-        }
+      if (orConditions.length > 0) {
+        query = query.or(orConditions.join(','));
       }
     }
   }
@@ -126,26 +118,17 @@ export const applyCaseColorFilter = (query: any, caseColor: string) => {
     
     const caseColors = caseColor.split(',').map(c => c.trim());
     
-    // Use containedBy for JSONB
+    // Use text search which is more reliable than JSONB for multiple values
     if (caseColors.length > 0) {
-      const caseColorFilter: any = {};
-      caseColorFilter['caseMaterial'] = caseColors[0];
+      const orConditions = [];
       
-      // Use containedBy for JSONB
-      query = query.containedBy('specifications', caseColorFilter);
+      for (let i = 0; i < caseColors.length; i++) {
+        orConditions.push(`specifications::text ilike '%"caseMaterial":"${caseColors[i]}"%'`);
+        orConditions.push(`specifications::text ilike '%"caseMaterial": "${caseColors[i]}"%'`);
+      }
       
-      // For multiple case colors, add OR conditions
-      if (caseColors.length > 1) {
-        let orConditions = [];
-        for (let i = 1; i < caseColors.length; i++) {
-          const additionalFilter: any = {};
-          additionalFilter['caseMaterial'] = caseColors[i];
-          orConditions.push(`specifications::jsonb @> '${JSON.stringify(additionalFilter)}'`);
-        }
-        
-        if (orConditions.length > 0) {
-          query = query.or(orConditions.join(','));
-        }
+      if (orConditions.length > 0) {
+        query = query.or(orConditions.join(','));
       }
     }
   }

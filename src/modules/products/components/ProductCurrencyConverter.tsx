@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Product } from '@/types/api';
 
 interface ProductCurrencyConverterProps {

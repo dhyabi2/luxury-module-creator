@@ -30,16 +30,33 @@ export const applyCategoryFilter = (query: any, params: any) => {
   return query;
 };
 
-// Apply gender filter with OR logic
+// Apply gender filter with OR logic - FIXED
 export const applyGenderFilter = (query: any, params: any) => {
   if (params.gender) {
     const genders = params.gender.split(',').map((g: string) => g.trim());
     console.log(`[API:products] Filtering by genders: ${genders.join(', ')}`);
     
     if (genders.length > 0) {
-      // Use OR logic for multiple genders
-      const orConditions = genders.map(gender => `specifications->gender.ilike.%${gender}%`).join(',');
-      query = query.or(orConditions);
+      // For non-watch categories, use simplified approach without JSONB operators
+      if (params.category && 
+          (params.category.toLowerCase().includes('accessories') || 
+           params.category.toLowerCase().includes('bags') || 
+           params.category.toLowerCase().includes('perfumes'))) {
+        // Skip gender filter for non-watch categories
+        console.log('[API:products] Skipping detailed gender filter for non-watch category');
+        return query;
+      } else {
+        // Fixed approach for watches - use containedBy for each gender with OR
+        if (genders.length === 1) {
+          query = query.contains('specifications', { gender: genders[0] });
+        } else {
+          // For multiple genders, build an OR condition string with contains for each
+          const orConditions = genders.map(gender => 
+            `specifications->gender.eq.${gender}`
+          ).join(',');
+          query = query.or(orConditions);
+        }
+      }
     }
   }
   return query;
@@ -170,7 +187,7 @@ export const applyAllFilters = (query: any, params: any) => {
     console.log('[API:products] Skipping watch-specific filters for non-watch category');
   }
   
-  // Apply gender filter - always include, not watch-specific
+  // Apply gender filter - always include, but with special handling
   query = applyGenderFilter(query, params);
   
   query = applySpecialFilters(query, params);

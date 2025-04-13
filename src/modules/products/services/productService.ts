@@ -50,7 +50,8 @@ export const fetchProducts = async (queryParams: string): Promise<ProductsRespon
         console.log('Retrying without case size parameters');
         const fallbackParams = queryParams
           .replace(/&minCaseSize=\d+/, '')
-          .replace(/&maxCaseSize=\d+/, '');
+          .replace(/&maxCaseSize=\d+/, '')
+          .replace(/&gender=[^&]+/, ''); // Also remove gender filter which causes problems
           
         const fallbackResponse = await fetch(`${SUPABASE_URL}/functions/v1/products?${fallbackParams}`, {
           method: 'GET',

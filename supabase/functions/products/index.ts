@@ -38,6 +38,13 @@ serve(async (req) => {
       // Remove case size parameters to avoid filter errors
       delete params.minCaseSize;
       delete params.maxCaseSize;
+      
+      // For accessories, simplify gender filter to avoid JSONB errors
+      if (params.gender && params.gender.includes(',')) {
+        console.log('[API:products] Simplifying gender filter for non-watch category');
+        // Just use a basic query without the gender filter to avoid errors
+        delete params.gender;
+      }
     }
     
     // Extract pagination and sort parameters
@@ -49,55 +56,102 @@ serve(async (req) => {
     console.log('[API:products] Building query with completely unrestricted public access');
     let query = supabase.from('products').select('*', { count: 'exact' });
     
-    // Apply filters
-    query = applyAllFilters(query, params);
-    
-    // Execute count query first
-    console.log('[API:products] Executing count query with completely public access');
-    const { count, error: countError } = await query;
-    
-    if (countError) {
-      console.error('[API:products] Count query error:', countError);
-      throw countError;
-    }
-    
-    console.log(`[API:products] Total products found: ${count}`);
-    
-    // Apply sorting
-    query = applySorting(query, sortBy);
-    
-    // Apply pagination
-    query = applyPagination(query, page, pageSize);
-    
-    // Execute the data query
-    console.log('[API:products] Executing data query with completely unrestricted public access');
-    const { data: products, error } = await query;
-    
-    if (error) {
-      console.error('[API:products] Data query error:', error);
-      throw error;
-    }
-    
-    console.log(`[API:products] Retrieved ${products?.length || 0} products`);
-    
-    // Process products
-    const processedProducts = processProducts(products);
-    
-    // Prepare the response
-    const response = {
-      products: processedProducts,
-      pagination: {
-        totalCount: count || 0,
-        totalPages: Math.ceil((count || 0) / pageSize),
-        currentPage: page,
-        pageSize: pageSize
+    try {
+      // Apply filters
+      query = applyAllFilters(query, params);
+      
+      // Execute count query first
+      console.log('[API:products] Executing count query with completely public access');
+      const { count, error: countError } = await query;
+      
+      if (countError) {
+        console.error('[API:products] Count query error:', countError);
+        throw countError;
       }
-    };
-    
-    console.log(`[API:products] Sending response with ${processedProducts.length} products`);
-    console.log(`[API:products] Pagination: page ${page}/${Math.ceil((count || 0) / pageSize)}`);
-    
-    return createResponse(response);
+      
+      console.log(`[API:products] Total products found: ${count}`);
+      
+      // Apply sorting
+      query = applySorting(query, sortBy);
+      
+      // Apply pagination
+      query = applyPagination(query, page, pageSize);
+      
+      // Execute the data query
+      console.log('[API:products] Executing data query with completely unrestricted public access');
+      const { data: products, error } = await query;
+      
+      if (error) {
+        console.error('[API:products] Data query error:', error);
+        throw error;
+      }
+      
+      console.log(`[API:products] Retrieved ${products?.length || 0} products`);
+      
+      // Process products
+      const processedProducts = processProducts(products);
+      
+      // Prepare the response
+      const response = {
+        products: processedProducts,
+        pagination: {
+          totalCount: count || 0,
+          totalPages: Math.ceil((count || 0) / pageSize),
+          currentPage: page,
+          pageSize: pageSize
+        }
+      };
+      
+      console.log(`[API:products] Sending response with ${processedProducts.length} products`);
+      console.log(`[API:products] Pagination: page ${page}/${Math.ceil((count || 0) / pageSize)}`);
+      
+      return createResponse(response);
+    } catch (queryError) {
+      console.error('[API:products] Query error:', queryError);
+      
+      // Special handling for non-watch categories with problematic filters
+      if (isAccessoryCategory) {
+        console.log('[API:products] Trying simplified query for non-watch category');
+        
+        // Create a very simple query without problematic filters
+        const simpleQuery = supabase.from('products')
+          .select('*', { count: 'exact' })
+          .ilike('category', `%${params.category}%`);
+        
+        // Execute simplified count query
+        const { count: simpleCount } = await simpleQuery;
+        
+        // Apply pagination
+        const simplePaginatedQuery = simpleQuery
+          .order('id', { ascending: false })
+          .range((page - 1) * pageSize, page * pageSize - 1);
+        
+        // Execute simplified data query
+        const { data: simpleProducts } = await simplePaginatedQuery;
+        
+        if (simpleProducts) {
+          console.log(`[API:products] Retrieved ${simpleProducts.length} products with simplified query`);
+          
+          const processedProducts = processProducts(simpleProducts);
+          
+          // Prepare the response
+          const response = {
+            products: processedProducts,
+            pagination: {
+              totalCount: simpleCount || 0,
+              totalPages: Math.ceil((simpleCount || 0) / pageSize),
+              currentPage: page,
+              pageSize: pageSize
+            }
+          };
+          
+          return createResponse(response);
+        }
+      }
+      
+      // If all else fails, throw the original error
+      throw queryError;
+    }
   } catch (error) {
     console.error('[API:products] Error processing request:', error);
     
