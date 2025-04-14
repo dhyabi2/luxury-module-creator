@@ -91,6 +91,9 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
   const showWatchFilters = activeCategoryName.toLowerCase() === 'watches' || 
     (selectedCategories.length > 0 && selectedCategories.includes('watches'));
 
+  // Get price range unit
+  const priceRangeUnit = filtersData.priceRange?.unit || 'OMR';
+
   return (
     <div className="space-y-1">
       {/* Categories filter */}
@@ -108,9 +111,10 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
       <FilterCategory
         title="Price Range"
         type="range"
+        options={[]} /* Added empty options array to fix TypeScript error */
         rangeMin={priceRange?.min || 0}
         rangeMax={priceRange?.max || 1000}
-        rangeUnit={priceRange?.unit || 'OMR'}
+        rangeUnit={priceRangeUnit}
         currentMin={priceRange?.min || 0}
         currentMax={priceRange?.max || 1000}
         onRangeChange={handlePriceRangeChange}
@@ -145,8 +149,8 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
           filtersData={filtersData}
           selectedOptions={selectedOptions}
           caseSizeRange={caseSizeRange}
-          handleSelectionChange={handleSelectionChange}
-          handleCaseSizeRangeChange={handleCaseSizeRangeChange}
+          onSelectionChange={handleSelectionChange}
+          onCaseSizeRangeChange={handleCaseSizeRangeChange}
         />
       )}
     </div>

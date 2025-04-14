@@ -11,7 +11,8 @@ import CurrencySelector from '@/modules/currency/CurrencySelector';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [logoUrl, setLogoUrl] = useState('https://cdn-iicfd.nitrocdn.com/HlkbfeOkMsuGJIhigodBlPxupvwkWuYp/assets/images/optimized/rev-4b911b6/mnkwatches.store/wp-content/uploads/2022/03/ezgif.com-gif-maker-3-1.png');
+  const [logoUrl, setLogoUrl] = useState('/logo.svg');
+  const [logoLoadError, setLogoLoadError] = useState(false);
 
   useEffect(() => {
     const fetchLogoUrl = async () => {
@@ -26,7 +27,7 @@ const Header = () => {
           return;
         }
         
-        if (data && data.logo_url && data.logo_url !== '/logo.svg') {
+        if (data && data.logo_url) {
           setLogoUrl(data.logo_url);
         }
       } catch (err) {
@@ -41,6 +42,15 @@ const Header = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  // Handle logo load error only once
+  const handleLogoError = (e) => {
+    if (!logoLoadError) {
+      setLogoLoadError(true);
+      console.error('Error loading logo image:', logoUrl);
+      setLogoUrl('/logo.svg');
+    }
+  };
+
   return (
     <header className="bg-white/95 shadow-sm fixed w-full top-0 left-0 z-50 text-brand-dark">
       <div className="container mx-auto px-4">
@@ -50,11 +60,7 @@ const Header = () => {
               src={logoUrl} 
               alt="Logo" 
               className="h-8 sm:h-12 w-auto"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = 'https://cdn-iicfd.nitrocdn.com/HlkbfeOkMsuGJIhigodBlPxupvwkWuYp/assets/images/optimized/rev-4b911b6/mnkwatches.store/wp-content/uploads/2022/03/ezgif.com-gif-maker-3-1.png'; // Fallback to new default logo
-                console.error('Error loading logo image:', logoUrl);
-              }}
+              onError={handleLogoError}
             />
           </Link>
           

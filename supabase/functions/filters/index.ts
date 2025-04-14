@@ -10,6 +10,13 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
+// Default gender options that will always be included
+const DEFAULT_GENDERS = [
+  { id: 'men', name: 'Men' },
+  { id: 'women', name: 'Women' },
+  { id: 'unisex', name: 'Unisex' }
+];
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -57,26 +64,36 @@ serve(async (req) => {
     console.log('[API:filters] Filters data retrieved successfully');
     console.log('[API:filters] Response structure:', Object.keys(data.data));
     
-    // Ensure genders key always exists in the data
-    if (data.data && !data.data.genders) {
-      console.log('[API:filters] Adding default genders as they were missing');
-      data.data.genders = [
-        { id: 'men', name: 'Men' },
-        { id: 'women', name: 'Women' },
-        { id: 'unisex', name: 'Unisex' }
-      ];
-    }
+    // Create a copy of the data to modify
+    const responseData = { ...data.data };
+    
+    // Always ensure genders key exists with default values
+    responseData.genders = DEFAULT_GENDERS;
+    
+    console.log('[API:filters] Ensuring gender data is available');
     
     // Return the response with proper CORS headers
-    return new Response(JSON.stringify(data.data), {
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200
     });
   } catch (error) {
     console.error('[API:filters] Error processing request:', error);
     
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    // Even in error case, return default filters with genders
+    const defaultResponse = {
+      categories: [],
+      brands: [],
+      bands: [],
+      colors: [],
+      caseColors: [],
+      priceRange: { min: 0, max: 1000, unit: 'OMR' },
+      caseSizeRange: { min: 20, max: 45, unit: 'mm' },
+      genders: DEFAULT_GENDERS
+    };
+    
+    return new Response(JSON.stringify(defaultResponse), {
+      status: 200, // Return 200 even for errors to prevent client retries
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }

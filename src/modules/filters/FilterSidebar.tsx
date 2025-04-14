@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import FilterHeader from './components/FilterHeader';
 import FilterSidebarContent from './components/FilterSidebarContent';
@@ -20,7 +20,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   // State for filters data and loading
   const [filtersData, setFiltersData] = useState<FiltersResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [filterRequested, setFilterRequested] = useState(false);
+  const apiRequestCompleted = useRef(false);
   
   // Filter state
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>(
@@ -42,11 +42,12 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   
   // Fetch filters data only once on component mount
   useEffect(() => {
-    if (filterRequested) return;
+    // Skip if we already made the request
+    if (apiRequestCompleted.current) return;
     
     const fetchFiltersData = async () => {
       setIsLoading(true);
-      setFilterRequested(true);
+      apiRequestCompleted.current = true; // Mark as completed immediately to prevent duplicate requests
       
       try {
         // Direct API call to the edge function
@@ -69,26 +70,26 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         
         if (!response.ok) {
           console.error('Failed to fetch filters:', response.status, response.statusText);
-          throw new Error(`Failed to fetch filters: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('Filter data received:', data);
-        setFiltersData(data || defaultFilters);
-        
-        // Extract category-specific brands if available
-        if (data && data.categoryBrands) {
-          setCategorySpecificBrands(data.categoryBrands);
-        }
-        
-        // Initialize price range from data
-        if (data && data.priceRange) {
-          setPriceRange(data.priceRange);
-        }
-        
-        // Initialize case size range from data
-        if (data && data.caseSizeRange) {
-          setCaseSizeRange(data.caseSizeRange);
+          setFiltersData(defaultFilters);
+        } else {
+          const data = await response.json();
+          console.log('Filter data received:', data);
+          setFiltersData(data || defaultFilters);
+          
+          // Extract category-specific brands if available
+          if (data && data.categoryBrands) {
+            setCategorySpecificBrands(data.categoryBrands);
+          }
+          
+          // Initialize price range from data
+          if (data && data.priceRange) {
+            setPriceRange(data.priceRange);
+          }
+          
+          // Initialize case size range from data
+          if (data && data.caseSizeRange) {
+            setCaseSizeRange(data.caseSizeRange);
+          }
         }
       } catch (error) {
         console.error('Error fetching filters:', error);
@@ -102,7 +103,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     };
     
     fetchFiltersData();
-  }, []);
+  }, []); // Empty dependency array to run only once
   
   // Handle filter changes and call the parent component's callback
   useEffect(() => {

@@ -37,14 +37,6 @@ const WatchSpecificFilters: React.FC<WatchSpecificFiltersProps> = ({
   return (
     <>
       <FilterCategory
-        title="Gender"
-        options={genderOptions}
-        type="checkbox"
-        selectedOptions={selectedOptions.genders || []}
-        onSelectionChange={(selected) => onSelectionChange('genders', selected)}
-      />
-    
-      <FilterCategory
         title="Case Size"
         options={[]}
         type="range"
