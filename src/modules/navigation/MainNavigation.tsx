@@ -52,7 +52,7 @@ const MainNavigation = () => {
             <div className="font-medium text-base flex items-center">
               <Link to="/" className="hidden md:flex items-center">
                 
-                <span className="text-lg font-bold text-primary mr-6">MKWatches</span>
+                
               </Link>
               
               <nav className="flex items-center space-x-2 md:space-x-4">
