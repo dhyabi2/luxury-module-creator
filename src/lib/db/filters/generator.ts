@@ -49,7 +49,13 @@ export async function generateFilters(): Promise<FiltersData> {
     const bands = extractBands(watches);
     const caseColors = extractCaseColors(watches);
     const colors = extractColors(watches);
-    const genders = extractGenders(watches);
+    
+    // Extract genders from all products, not just watches
+    const genders = [
+      { id: 'men', name: 'Men' },
+      { id: 'women', name: 'Women' },
+      { id: 'unisex', name: 'Unisex' }
+    ];
     
     // Find min and max prices
     const prices = typedProducts.map(product => product.price);

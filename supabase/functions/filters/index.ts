@@ -51,6 +51,16 @@ serve(async (req) => {
     console.log('[API:filters] Filters data retrieved successfully');
     console.log('[API:filters] Response structure:', Object.keys(data.data));
     
+    // Ensure genders key exists in the data
+    if (data.data && !data.data.genders && data.data.genders !== null) {
+      console.log('[API:filters] Adding default genders as they were missing');
+      data.data.genders = [
+        { id: 'men', name: 'Men' },
+        { id: 'women', name: 'Women' },
+        { id: 'unisex', name: 'Unisex' }
+      ];
+    }
+    
     return new Response(JSON.stringify(data.data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

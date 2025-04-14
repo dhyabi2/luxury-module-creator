@@ -40,6 +40,9 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
   } else {
     console.log('No brands available to display in filter');
   }
+  
+  // Debug the genders data
+  console.log('Gender options:', filtersData?.genders);
 
   return (
     <>
@@ -60,9 +63,9 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
             title="Price Range"
             options={[]}
             type="range"
-            rangeMin={filtersData.priceRange.min}
-            rangeMax={filtersData.priceRange.max}
-            rangeUnit={filtersData.priceRange.unit}
+            rangeMin={filtersData.priceRange?.min || 0}
+            rangeMax={filtersData.priceRange?.max || 1000}
+            rangeUnit={filtersData.priceRange?.unit || ''}
             currentMin={priceRange.min}
             currentMax={priceRange.max}
             onRangeChange={handlePriceRangeChange}

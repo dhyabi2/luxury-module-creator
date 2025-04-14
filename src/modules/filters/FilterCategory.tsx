@@ -28,8 +28,8 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
   
   // Log the options to debug
   useEffect(() => {
-    if (title.includes('Brand')) {
-      console.log(`${title} options:`, options.length > 0 ? options.slice(0, 3) : 'No options');
+    if (title === "Gender") {
+      console.log(`Gender filter options:`, options);
     }
   }, [title, options]);
   
@@ -72,6 +72,9 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
     }
   };
   
+  // Check if we have options to display
+  const hasOptions = Array.isArray(options) && options.length > 0;
+  
   return (
     <div className="border-b border-gray-200 py-4">
       <button 
@@ -97,22 +100,30 @@ const FilterCategory: React.FC<FilterCategoryProps> = ({
               onRangeChange={handleRangeChange}
             />
           ) : type === 'radio' ? (
-            <RadioFilter
-              options={options}
-              selectedOptions={selected}
-              onSelectionChange={handleSelectionChange}
-            />
+            <>
+              {hasOptions ? (
+                <RadioFilter
+                  options={options}
+                  selectedOptions={selected}
+                  onSelectionChange={handleSelectionChange}
+                />
+              ) : (
+                <div className="text-sm text-gray-500 italic">No options available</div>
+              )}
+            </>
           ) : (
-            <CheckboxFilter
-              options={options}
-              selectedOptions={selected}
-              onSelectionChange={handleSelectionChange}
-              showAllOption={showAllOption}
-            />
-          )}
-          
-          {type !== 'range' && options.length === 0 && (
-            <div className="text-sm text-gray-500 italic">No options available</div>
+            <>
+              {hasOptions ? (
+                <CheckboxFilter
+                  options={options}
+                  selectedOptions={selected}
+                  onSelectionChange={handleSelectionChange}
+                  showAllOption={showAllOption}
+                />
+              ) : (
+                <div className="text-sm text-gray-500 italic">No options available</div>
+              )}
+            </>
           )}
         </div>
       )}
