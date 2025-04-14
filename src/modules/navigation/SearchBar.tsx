@@ -1,11 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Search } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const SearchBar = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
   
   const handleFocus = () => setIsFocused(true);
   const handleBlur = () => setIsFocused(false);
@@ -25,25 +27,25 @@ const SearchBar = () => {
   }, []);
 
   return (
-    <div className="relative w-full md:w-64 lg:w-72 my-2">
+    <div className={`relative w-full ${isMobile ? 'my-1' : 'md:w-64 lg:w-72 my-2'}`}>
       <div 
-        className={`flex items-center bg-white/10 backdrop-blur-sm rounded-full overflow-hidden transition-all duration-300 border border-white/5 ${
-          isFocused ? 'ring-1 ring-white/30' : ''
+        className={`flex items-center ${isMobile ? 'bg-gray-100' : 'bg-white/10 backdrop-blur-sm'} rounded-full overflow-hidden transition-all duration-300 border ${
+          isFocused ? 'ring-1 ring-brand/30' : 'border-gray-200'
         }`}
         ref={inputRef}
       >
         <input
           type="text"
           placeholder="What are you looking for?"
-          className="flex-grow py-2.5 px-4 bg-transparent text-white text-sm focus:outline-none placeholder:text-white/60"
+          className={`flex-grow py-2 px-4 bg-transparent ${isMobile ? 'text-gray-800' : 'text-white'} text-sm focus:outline-none placeholder:${isMobile ? 'text-gray-500' : 'text-white/60'}`}
           onFocus={handleFocus}
           onBlur={handleBlur}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <button 
-          className={`px-4 py-2.5 transition-colors duration-200 ${
-            isFocused ? 'text-white' : 'text-white/80'
+          className={`px-4 py-2 transition-colors duration-200 ${
+            isFocused ? isMobile ? 'text-gray-800' : 'text-white' : isMobile ? 'text-gray-600' : 'text-white/80'
           }`}
         >
           <Search className="w-4 h-4" />

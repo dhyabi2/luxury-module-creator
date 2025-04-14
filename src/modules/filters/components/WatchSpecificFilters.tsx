@@ -35,7 +35,7 @@ const WatchSpecificFilters: React.FC<WatchSpecificFiltersProps> = ({
   const caseSizeUnit = filtersData?.caseSizeRange?.unit || 'mm';
   
   return (
-    <>
+    <div className="space-y-4 sm:space-y-6">
       <FilterCategory
         title="Case Size"
         options={[]}
@@ -46,6 +46,14 @@ const WatchSpecificFilters: React.FC<WatchSpecificFiltersProps> = ({
         currentMin={caseSizeRange.min}
         currentMax={caseSizeRange.max}
         onRangeChange={onCaseSizeRangeChange}
+      />
+      
+      <FilterCategory
+        title="Gender"
+        options={genderOptions || []}
+        type="checkbox"
+        selectedOptions={selectedOptions.genders || []}
+        onSelectionChange={(selected) => onSelectionChange('genders', selected)}
       />
       
       <FilterCategory
@@ -71,7 +79,7 @@ const WatchSpecificFilters: React.FC<WatchSpecificFiltersProps> = ({
         selectedOptions={selectedOptions.colors || []}
         onSelectionChange={(selected) => onSelectionChange('colors', selected)}
       />
-    </>
+    </div>
   );
 };
 

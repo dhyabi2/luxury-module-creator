@@ -18,14 +18,16 @@ const ProductGridContent: React.FC<ProductGridContentProps> = ({
   onPageChange
 }) => {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <ProductGrid products={products} />
       
-      <ProductPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={onPageChange}
-      />
+      <div className="flex justify-center mt-4 sm:mt-8">
+        <ProductPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+        />
+      </div>
     </div>
   );
 };

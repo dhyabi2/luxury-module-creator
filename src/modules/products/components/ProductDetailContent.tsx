@@ -13,7 +13,7 @@ import QuantitySelector from './QuantitySelector';
 import ProductWhatsAppButton from './ProductWhatsAppButton';
 import ProductCurrencyConverter from './ProductCurrencyConverter';
 import ProductCheckoutHandler from './ProductCheckoutHandler';
-import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ProductDetailContentProps {
   product: Product;
@@ -24,6 +24,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   const { addItem } = useCart();
   const { currency } = useCurrency();
   const [convertedProduct, setConvertedProduct] = useState<Product>(product);
+  const isMobile = useIsMobile();
   
   const formattedProduct = formatProductData(convertedProduct, currency);
   
@@ -59,7 +60,7 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
   console.log('Specifications:', specifications);
   
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-6 sm:py-8">
       <ProductCurrencyConverter 
         product={product}
         currency={currency}
@@ -71,14 +72,14 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({ product }) 
         productName={convertedProduct.name} 
       />
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+      <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 gap-8'} mt-4 sm:mt-8`}>
         <ProductDetailImage 
           image={convertedProduct.image} 
           name={convertedProduct.name} 
           brand={convertedProduct.brand}
         />
         
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-8">
           <ProductInfo 
             name={convertedProduct.name}
             brand={convertedProduct.brand}

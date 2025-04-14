@@ -48,7 +48,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
-      <main className="flex-grow pt-[180px] xs:pt-[190px] sm:pt-[200px] md:pt-[205px]">
+      <main className="flex-grow pt-[140px] xs:pt-[150px] sm:pt-[160px] md:pt-[180px] transition-all">
         {children}
       </main>
       <Footer />

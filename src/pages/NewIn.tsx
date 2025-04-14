@@ -4,12 +4,15 @@ import MainLayout from '../modules/layout/MainLayout';
 import ProductGrid from '../modules/products/ProductGrid';
 import FilterSidebar from '../modules/filters/FilterSidebar';
 import { useState, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const NewIn = () => {
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({
     priceRange: { min: 0, max: 1225 },
     newArrival: true
   });
+  const [showFilters, setShowFilters] = useState(false);
+  const isMobile = useIsMobile();
   
   // Use a memoized callback to prevent unnecessary rerenders
   const handleFilterChange = useCallback((filters: Record<string, any>) => {
@@ -18,20 +21,23 @@ const NewIn = () => {
       ...filters,
       newArrival: true // Always keep new arrival filter
     });
-  }, []);
+    if (isMobile) {
+      setShowFilters(false);
+    }
+  }, [isMobile]);
   
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Banner */}
-        <div className="mb-8 sm:mb-12 overflow-hidden rounded-lg relative">
-          <div className="h-[200px] sm:h-[250px] bg-brand relative flex items-center">
+        <div className="mb-6 sm:mb-12 overflow-hidden rounded-lg relative">
+          <div className="h-[150px] xs:h-[200px] sm:h-[250px] bg-brand relative flex items-center">
             <div className="container mx-auto px-4 md:px-8 z-10">
               <div className="max-w-xl">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-6">
                   NEW ARRIVALS
                 </h1>
-                <p className="text-white/90 mb-6 text-sm sm:text-base leading-relaxed">
+                <p className="text-white/90 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
                   Explore our latest collections and new season additions.
                 </p>
               </div>
@@ -40,14 +46,27 @@ const NewIn = () => {
         </div>
       
         {/* Breadcrumb */}
-        <div className="text-xs sm:text-sm text-gray-600 mb-6 sm:mb-8 tracking-wider overflow-x-auto whitespace-nowrap pb-2">
+        <div className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-8 tracking-wider overflow-x-auto whitespace-nowrap pb-2">
           <span className="hover:text-black cursor-pointer transition-colors">HOME</span> / <span className="font-medium text-gray-900">NEW IN</span>
         </div>
         
+        {/* Mobile Filter Toggle */}
+        {isMobile && (
+          <div className="mb-4">
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className="w-full py-2 px-4 bg-gray-100 text-gray-800 rounded-md flex justify-between items-center"
+            >
+              <span>Filter New Arrivals</span>
+              <span>{showFilters ? '↑' : '↓'}</span>
+            </button>
+          </div>
+        )}
+        
         {/* Products with Sidebar - Mobile First Approach */}
         <div className="flex flex-col lg:flex-row gap-6 sm:gap-10">
-          {/* Sidebar - Order first on mobile but last on desktop */}
-          <div className="w-full lg:w-1/4 order-first">
+          {/* Sidebar - Conditionally shown on mobile */}
+          <div className={`${isMobile ? (showFilters ? 'block' : 'hidden') : 'block'} w-full lg:w-1/4 lg:order-first`}>
             <FilterSidebar 
               initialFilters={{
                 priceRange: { min: 0, max: 1225 },
@@ -58,7 +77,7 @@ const NewIn = () => {
           </div>
           
           {/* Main Content */}
-          <div className="w-full lg:w-3/4 order-last lg:order-first mt-6 lg:mt-0">
+          <div className="w-full lg:w-3/4 mt-4 lg:mt-0">
             <ProductGrid 
               title="New Arrivals" 
               filters={activeFilters}

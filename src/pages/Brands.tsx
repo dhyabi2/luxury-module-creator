@@ -4,6 +4,7 @@ import MainLayout from '../modules/layout/MainLayout';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import ProductGrid from '../modules/products/ProductGrid';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Brand logo/image interface
 interface Brand {
@@ -16,6 +17,7 @@ const Brands = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     // Fetch brands data
@@ -57,26 +59,26 @@ const Brands = () => {
   
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8 mt-24">
-        <div className="text-xs sm:text-sm text-gray-600 mb-6 tracking-wider">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <div className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 tracking-wider">
           <Link to="/" className="hover:text-black transition-colors">HOME</Link> / <span className="font-medium text-gray-900">BRANDS</span>
         </div>
         
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif mb-6 sm:mb-10">Our Brands</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif mb-4 sm:mb-8">Our Brands</h1>
         
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="animate-pulse bg-gray-200 h-32 rounded-md"></div>
+              <div key={i} className="animate-pulse bg-gray-200 h-24 sm:h-32 rounded-md"></div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {brands.map(brand => (
               <Link 
                 to={`/brands?brand=${brand.id}`} 
                 key={brand.id}
-                className={`border hover:border-gray-400 transition-colors rounded-md p-4 flex items-center justify-center h-32 ${selectedBrand === brand.id ? 'border-black border-2' : 'border-gray-200'}`}
+                className={`border hover:border-gray-400 transition-colors rounded-md p-3 sm:p-4 flex items-center justify-center h-24 sm:h-32 ${selectedBrand === brand.id ? 'border-black border-2' : 'border-gray-200'}`}
                 onClick={(e) => {
                   e.preventDefault();
                   setSelectedBrand(brand.id);
@@ -86,7 +88,7 @@ const Brands = () => {
                   window.history.pushState({}, '', url);
                 }}
               >
-                <img src={brand.logo} alt={brand.name} className="max-w-full max-h-full" />
+                <img src={brand.logo} alt={brand.name} className="max-w-full max-h-full object-contain" />
               </Link>
             ))}
           </div>
@@ -94,9 +96,9 @@ const Brands = () => {
         
         {/* Show products for selected brand */}
         {selectedBrand && (
-          <div className="mt-12">
-            <h2 className="text-xl sm:text-2xl mb-6">{brands.find(b => b.id === selectedBrand)?.name || 'Brand'} Products</h2>
-            <ProductGrid brand={selectedBrand} pageSize={8} />
+          <div className="mt-8 sm:mt-12">
+            <h2 className="text-xl sm:text-2xl mb-4 sm:mb-6">{brands.find(b => b.id === selectedBrand)?.name || 'Brand'} Products</h2>
+            <ProductGrid brand={selectedBrand} pageSize={isMobile ? 4 : 8} />
           </div>
         )}
       </div>
