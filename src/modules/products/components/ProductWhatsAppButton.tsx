@@ -43,7 +43,7 @@ const ProductWhatsAppButton: React.FC<ProductWhatsAppButtonProps> = ({
   return (
     <div className="mt-4 mb-6">
       <a 
-        href={`https://wa.me/96899999999?text=${createWhatsAppMessage()}`} 
+        href={`https://wa.me/96895696644?text=${createWhatsAppMessage()}`} 
         target="_blank" 
         rel="noopener noreferrer"
         className="inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"

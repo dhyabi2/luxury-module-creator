@@ -1,4 +1,3 @@
-
 import React from 'react';
 import MainLayout from '../modules/layout/MainLayout';
 import { Mail, MapPin, Phone } from 'lucide-react';
@@ -31,7 +30,16 @@ const ContactUs = () => {
                   <Phone className="w-6 h-6 text-brand mr-3 mt-1" />
                   <div>
                     <h3 className="font-medium text-lg">Phone Number</h3>
-                    <p className="text-gray-700 mt-1">+968 9291120</p>
+                    <p className="text-gray-700 mt-1">
+                      <a 
+                        href="https://wa.me/96895696644" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="hover:text-green-600 transition-colors"
+                      >
+                        +968 9569 6644
+                      </a>
+                    </p>
                   </div>
                 </div>
                 

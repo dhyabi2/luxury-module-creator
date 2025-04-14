@@ -57,7 +57,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         
         <div className="mt-3 mb-1">
           <a 
-            href={`https://wa.me/96899999999?text=${createWhatsAppMessage()}`}
+            href={`https://wa.me/96895696644?text=${createWhatsAppMessage()}`}
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex items-center text-green-600 text-sm hover:text-green-700 transition-colors"
