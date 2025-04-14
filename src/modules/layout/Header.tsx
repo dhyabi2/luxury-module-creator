@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import MainNavigation from '@/modules/navigation/MainNavigation';
@@ -12,45 +11,30 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [logoUrl, setLogoUrl] = useState('/logo.svg');
-  const [logoLoadError, setLogoLoadError] = useState(false);
+  const [brandName, setBrandName] = useState('MKWatches');
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    const fetchLogoUrl = async () => {
+    const fetchStoreName = async () => {
       try {
         const { data, error } = await supabase
           .from('settings')
-          .select('logo_url')
+          .select('store_name')
           .single();
         
-        if (error) {
-          console.error('Error fetching logo URL:', error);
-          return;
-        }
-        
-        if (data && data.logo_url) {
-          setLogoUrl(data.logo_url);
+        if (data && data.store_name) {
+          setBrandName(data.store_name);
         }
       } catch (err) {
-        console.error('Failed to fetch logo URL:', err);
+        console.error('Failed to fetch store name:', err);
       }
     };
     
-    fetchLogoUrl();
+    fetchStoreName();
   }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  // Handle logo load error only once
-  const handleLogoError = () => {
-    if (!logoLoadError) {
-      setLogoLoadError(true);
-      console.error('Error loading logo image:', logoUrl);
-      setLogoUrl('/logo.svg');
-    }
   };
 
   return (
@@ -58,12 +42,9 @@ const Header = () => {
       <div className="container mx-auto px-2 sm:px-4">
         <div className="flex justify-between h-16 sm:h-20 items-center">
           <Link to="/" className="flex-shrink-0">
-            <img 
-              src={logoUrl} 
-              alt="Logo" 
-              className="h-8 sm:h-12 w-auto"
-              onError={handleLogoError}
-            />
+            <h1 className="text-xl sm:text-2xl font-bold text-brand-dark tracking-wider">
+              {brandName}
+            </h1>
           </Link>
           
           <div className="hidden lg:block flex-1 px-4">
