@@ -1,16 +1,16 @@
 
 // Main filters module - exports all filter functions
-import { applyBrandFilter } from './brandFilter';
-import { applyCategoryFilter } from './categoryFilter';
-import { applyGenderFilter } from './genderFilter';
-import { applyPriceFilter } from './priceFilter';
+import { applyBrandFilter } from './brandFilter.ts';
+import { applyCategoryFilter } from './categoryFilter.ts';
+import { applyGenderFilter } from './genderFilter.ts';
+import { applyPriceFilter } from './priceFilter.ts';
 import { 
   applyCaseSizeFilter, 
   applyBandFilter, 
   applyCaseColorFilter, 
   applyColorFilter 
-} from './watchFilters';
-import { applySpecialFilters } from './specialFilters';
+} from './watchFilters.ts';
+import { applySpecialFilters } from './specialFilters.ts';
 
 // Apply all filters to a query
 export const applyAllFilters = (query: any, params: any) => {
