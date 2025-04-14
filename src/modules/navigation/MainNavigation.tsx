@@ -57,8 +57,8 @@ const MainNavigation = () => {
           <div className="flex items-center space-x-2 md:space-x-6">
             <div className="font-medium text-base flex items-center">
               <Link to="/" className="hidden md:flex items-center">
-                <img src="/logo.svg" alt="M&K Watches Logo" className="h-6 w-auto mr-2" />
-                <span className="text-lg font-bold text-primary mr-6">M&K Watches</span>
+                <img src="/logo.svg" alt="MKWatches Logo" className="h-6 w-auto mr-2" />
+                <span className="text-lg font-bold text-primary mr-6">MKWatches</span>
               </Link>
               
               <nav className="flex items-center space-x-2 md:space-x-4">

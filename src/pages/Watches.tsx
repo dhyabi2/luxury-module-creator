@@ -23,7 +23,7 @@ const Watches = () => {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-        <h1 className="text-2xl sm:text-page-title font-display text-brand-dark mb-4 sm:mb-6">Watches Collection</h1>
+        <h1 className="text-2xl sm:text-page-title font-display text-brand-dark mb-4 sm:mb-6">MKWatches Collection</h1>
         
         {/* Mobile Filter Toggle */}
         {isMobile && (

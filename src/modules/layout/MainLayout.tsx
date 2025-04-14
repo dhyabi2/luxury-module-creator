@@ -11,7 +11,7 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
-  const [brandName, setBrandName] = useState("M&K Watches");
+  const [brandName, setBrandName] = useState("MKWatches");
   
   // Fetch store settings on mount
   useEffect(() => {

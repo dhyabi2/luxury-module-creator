@@ -26,7 +26,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       : `${window.location.origin}${imageUrl}`;
     
     // Create message with product details and image URL
-    const message = `I'm interested in: ${product.brand} ${product.name} (${product.currency} ${product.price})\n\nProduct image: ${absoluteImageUrl}\n\nProduct link: ${window.location.origin}/product/${product.id}`;
+    const message = `I'm interested in: ${product.brand} ${product.name} (${product.currency} ${product.price}) from MKWatches\n\nProduct image: ${absoluteImageUrl}\n\nProduct link: ${window.location.origin}/product/${product.id}`;
     
     return encodeURIComponent(message);
   };

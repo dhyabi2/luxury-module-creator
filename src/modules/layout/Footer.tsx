@@ -15,10 +15,10 @@ const Footer = () => {
                 <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="font-serif tracking-wider text-xl text-brand">Labels Luxury</span>
+              <span className="font-serif tracking-wider text-xl text-brand">MKWatches</span>
             </Link>
             <p className="text-gray-600 text-sm">
-              Discover exclusive luxury items at Labels Luxury. We offer a curated collection of premium watches, jewelry, and accessories from world-renowned brands.
+              Discover exclusive luxury items at MKWatches. We offer a curated collection of premium watches, jewelry, and accessories from world-renowned brands.
             </p>
             <div className="flex space-x-4 pt-2">
               <a href="#" className="text-gray-600 hover:text-brand transition-colors">
@@ -74,7 +74,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center">
                 <Mail className="w-5 h-5 text-brand mr-2" />
-                <span className="text-gray-600 text-sm">info@labelsluxury.com</span>
+                <span className="text-gray-600 text-sm">info@mkwatches.com</span>
               </li>
             </ul>
             
@@ -87,7 +87,7 @@ const Footer = () => {
         
         <div className="mt-12 pt-8 border-t border-gray-200">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-600 text-sm">&copy; {new Date().getFullYear()} Labels Luxury. All rights reserved.</p>
+            <p className="text-gray-600 text-sm">&copy; {new Date().getFullYear()} MKWatches. All rights reserved.</p>
             <div className="mt-4 md:mt-0">
               <img src="https://via.placeholder.com/280x30?text=Payment+Methods" alt="Payment Methods" className="h-8" />
             </div>
