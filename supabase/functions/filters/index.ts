@@ -2,16 +2,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
+// Configure CORS headers to allow all origins
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('[API:filters] Handling CORS preflight request');
-    return new Response(null, { headers: corsHeaders });
+    console.log('[API:filters] Handling CORS preflight request with completely unrestricted access');
+    return new Response(null, { 
+      status: 204, 
+      headers: corsHeaders 
+    });
   }
 
   // Create a Supabase client
@@ -51,8 +57,8 @@ serve(async (req) => {
     console.log('[API:filters] Filters data retrieved successfully');
     console.log('[API:filters] Response structure:', Object.keys(data.data));
     
-    // Ensure genders key exists in the data
-    if (data.data && !data.data.genders && data.data.genders !== null) {
+    // Ensure genders key always exists in the data
+    if (data.data && !data.data.genders) {
       console.log('[API:filters] Adding default genders as they were missing');
       data.data.genders = [
         { id: 'men', name: 'Men' },
@@ -61,8 +67,10 @@ serve(async (req) => {
       ];
     }
     
+    // Return the response with proper CORS headers
     return new Response(JSON.stringify(data.data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
     });
   } catch (error) {
     console.error('[API:filters] Error processing request:', error);

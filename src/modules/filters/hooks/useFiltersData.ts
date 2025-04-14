@@ -1,15 +1,25 @@
 
-import { useState, useEffect } from 'react';
+// NOTE: This hook is kept for reference but not used anymore.
+// Direct API calls are used in FilterSidebar.tsx instead to avoid excessive API requests.
+
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { FiltersResponse } from '@/types/api';
+import { defaultFilters } from '@/lib/db/filters/defaultValues';
 
 export function useFiltersData(selectedCategories: string[], categoryParam?: string) {
   const [filtersData, setFiltersData] = useState<FiltersResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const requestMadeRef = useRef(false);
   
   useEffect(() => {
+    // Prevent multiple requests being made
+    if (requestMadeRef.current) return;
+    
     const fetchFiltersData = async () => {
       setIsLoading(true);
+      requestMadeRef.current = true;
+      
       try {
         // Direct API call to the edge function
         const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
@@ -19,6 +29,8 @@ export function useFiltersData(selectedCategories: string[], categoryParam?: str
           selectedCategories.join(',') : '';
         
         const queryString = categoryQueryParam ? `?category=${categoryQueryParam}` : '';
+        
+        console.log(`[useFiltersData] Making single API request with query: ${queryString}`);
         const response = await fetch(`${SUPABASE_URL}/functions/v1/filters${queryString}`, {
           headers: {
             "apikey": SUPABASE_KEY,
@@ -38,8 +50,9 @@ export function useFiltersData(selectedCategories: string[], categoryParam?: str
         
       } catch (error) {
         console.error('Error fetching filters:', error);
+        setFiltersData(defaultFilters);
         toast.error('Failed to load filters', {
-          description: 'Please try again later.'
+          description: 'Using default filters instead'
         });
       } finally {
         setIsLoading(false);
@@ -47,7 +60,7 @@ export function useFiltersData(selectedCategories: string[], categoryParam?: str
     };
     
     fetchFiltersData();
-  }, [selectedCategories]);
+  }, []); // Empty dependency array to only run once
   
   return { filtersData, isLoading };
 }
