@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -149,48 +150,50 @@ const CheckoutForm = () => {
   };
 
   const processDirectCheckout = () => {
-    fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/create-checkout', {
+    console.log('Initializing Thawani checkout process...', {
+      items: cart.items,
+      total: cart.total,
+      customer: billingDetails
+    });
+
+    fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/create-thawani-session', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        items: cart.items,
-        mode: 'payment',
-        successUrl: window.location.origin + '/checkout/success',
-        cancelUrl: window.location.origin + '/checkout/canceled',
-        customerDetails: {
-          name: `${billingDetails.firstName} ${billingDetails.lastName}`,
-          email: billingDetails.email,
-          phone: billingDetails.phone,
-          address: {
-            line1: billingDetails.address1,
-            line2: billingDetails.address2,
-            city: billingDetails.city,
-            state: billingDetails.state,
-            country: billingDetails.country,
-            postal_code: billingDetails.postcode
-          }
+        products: cart.items.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          unit_amount: Math.round(item.price * 1000) // Convert to baisa
+        })),
+        success_url: window.location.origin + '/checkout/success',
+        cancel_url: window.location.origin + '/checkout/canceled',
+        metadata: {
+          customer_email: billingDetails.email,
+          customer_name: `${billingDetails.firstName} ${billingDetails.lastName}`,
+          order_id: `ORD-${Date.now()}`
         }
       })
     })
     .then(response => {
-      if (!response.ok) {
-        throw response;
-      }
+      console.log('Thawani API Response status:', response.status);
       return response.json();
     })
     .then(data => {
-      console.log('Checkout session created:', data);
-      if (data.url) {
-        window.location.href = data.url;
+      console.log('Thawani session created:', data);
+      if (data?.data?.session_id) {
+        const redirectUrl = `https://uatcheckout.thawani.om/pay/${data.data.session_id}?key=HGvTMLDssJghr9tlN9gr4DVYt0qyBy`;
+        console.log('Redirecting to Thawani:', redirectUrl);
+        window.location.href = redirectUrl;
       } else {
-        toast.error('Could not redirect to checkout');
+        console.error('No session ID in response:', data);
+        throw new Error('Failed to create Thawani session');
       }
     })
     .catch(error => {
-      console.error('Error creating checkout session:', error);
-      toast.error('Failed to initialize checkout');
+      console.error('Error creating Thawani checkout:', error);
+      throw error;
     });
   };
 

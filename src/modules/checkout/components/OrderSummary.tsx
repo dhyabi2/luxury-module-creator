@@ -1,7 +1,6 @@
 import React from 'react';
 import { CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ThawaniPayment from './ThawaniPayment';
 
 interface OrderSummaryProps {
   cart: any;
@@ -86,6 +85,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               </div>
               <p className="text-sm text-gray-600 pl-6">
                 Pay securely using Thawani payment gateway.
+                <br />
+                Payment Methods Accepted: VisaCard/Master Card and Credit Card/Debit Card
               </p>
             </div>
 
@@ -107,8 +108,6 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               </p>
             </div>
           </div>
-
-          <ThawaniPayment cart={cart} />
 
           <Button 
             type="submit"
