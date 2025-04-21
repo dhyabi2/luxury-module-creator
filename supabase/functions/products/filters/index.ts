@@ -1,5 +1,5 @@
 
-// Main filters module - exports all filter functions
+// Re-export filters modules from the filters directory
 import { applyBrandFilter } from './brandFilter.ts';
 import { applyCategoryFilter } from './categoryFilter.ts';
 import { applyGenderFilter } from './genderFilter.ts';
