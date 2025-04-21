@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import TestResultDisplay from './TestResultDisplay';
@@ -424,6 +423,45 @@ const FilterTests: React.FC = () => {
       }
       
       const data = await response.json();
+      console.log('Combined filter test results:', data);
+      
+      // Enhanced logging for combined filter failures
+      if (data.products.length === 0) {
+        console.error('Combined filter test failed: No products returned');
+        throw new Error('No products returned for combined filter');
+      }
+      
+      // Detailed validation of each filter condition
+      const nonMatchingProducts = data.products.filter((product: any) => {
+        const categoryMatch = product.category.toLowerCase().includes('watches');
+        const brandMatch = product.brand.toLowerCase() === 'rolex';
+        const priceMatch = product.price >= 1000 && product.price <= 20000;
+        
+        console.log(`Product ${product.id} validation:`, {
+          name: product.name,
+          category: product.category,
+          categoryMatch,
+          brand: product.brand,
+          brandMatch,
+          price: product.price,
+          priceMatch
+        });
+        
+        return !(categoryMatch && brandMatch && priceMatch);
+      });
+      
+      if (nonMatchingProducts.length > 0) {
+        console.error('Combined filter test failed: Some products have incorrect values', 
+          nonMatchingProducts.map((p: any) => ({ 
+            id: p.id, 
+            name: p.name,
+            brand: p.brand, 
+            category: p.category,
+            price: p.price 
+          }))
+        );
+      }
+      
       const passed = data.products.length > 0 && 
                      data.products.every((product: any) => 
                        product.category.toLowerCase().includes('watches') &&

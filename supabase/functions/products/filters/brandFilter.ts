@@ -11,14 +11,19 @@ export const applyBrandFilter = (query: any, params: any) => {
       return query;
     }
     
-    // Fix for brand filtering
+    // Fix for brand filtering - use case insensitive comparison
     if (brands.length === 1) {
       // For single brand, use exact match (case insensitive)
+      console.log(`[API:products] Applying single brand filter with ilike: ${brands[0]}`);
       query = query.ilike('brand', brands[0]);
     } else {
-      // For multiple brands, build OR conditions
-      // This ensures exact matches for each brand
-      const orConditions = brands.map(brand => `brand.ilike.${brand}`).join(',');
+      // For multiple brands, build proper OR conditions with case insensitivity
+      console.log(`[API:products] Applying multiple brands filter with multiple ilikes: ${brands.join(', ')}`);
+      // Convert to lowercase for case insensitive comparison
+      const orConditions = brands.map(brand => {
+        return `brand.ilike.${brand}`;
+      }).join(',');
+      console.log(`[API:products] OR conditions: ${orConditions}`);
       query = query.or(orConditions);
     }
   }
