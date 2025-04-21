@@ -48,14 +48,18 @@ serve(async (req) => {
       
       if (!brands.includes('all') && brands.length > 0) {
         if (brands.length === 1) {
-          query = query.eq('brand', brands[0]);
+          query = query.ilike('brand', `%${brands[0]}%`);
+          console.log(`[API:filter-products] Filtering by single brand: ${brands[0]}`);
         } else {
-          query = query.in('brand', brands);
+          console.log(`[API:filter-products] Filtering by multiple brands: ${brands.join(', ')}`);
+          // For multiple brands, create OR conditions with ilike for each brand
+          const orConditions = brands.map(brand => `brand.ilike.%${brand}%`).join(',');
+          query = query.or(orConditions);
         }
       }
     }
     
-    // Apply category filter - FIXED to use exact matching
+    // Apply category filter using ilike for case-insensitive matching
     const categoryParam = params.category || params.categories;
     if (categoryParam) {
       const categories = (categoryParam as string).split(',').map(c => c.trim().toLowerCase());
@@ -64,10 +68,12 @@ serve(async (req) => {
       if (!categories.includes('all') && categories.length > 0) {
         if (categories.length === 1) {
           console.log(`[API:filter-products] Exact match for category: ${categories[0]}`);
-          query = query.eq('category', categories[0]);
+          query = query.ilike('category', categories[0]);
         } else {
-          console.log(`[API:filter-products] Multiple categories with IN operator: ${categories}`);
-          query = query.in('category', categories);
+          console.log(`[API:filter-products] Multiple categories with ILIKE operator: ${categories}`);
+          // For multiple categories, create OR conditions with ilike
+          const orConditions = categories.map(cat => `category.ilike.${cat}`).join(',');
+          query = query.or(orConditions);
         }
       }
     }
@@ -88,8 +94,10 @@ serve(async (req) => {
     
     // Apply price range filter
     if (params.minPrice && params.maxPrice) {
-      query = query.gte('price', parseFloat(params.minPrice as string))
-               .lte('price', parseFloat(params.maxPrice as string));
+      const minPrice = parseFloat(params.minPrice as string);
+      const maxPrice = parseFloat(params.maxPrice as string);
+      console.log(`[API:filter-products] Filtering by price range: ${minPrice} - ${maxPrice}`);
+      query = query.gte('price', minPrice).lte('price', maxPrice);
     }
     
     // Apply band material filter

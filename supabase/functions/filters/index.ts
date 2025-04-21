@@ -47,7 +47,7 @@ serve(async (req) => {
     console.log('[API:filters] Querying products table for actual brands');
     const { data: productsData, error: productsError } = await supabase
       .from('products')
-      .select('brand')
+      .select('brand, price')
       .order('brand');
     
     if (productsError) {
@@ -57,7 +57,11 @@ serve(async (req) => {
     
     // Extract unique brands from products
     const uniqueBrands = new Map();
+    let minPrice = Number.MAX_SAFE_INTEGER;
+    let maxPrice = 0;
+    
     productsData.forEach(product => {
+      // Process brand information
       const brandId = product.brand.toLowerCase().replace(/\s+/g, '-');
       if (!uniqueBrands.has(brandId)) {
         uniqueBrands.set(brandId, { 
@@ -68,6 +72,14 @@ serve(async (req) => {
       } else {
         uniqueBrands.get(brandId).count++;
       }
+      
+      // Track min and max prices
+      if (product.price < minPrice) {
+        minPrice = product.price;
+      }
+      if (product.price > maxPrice) {
+        maxPrice = product.price;
+      }
     });
     
     // Convert map to array and sort by name
@@ -75,6 +87,7 @@ serve(async (req) => {
       .sort((a, b) => a.name.localeCompare(b.name));
     
     console.log(`[API:filters] Found ${actualBrands.length} unique brands in products table`);
+    console.log(`[API:filters] Price range from products: ${minPrice} - ${maxPrice}`);
       
     // Now fetch the rest of the filters data
     console.log('[API:filters] Querying database for filters data');
@@ -82,7 +95,7 @@ serve(async (req) => {
       .from('filters')
       .select('data')
       .eq('id', 1)
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('[API:filters] Database error:', error);
@@ -103,6 +116,13 @@ serve(async (req) => {
     // Replace the brands with actual brands from products table
     responseData.brands = actualBrands;
     
+    // Update price range with actual min and max prices from the products
+    responseData.priceRange = {
+      min: Math.floor(minPrice),  // Round down to nearest integer
+      max: Math.ceil(maxPrice),   // Round up to nearest integer
+      unit: responseData.priceRange?.unit || 'OMR'  // Keep the existing unit or use default
+    };
+    
     // Filter category-specific brands if available
     if (responseData.categoryBrands) {
       // Create empty category-specific mapping
@@ -120,8 +140,8 @@ serve(async (req) => {
           // Query products for this specific category to get actual brands
           const { data: categoryProducts, error: categoryError } = await supabase
             .from('products')
-            .select('brand')
-            .eq('category', categoryId);
+            .select('brand, price')
+            .ilike('category', `%${categoryId}%`);
           
           if (categoryError) {
             console.error(`[API:filters] Error fetching brands for category ${categoryId}:`, categoryError);
@@ -130,7 +150,11 @@ serve(async (req) => {
           
           // Extract unique brands for this category
           const categoryBrandsMap = new Map();
+          let categoryMinPrice = Number.MAX_SAFE_INTEGER;
+          let categoryMaxPrice = 0;
+          
           categoryProducts.forEach(product => {
+            // Process brand
             const brandId = product.brand.toLowerCase().replace(/\s+/g, '-');
             if (!categoryBrandsMap.has(brandId)) {
               categoryBrandsMap.set(brandId, { 
@@ -141,11 +165,29 @@ serve(async (req) => {
             } else {
               categoryBrandsMap.get(brandId).count++;
             }
+            
+            // Track price range for this category
+            if (product.price < categoryMinPrice) {
+              categoryMinPrice = product.price;
+            }
+            if (product.price > categoryMaxPrice) {
+              categoryMaxPrice = product.price;
+            }
           });
           
           // Store in categoryBrands
           categoryBrands[categoryId] = Array.from(categoryBrandsMap.values());
           console.log(`[API:filters] Found ${categoryBrands[categoryId].length} brands for category ${categoryId}`);
+          
+          // Store category-specific price range if we have products
+          if (categoryProducts.length > 0) {
+            console.log(`[API:filters] Price range for category ${categoryId}: ${categoryMinPrice} - ${categoryMaxPrice}`);
+            categoryBrands[`${categoryId}-priceRange`] = {
+              min: Math.floor(categoryMinPrice),
+              max: Math.ceil(categoryMaxPrice),
+              unit: responseData.priceRange?.unit || 'OMR'
+            };
+          }
         }
       }
       
@@ -157,6 +199,7 @@ serve(async (req) => {
     responseData.genders = DEFAULT_GENDERS;
     
     console.log('[API:filters] Ensuring gender data is available');
+    console.log('[API:filters] Final price range:', responseData.priceRange);
     
     // Return the response with proper CORS headers
     return new Response(JSON.stringify(responseData), {
@@ -166,16 +209,19 @@ serve(async (req) => {
   } catch (error) {
     console.error('[API:filters] Error processing request:', error);
     
-    // Even in error case, return default filters with genders and actual brands
+    // Even in error case, try to return min and max prices
     const { data: productsData } = await supabase
       .from('products')
-      .select('brand')
-      .order('brand');
+      .select('brand, price');
     
     // Extract unique brands even in error case
     const uniqueBrands = new Map();
+    let fallbackMinPrice = 0;
+    let fallbackMaxPrice = 1000;
+    
     if (productsData) {
       productsData.forEach(product => {
+        // Process brand
         const brandId = product.brand.toLowerCase().replace(/\s+/g, '-');
         if (!uniqueBrands.has(brandId)) {
           uniqueBrands.set(brandId, { 
@@ -186,6 +232,14 @@ serve(async (req) => {
         } else {
           uniqueBrands.get(brandId).count++;
         }
+        
+        // Track min and max prices
+        if (product.price < fallbackMinPrice || fallbackMinPrice === 0) {
+          fallbackMinPrice = product.price;
+        }
+        if (product.price > fallbackMaxPrice) {
+          fallbackMaxPrice = product.price;
+        }
       });
     }
     
@@ -195,8 +249,11 @@ serve(async (req) => {
       bands: [],
       colors: [],
       caseColors: [],
-      priceRange: { min: 0, max: 1000, unit: 'OMR' },
-      caseSizeRange: { min: 20, max: 45, unit: 'mm' },
+      priceRange: { 
+        min: Math.floor(fallbackMinPrice || 0), 
+        max: Math.ceil(fallbackMaxPrice || 1000), 
+        unit: 'OMR' 
+      },
       genders: DEFAULT_GENDERS
     };
     

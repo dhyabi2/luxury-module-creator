@@ -80,9 +80,13 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
             setCategorySpecificBrands(data.categoryBrands);
           }
           
-          // Initialize price range from data
+          // Initialize price range from data - NOW DYNAMIC FROM THE DATABASE
           if (data && data.priceRange) {
-            setPriceRange(data.priceRange);
+            console.log('Setting price range from filters data:', data.priceRange);
+            setPriceRange({
+              min: data.priceRange.min,
+              max: data.priceRange.max
+            });
           }
         }
       } catch (error) {
