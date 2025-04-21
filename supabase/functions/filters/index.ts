@@ -43,7 +43,40 @@ serve(async (req) => {
   });
   
   try {
-    // Fetch filters directly from Supabase
+    // First, fetch existing brands directly from the products table for accuracy
+    console.log('[API:filters] Querying products table for actual brands');
+    const { data: productsData, error: productsError } = await supabase
+      .from('products')
+      .select('brand')
+      .order('brand');
+    
+    if (productsError) {
+      console.error('[API:filters] Error fetching product brands:', productsError);
+      throw new Error(`Error fetching product brands: ${productsError.message}`);
+    }
+    
+    // Extract unique brands from products
+    const uniqueBrands = new Map();
+    productsData.forEach(product => {
+      const brandId = product.brand.toLowerCase().replace(/\s+/g, '-');
+      if (!uniqueBrands.has(brandId)) {
+        uniqueBrands.set(brandId, { 
+          id: brandId, 
+          name: product.brand,
+          count: 1 
+        });
+      } else {
+        uniqueBrands.get(brandId).count++;
+      }
+    });
+    
+    // Convert map to array and sort by name
+    const actualBrands = Array.from(uniqueBrands.values())
+      .sort((a, b) => a.name.localeCompare(b.name));
+    
+    console.log(`[API:filters] Found ${actualBrands.length} unique brands in products table`);
+      
+    // Now fetch the rest of the filters data
     console.log('[API:filters] Querying database for filters data');
     const { data, error } = await supabase
       .from('filters')
@@ -67,6 +100,59 @@ serve(async (req) => {
     // Create a copy of the data to modify
     const responseData = { ...data.data };
     
+    // Replace the brands with actual brands from products table
+    responseData.brands = actualBrands;
+    
+    // Filter category-specific brands if available
+    if (responseData.categoryBrands) {
+      // Create empty category-specific mapping
+      const categoryBrands = {};
+      
+      // Update category brands based on actual products
+      if (category) {
+        const categories = category.split(',').map(c => c.trim().toLowerCase());
+        
+        for (const categoryId of categories) {
+          if (categoryId === 'all') continue;
+          
+          console.log(`[API:filters] Filtering brands for category: ${categoryId}`);
+          
+          // Query products for this specific category to get actual brands
+          const { data: categoryProducts, error: categoryError } = await supabase
+            .from('products')
+            .select('brand')
+            .eq('category', categoryId);
+          
+          if (categoryError) {
+            console.error(`[API:filters] Error fetching brands for category ${categoryId}:`, categoryError);
+            continue;
+          }
+          
+          // Extract unique brands for this category
+          const categoryBrandsMap = new Map();
+          categoryProducts.forEach(product => {
+            const brandId = product.brand.toLowerCase().replace(/\s+/g, '-');
+            if (!categoryBrandsMap.has(brandId)) {
+              categoryBrandsMap.set(brandId, { 
+                id: brandId, 
+                name: product.brand,
+                count: 1 
+              });
+            } else {
+              categoryBrandsMap.get(brandId).count++;
+            }
+          });
+          
+          // Store in categoryBrands
+          categoryBrands[categoryId] = Array.from(categoryBrandsMap.values());
+          console.log(`[API:filters] Found ${categoryBrands[categoryId].length} brands for category ${categoryId}`);
+        }
+      }
+      
+      // Update the response data with filtered category brands
+      responseData.categoryBrands = categoryBrands;
+    }
+    
     // Always ensure genders key exists with default values
     responseData.genders = DEFAULT_GENDERS;
     
@@ -80,10 +166,32 @@ serve(async (req) => {
   } catch (error) {
     console.error('[API:filters] Error processing request:', error);
     
-    // Even in error case, return default filters with genders
+    // Even in error case, return default filters with genders and actual brands
+    const { data: productsData } = await supabase
+      .from('products')
+      .select('brand')
+      .order('brand');
+    
+    // Extract unique brands even in error case
+    const uniqueBrands = new Map();
+    if (productsData) {
+      productsData.forEach(product => {
+        const brandId = product.brand.toLowerCase().replace(/\s+/g, '-');
+        if (!uniqueBrands.has(brandId)) {
+          uniqueBrands.set(brandId, { 
+            id: brandId, 
+            name: product.brand,
+            count: 1 
+          });
+        } else {
+          uniqueBrands.get(brandId).count++;
+        }
+      });
+    }
+    
     const defaultResponse = {
       categories: [],
-      brands: [],
+      brands: Array.from(uniqueBrands.values()),
       bands: [],
       colors: [],
       caseColors: [],

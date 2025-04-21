@@ -27,15 +27,7 @@ const WatchSpecificFilters: React.FC<WatchSpecificFiltersProps> = ({
     : defaultGenders;
   
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <FilterCategory
-        title="Gender"
-        options={genderOptions || []}
-        type="checkbox"
-        selectedOptions={selectedOptions.genders || []}
-        onSelectionChange={(selected) => onSelectionChange('genders', selected)}
-      />
-      
+    <div className="space-y-4 sm:space-y-6">      
       <FilterCategory
         title="Band Material"
         options={filtersData.bands || []}

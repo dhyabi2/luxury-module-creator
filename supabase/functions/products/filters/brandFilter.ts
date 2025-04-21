@@ -20,8 +20,8 @@ export const applyBrandFilter = (query: any, params: any) => {
     return query.ilike('brand', brands[0]);
   } 
   
-  // For multiple brands, create OR conditions
-  const brandConditions = brands.map((brand: string) => `brand.ilike.${brand}`).join(',');
-  console.log(`[API:products] Multiple brands filter: ${brandConditions}`);
-  return query.or(brandConditions);
+  // For multiple brands, create OR conditions with ilike
+  const orConditions = brands.map((brand: string) => `brand.ilike.${brand}`).join(',');
+  console.log(`[API:products] Multiple brands OR filter: ${orConditions}`);
+  return query.or(orConditions);
 };

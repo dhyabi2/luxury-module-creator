@@ -139,7 +139,7 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
         showAllOption={false}
       />
       
-      {/* Brands filter */}
+      {/* Brands filter - showing only brands that exist in filtered products */}
       <FilterCategory
         title="Brands"
         type="checkbox"

@@ -14,11 +14,12 @@ export const applyCategoryFilter = (query: any, params: any) => {
     // Use exact match with lowercase for better filtering
     if (categories.length === 1) {
       console.log(`[API:products] Single category filter: ${categories[0]}`);
-      query = query.eq('category', categories[0]);
+      query = query.ilike('category', categories[0]);
     } else {
-      // For multiple categories, use IN operator with lowercase values
-      console.log(`[API:products] Multiple categories filter: ${categories.join(', ')}`);
-      query = query.in('category', categories);
+      // For multiple categories, create OR conditions with ilike for case-insensitive matching
+      const orConditions = categories.map((cat: string) => `category.ilike.${cat}`).join(',');
+      console.log(`[API:products] Multiple categories OR filter: ${orConditions}`);
+      query = query.or(orConditions);
     }
   }
   
@@ -34,10 +35,12 @@ export const applyCategoryFilter = (query: any, params: any) => {
     
     if (categories.length === 1) {
       console.log(`[API:products] Single categories filter: ${categories[0]}`);
-      query = query.eq('category', categories[0]);
+      query = query.ilike('category', categories[0]);
     } else {
-      console.log(`[API:products] Multiple categories filter: ${categories.join(', ')}`);
-      query = query.in('category', categories);
+      // For multiple categories, create OR conditions with ilike for case-insensitive matching
+      const orConditions = categories.map((cat: string) => `category.ilike.${cat}`).join(',');
+      console.log(`[API:products] Multiple categories OR filter: ${orConditions}`);
+      query = query.or(orConditions);
     }
   }
   
