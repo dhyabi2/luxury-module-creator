@@ -60,12 +60,15 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         const queryString = categoryQueryParam ? `?category=${categoryQueryParam}` : '';
         console.log(`[FilterSidebar] Fetching filters data with query: ${queryString}`);
         
+        // Direct API call with no intermediaries
         const response = await fetch(`${SUPABASE_URL}/functions/v1/filters${queryString}`, {
+          method: 'POST',
           headers: {
             "apikey": SUPABASE_KEY,
             "Authorization": `Bearer ${SUPABASE_KEY}`,
             "Content-Type": "application/json"
-          }
+          },
+          body: JSON.stringify({ selectedCategories })
         });
         
         if (!response.ok) {
@@ -115,8 +118,52 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         categories: selectedOptions.categories || []
       };
       onFilterChange(currentFilters);
+      
+      // Send filter selection to the edge function directly
+      sendFilterSelection(currentFilters);
     }
   }, [selectedOptions, priceRange, caseSizeRange, onFilterChange]);
+  
+  // Function to send filter selection directly to the edge function
+  const sendFilterSelection = async (filters: Record<string, any>) => {
+    try {
+      const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
+      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
+      
+      // Prepare filter data for API
+      const filterData = {
+        brands: filters.selectedOptions.brands?.join(','),
+        categories: filters.selectedOptions.categories?.join(','),
+        genders: filters.selectedOptions.genders?.join(','),
+        bands: filters.selectedOptions.bands?.join(','),
+        caseColors: filters.selectedOptions.caseColors?.join(','),
+        colors: filters.selectedOptions.colors?.join(','),
+        minPrice: filters.priceRange?.min,
+        maxPrice: filters.priceRange?.max,
+        minCaseSize: filters.caseSizeRange?.min,
+        maxCaseSize: filters.caseSizeRange?.max,
+        instock: filters.selectedOptions.instock?.includes('true') ? 'true' : undefined,
+        clearance: filters.selectedOptions.clearance?.includes('true') ? 'true' : undefined
+      };
+      
+      console.log('Sending filter selection to API:', filterData);
+      
+      // Send the filter selection to the edge function
+      await fetch(`${SUPABASE_URL}/functions/v1/filter-products`, {
+        method: 'POST',
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(filterData)
+      });
+      
+      // We don't need to process the response here as the ProductGrid will handle that
+    } catch (error) {
+      console.error('Error sending filter selection:', error);
+    }
+  };
   
   // Handle option selection change
   const handleSelectionChange = (filterType: string, values: string[]) => {

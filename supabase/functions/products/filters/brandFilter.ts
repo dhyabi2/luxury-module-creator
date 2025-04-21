@@ -1,26 +1,27 @@
 
-// Brand filter implementation
+// Brand filter implementation with improved handling
 export const applyBrandFilter = (query: any, params: any) => {
-  if (params.brand) {
-    const brands = params.brand.split(',').map((b: string) => b.trim());
-    console.log(`[API:products] Filtering by brands: ${brands.join(', ')}`);
-    
-    // If "all" is included or empty, don't filter by brand
-    if (brands.includes('all') || brands.length === 0) {
-      console.log('[API:products] Skipping brand filter due to "all" selection');
-      return query;
-    }
-    
-    // Fix for brand filtering - use array contains for exact match
-    if (brands.length === 1) {
-      // For single brand, use case insensitive comparison
-      console.log(`[API:products] Single brand filter (case-insensitive): ${brands[0]}`);
-      query = query.ilike('brand', brands[0]);
-    } else {
-      // For multiple brands, use 'in' operator with array
-      console.log(`[API:products] Multiple brands filter with in operator: ${brands.join(', ')}`);
-      query = query.in('brand', brands);
-    }
+  if (!params.brand) {
+    return query;
   }
-  return query;
+  
+  const brands = params.brand.split(',').map((b: string) => b.trim());
+  console.log(`[API:products] Filtering by brands: ${brands.join(', ')}`);
+  
+  // If "all" is included or empty, don't filter by brand
+  if (brands.includes('all') || brands.length === 0) {
+    console.log('[API:products] Skipping brand filter due to "all" selection');
+    return query;
+  }
+  
+  // For single brand, use ilike for case-insensitive matching
+  if (brands.length === 1) {
+    console.log(`[API:products] Single brand filter: ${brands[0]}`);
+    return query.ilike('brand', brands[0]);
+  } 
+  
+  // For multiple brands, create OR conditions
+  const brandConditions = brands.map((brand: string) => `brand.ilike.${brand}`).join(',');
+  console.log(`[API:products] Multiple brands filter: ${brandConditions}`);
+  return query.or(brandConditions);
 };
