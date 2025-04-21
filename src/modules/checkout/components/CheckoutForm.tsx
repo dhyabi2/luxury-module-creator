@@ -7,11 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import BillingDetailsForm from './BillingDetailsForm';
 import ShippingDetailsForm from './ShippingDetailsForm';
 import OrderSummary from './OrderSummary';
+import { validateCheckoutForm } from '../utils/formValidation';
+import { processThawaniPayment, processCashOnDelivery } from '../utils/paymentProcessing';
+import { BillingDetails, ShippingDetails, Country } from '../types/checkout';
 
 const CheckoutForm = () => {
   const [cart, setCart] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [billingDetails, setBillingDetails] = useState({
+  const [billingDetails, setBillingDetails] = useState<BillingDetails>({
     firstName: '',
     lastName: '',
     company: '',
@@ -26,7 +29,7 @@ const CheckoutForm = () => {
     orderNotes: ''
   });
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
-  const [shippingDetails, setShippingDetails] = useState({
+  const [shippingDetails, setShippingDetails] = useState<ShippingDetails>({
     firstName: '',
     lastName: '',
     company: '',
@@ -40,7 +43,7 @@ const CheckoutForm = () => {
   const [paymentMethod, setPaymentMethod] = useState('thawani');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const countries = [
+  const countries: Country[] = [
     { code: 'OM', name: 'Oman' },
     { code: 'AE', name: 'United Arab Emirates' },
     { code: 'SA', name: 'Saudi Arabia' },
@@ -80,7 +83,6 @@ const CheckoutForm = () => {
 
   const handleShipToDifferentAddressChange = () => {
     setShipToDifferentAddress(!shipToDifferentAddress);
-
     if (shipToDifferentAddress) {
       setShippingDetails({
         firstName: billingDetails.firstName,
@@ -100,35 +102,7 @@ const CheckoutForm = () => {
     setPaymentMethod(e.target.value);
   };
 
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-
-    if (!billingDetails.firstName) errors.firstName = "First name is required";
-    if (!billingDetails.lastName) errors.lastName = "Last name is required";
-    if (!billingDetails.country) errors.country = "Country is required";
-    if (!billingDetails.address1) errors.address1 = "Street address is required";
-    if (!billingDetails.city) errors.city = "Town/City is required";
-    if (!billingDetails.state) errors.state = "State/County is required";
-    if (!billingDetails.postcode) errors.postcode = "Postcode/ZIP is required";
-    if (!billingDetails.phone) errors.phone = "Phone is required";
-    if (!billingDetails.email) errors.email = "Email address is required";
-    else if (!/\S+@\S+\.\S+/.test(billingDetails.email)) errors.email = "Email address is invalid";
-
-    if (shipToDifferentAddress) {
-      if (!shippingDetails.firstName) errors.shippingFirstName = "First name is required";
-      if (!shippingDetails.lastName) errors.shippingLastName = "Last name is required";
-      if (!shippingDetails.country) errors.shippingCountry = "Country is required";
-      if (!shippingDetails.address1) errors.shippingAddress1 = "Street address is required";
-      if (!shippingDetails.city) errors.shippingCity = "Town/City is required";
-      if (!shippingDetails.state) errors.shippingState = "State/County is required";
-      if (!shippingDetails.postcode) errors.shippingPostcode = "Postcode/ZIP is required";
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Processing checkout...');
 
@@ -137,107 +111,19 @@ const CheckoutForm = () => {
       return;
     }
 
-    if (!validateForm()) {
+    const errors = validateCheckoutForm(billingDetails, shipToDifferentAddress, shippingDetails);
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     if (paymentMethod === 'thawani') {
-      processDirectCheckout();
+      await processThawaniPayment(cart, billingDetails);
     } else {
-      processCashOnDelivery();
+      processCashOnDelivery(cart, billingDetails, shippingDetails, shipToDifferentAddress);
     }
-  };
-
-  const processDirectCheckout = () => {
-    const thawaniRequestData = {
-      products: cart.items.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        unit_amount: Math.round(item.price * 1000) // Convert to baisa
-      })),
-      success_url: window.location.origin + '/checkout/success',
-      cancel_url: window.location.origin + '/checkout/canceled',
-      metadata: {
-        customer_email: billingDetails.email,
-        customer_name: `${billingDetails.firstName} ${billingDetails.lastName}`,
-        order_id: `ORD-${Date.now()}`
-      }
-    };
-    
-    console.log('Initializing Thawani checkout process with data:', JSON.stringify(thawaniRequestData));
-
-    fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/create-thawani-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(thawaniRequestData)
-    })
-    .then(response => {
-      console.log('Thawani API Response status:', response.status);
-      if (!response.ok) {
-        console.error('Thawani API Response not OK:', response.status);
-      }
-      return response.text().then(text => {
-        try {
-          console.log('Raw response text:', text);
-          return text ? JSON.parse(text) : {};
-        } catch (e) {
-          console.error('Error parsing JSON response:', e);
-          throw new Error('Invalid JSON response from Thawani API');
-        }
-      });
-    })
-    .then(data => {
-      console.log('Thawani session created, full response:', JSON.stringify(data));
-      if (data?.data?.session_id) {
-        const redirectUrl = `https://uatcheckout.thawani.om/pay/${data.data.session_id}?key=HGvTMLDssJghr9tlN9gr4DVYt0qyBy`;
-        console.log('Redirecting to Thawani URL:', redirectUrl);
-        window.location.href = redirectUrl;
-      } else {
-        console.error('No session ID in response:', JSON.stringify(data));
-        throw new Error('Failed to create Thawani session: No session ID returned');
-      }
-    })
-    .catch(error => {
-      console.error('Error creating Thawani checkout:', error);
-      console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-      throw error;
-    });
-  };
-
-  const processCashOnDelivery = () => {
-    console.log('Processing cash on delivery order...');
-
-    const order = {
-      id: `ORD-${Date.now()}`,
-      items: cart.items,
-      billing: billingDetails,
-      shipping: shipToDifferentAddress ? shippingDetails : billingDetails,
-      total: cart.total,
-      subtotal: cart.subtotal,
-      payment_method: 'cash',
-      status: 'processing',
-      date: new Date().toISOString()
-    };
-
-    const storedOrders = localStorage.getItem('orders');
-    const orders = storedOrders ? JSON.parse(storedOrders) : [];
-    orders.push(order);
-    localStorage.setItem('orders', JSON.stringify(orders));
-
-    localStorage.setItem('cart', JSON.stringify({
-      items: [],
-      totalItems: 0,
-      subtotal: 0,
-      discount: 0,
-      total: 0
-    }));
-
-    window.dispatchEvent(new Event('cartUpdated'));
-
-    window.location.href = '/checkout/success';
   };
 
   if (isLoading) {
