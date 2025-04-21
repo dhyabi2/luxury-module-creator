@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,16 +6,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { CreditCard, ShoppingCart } from 'lucide-react';
+import ThawaniPayment from '@/components/ui/thawani-payment';
 
 const CheckoutForm = () => {
-  // Direct state management without custom hooks
   const [cart, setCart] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [billingDetails, setBillingDetails] = useState({
     firstName: '',
     lastName: '',
     company: '',
-    country: 'OM', // Default to Oman
+    country: 'OM',
     address1: '',
     address2: '',
     city: '',
@@ -31,17 +30,16 @@ const CheckoutForm = () => {
     firstName: '',
     lastName: '',
     company: '',
-    country: 'OM', // Default to Oman
+    country: 'OM',
     address1: '',
     address2: '',
     city: '',
     state: '',
-    postcode: '',
+    postcode: ''
   });
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  
-  // Load cart data directly from localStorage
+
   useEffect(() => {
     try {
       const storedCart = localStorage.getItem('cart');
@@ -54,8 +52,7 @@ const CheckoutForm = () => {
       setIsLoading(false);
     }
   }, []);
-  
-  // Handle form input changes for billing
+
   const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setBillingDetails(prev => ({
@@ -63,8 +60,7 @@ const CheckoutForm = () => {
       [name.replace('billing_', '')]: value
     }));
   };
-  
-  // Handle form input changes for shipping
+
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setShippingDetails(prev => ({
@@ -72,12 +68,10 @@ const CheckoutForm = () => {
       [name.replace('shipping_', '')]: value
     }));
   };
-  
-  // Toggle ship to different address
+
   const handleShipToDifferentAddressChange = () => {
     setShipToDifferentAddress(!shipToDifferentAddress);
-    
-    // If turning off, reset shipping details to match billing
+
     if (shipToDifferentAddress) {
       setShippingDetails({
         firstName: billingDetails.firstName,
@@ -92,17 +86,14 @@ const CheckoutForm = () => {
       });
     }
   };
-  
-  // Handle payment method selection
+
   const handlePaymentMethodChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPaymentMethod(e.target.value);
   };
-  
-  // Basic form validation
+
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    
-    // Required billing fields
+
     if (!billingDetails.firstName) errors.firstName = "First name is required";
     if (!billingDetails.lastName) errors.lastName = "Last name is required";
     if (!billingDetails.country) errors.country = "Country is required";
@@ -113,8 +104,7 @@ const CheckoutForm = () => {
     if (!billingDetails.phone) errors.phone = "Phone is required";
     if (!billingDetails.email) errors.email = "Email address is required";
     else if (!/\S+@\S+\.\S+/.test(billingDetails.email)) errors.email = "Email address is invalid";
-    
-    // If shipping to different address, validate shipping fields too
+
     if (shipToDifferentAddress) {
       if (!shippingDetails.firstName) errors.shippingFirstName = "First name is required";
       if (!shippingDetails.lastName) errors.shippingLastName = "Last name is required";
@@ -124,38 +114,33 @@ const CheckoutForm = () => {
       if (!shippingDetails.state) errors.shippingState = "State/County is required";
       if (!shippingDetails.postcode) errors.shippingPostcode = "Postcode/ZIP is required";
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-  
-  // Handle form submission
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Processing checkout...');
-    
+
     if (!cart || !cart.items || cart.items.length === 0) {
       toast.error("Your cart is empty");
       return;
     }
-    
+
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
       return;
     }
-    
-    // For direct stripe checkout
+
     if (paymentMethod === 'card') {
       processDirectCheckout();
     } else {
-      // For cash on delivery
       processCashOnDelivery();
     }
   };
-  
-  // Process direct checkout with Stripe
+
   const processDirectCheckout = () => {
-    // Direct API call to our edge function
     fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/create-checkout', {
       method: 'POST',
       headers: {
@@ -200,12 +185,10 @@ const CheckoutForm = () => {
       toast.error('Failed to initialize checkout');
     });
   };
-  
-  // Process cash on delivery order
+
   const processCashOnDelivery = () => {
     console.log('Processing cash on delivery order...');
-    
-    // Store order in localStorage (in a real app, this would go to a database)
+
     const order = {
       id: `ORD-${Date.now()}`,
       items: cart.items,
@@ -217,14 +200,12 @@ const CheckoutForm = () => {
       status: 'processing',
       date: new Date().toISOString()
     };
-    
-    // Store order
+
     const storedOrders = localStorage.getItem('orders');
     const orders = storedOrders ? JSON.parse(storedOrders) : [];
     orders.push(order);
     localStorage.setItem('orders', JSON.stringify(orders));
-    
-    // Clear cart
+
     localStorage.setItem('cart', JSON.stringify({
       items: [],
       totalItems: 0,
@@ -232,25 +213,21 @@ const CheckoutForm = () => {
       discount: 0,
       total: 0
     }));
-    
-    // Trigger cart update event
+
     window.dispatchEvent(new Event('cartUpdated'));
-    
-    // Redirect to success page
+
     window.location.href = '/checkout/success';
   };
-  
-  // For countries select dropdown
+
   const countries = [
     { code: 'OM', name: 'Oman' },
     { code: 'AE', name: 'United Arab Emirates' },
     { code: 'SA', name: 'Saudi Arabia' },
     { code: 'QA', name: 'Qatar' },
     { code: 'BH', name: 'Bahrain' },
-    { code: 'KW', name: 'Kuwait' },
-    // Add more countries as needed
+    { code: 'KW', name: 'Kuwait' }
   ];
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -258,7 +235,7 @@ const CheckoutForm = () => {
       </div>
     );
   }
-  
+
   if (!cart || !cart.items || cart.items.length === 0) {
     return (
       <div className="max-w-md mx-auto text-center p-8">
@@ -273,9 +250,9 @@ const CheckoutForm = () => {
       </div>
     );
   }
-  
+
   return (
-    <form className="checkout woocommerce-checkout" onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid md:grid-cols-12 gap-8">
         <div className="md:col-span-8 md:order-1 order-2">
           <div className="customer-details space-y-8">
@@ -283,10 +260,10 @@ const CheckoutForm = () => {
               <ShoppingCart className="mr-2 h-4 w-4" />
               Back to Cart
             </Link>
-            
+
             <div className="billing-fields">
               <h3 className="text-xl font-bold mb-4">Billing details</h3>
-              
+
               <div className="billing-fields-wrapper space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -304,7 +281,7 @@ const CheckoutForm = () => {
                     />
                     {formErrors.firstName && <p className="text-red-500 text-sm mt-1">{formErrors.firstName}</p>}
                   </div>
-                  
+
                   <div>
                     <label htmlFor="billing_lastName" className="block text-sm font-medium text-gray-700 mb-1">
                       Last name <span className="text-red-500">*</span>
@@ -320,7 +297,7 @@ const CheckoutForm = () => {
                     {formErrors.lastName && <p className="text-red-500 text-sm mt-1">{formErrors.lastName}</p>}
                   </div>
                 </div>
-                
+
                 <div>
                   <label htmlFor="billing_company" className="block text-sm font-medium text-gray-700 mb-1">
                     Company name (optional)
@@ -333,7 +310,7 @@ const CheckoutForm = () => {
                     onChange={handleBillingChange}
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="billing_country" className="block text-sm font-medium text-gray-700 mb-1">
                     Country / Region <span className="text-red-500">*</span>
@@ -354,7 +331,7 @@ const CheckoutForm = () => {
                   </select>
                   {formErrors.country && <p className="text-red-500 text-sm mt-1">{formErrors.country}</p>}
                 </div>
-                
+
                 <div>
                   <label htmlFor="billing_address1" className="block text-sm font-medium text-gray-700 mb-1">
                     Street address <span className="text-red-500">*</span>
@@ -369,7 +346,7 @@ const CheckoutForm = () => {
                     className={`mb-2 ${formErrors.address1 ? "border-red-500" : ""}`}
                   />
                   {formErrors.address1 && <p className="text-red-500 text-sm mt-1">{formErrors.address1}</p>}
-                  
+
                   <Input
                     type="text"
                     id="billing_address2"
@@ -379,7 +356,7 @@ const CheckoutForm = () => {
                     onChange={handleBillingChange}
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="billing_city" className="block text-sm font-medium text-gray-700 mb-1">
                     Town / City <span className="text-red-500">*</span>
@@ -394,7 +371,7 @@ const CheckoutForm = () => {
                   />
                   {formErrors.city && <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>}
                 </div>
-                
+
                 <div>
                   <label htmlFor="billing_state" className="block text-sm font-medium text-gray-700 mb-1">
                     State / County <span className="text-red-500">*</span>
@@ -409,7 +386,7 @@ const CheckoutForm = () => {
                   />
                   {formErrors.state && <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>}
                 </div>
-                
+
                 <div>
                   <label htmlFor="billing_postcode" className="block text-sm font-medium text-gray-700 mb-1">
                     Postcode / ZIP <span className="text-red-500">*</span>
@@ -424,7 +401,7 @@ const CheckoutForm = () => {
                   />
                   {formErrors.postcode && <p className="text-red-500 text-sm mt-1">{formErrors.postcode}</p>}
                 </div>
-                
+
                 <div>
                   <label htmlFor="billing_phone" className="block text-sm font-medium text-gray-700 mb-1">
                     Phone <span className="text-red-500">*</span>
@@ -439,7 +416,7 @@ const CheckoutForm = () => {
                   />
                   {formErrors.phone && <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>}
                 </div>
-                
+
                 <div>
                   <label htmlFor="billing_email" className="block text-sm font-medium text-gray-700 mb-1">
                     Email address <span className="text-red-500">*</span>
@@ -456,7 +433,7 @@ const CheckoutForm = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="shipping-fields">
               <div className="flex items-center space-x-2 mb-4">
                 <Checkbox
@@ -471,7 +448,7 @@ const CheckoutForm = () => {
                   Ship to a different address?
                 </label>
               </div>
-              
+
               {shipToDifferentAddress && (
                 <div className="shipping-fields-wrapper space-y-4 mt-6">
                   <div className="grid grid-cols-2 gap-4">
@@ -489,7 +466,7 @@ const CheckoutForm = () => {
                       />
                       {formErrors.shippingFirstName && <p className="text-red-500 text-sm mt-1">{formErrors.shippingFirstName}</p>}
                     </div>
-                    
+
                     <div>
                       <label htmlFor="shipping_lastName" className="block text-sm font-medium text-gray-700 mb-1">
                         Last name <span className="text-red-500">*</span>
@@ -505,7 +482,7 @@ const CheckoutForm = () => {
                       {formErrors.shippingLastName && <p className="text-red-500 text-sm mt-1">{formErrors.shippingLastName}</p>}
                     </div>
                   </div>
-                  
+
                   <div>
                     <label htmlFor="shipping_company" className="block text-sm font-medium text-gray-700 mb-1">
                       Company name (optional)
@@ -518,7 +495,7 @@ const CheckoutForm = () => {
                       onChange={handleShippingChange}
                     />
                   </div>
-                  
+
                   <div>
                     <label htmlFor="shipping_country" className="block text-sm font-medium text-gray-700 mb-1">
                       Country / Region <span className="text-red-500">*</span>
@@ -539,7 +516,7 @@ const CheckoutForm = () => {
                     </select>
                     {formErrors.shippingCountry && <p className="text-red-500 text-sm mt-1">{formErrors.shippingCountry}</p>}
                   </div>
-                  
+
                   <div>
                     <label htmlFor="shipping_address1" className="block text-sm font-medium text-gray-700 mb-1">
                       Street address <span className="text-red-500">*</span>
@@ -554,7 +531,7 @@ const CheckoutForm = () => {
                       className={`mb-2 ${formErrors.shippingAddress1 ? "border-red-500" : ""}`}
                     />
                     {formErrors.shippingAddress1 && <p className="text-red-500 text-sm mt-1">{formErrors.shippingAddress1}</p>}
-                    
+
                     <Input
                       type="text"
                       id="shipping_address2"
@@ -564,7 +541,7 @@ const CheckoutForm = () => {
                       onChange={handleShippingChange}
                     />
                   </div>
-                  
+
                   <div>
                     <label htmlFor="shipping_city" className="block text-sm font-medium text-gray-700 mb-1">
                       Town / City <span className="text-red-500">*</span>
@@ -579,7 +556,7 @@ const CheckoutForm = () => {
                     />
                     {formErrors.shippingCity && <p className="text-red-500 text-sm mt-1">{formErrors.shippingCity}</p>}
                   </div>
-                  
+
                   <div>
                     <label htmlFor="shipping_state" className="block text-sm font-medium text-gray-700 mb-1">
                       State / County <span className="text-red-500">*</span>
@@ -594,7 +571,7 @@ const CheckoutForm = () => {
                     />
                     {formErrors.shippingState && <p className="text-red-500 text-sm mt-1">{formErrors.shippingState}</p>}
                   </div>
-                  
+
                   <div>
                     <label htmlFor="shipping_postcode" className="block text-sm font-medium text-gray-700 mb-1">
                       Postcode / ZIP <span className="text-red-500">*</span>
@@ -612,7 +589,7 @@ const CheckoutForm = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="additional-fields">
               <div>
                 <label htmlFor="order_notes" className="block text-sm font-medium text-gray-700 mb-1">
@@ -630,18 +607,18 @@ const CheckoutForm = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="md:col-span-4 md:order-2 order-1">
           <div className="order-review">
             <h3 className="text-xl font-bold mb-6">Your Order</h3>
-            
+
             <div className="border rounded-lg p-6 bg-gray-50">
               <div className="space-y-4">
                 <div className="flex justify-between pb-2 border-b text-sm font-medium">
                   <span>Product</span>
                   <span>Subtotal</span>
                 </div>
-                
+
                 {cart.items.map((item: any) => (
                   <div key={item.id} className="flex justify-between py-2 border-b">
                     <div className="flex items-start">
@@ -662,29 +639,29 @@ const CheckoutForm = () => {
                     </div>
                   </div>
                 ))}
-                
+
                 <div className="flex justify-between py-2 border-b">
                   <span>Subtotal</span>
                   <span>OMR {cart.subtotal.toFixed(2)}</span>
                 </div>
-                
+
                 {cart.discount > 0 && (
                   <div className="flex justify-between py-2 border-b">
                     <span>Discount</span>
                     <span className="text-red-500">-OMR {cart.discount.toFixed(2)}</span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between py-2 border-b">
                   <span>Shipping</span>
                   <span>Free shipping</span>
                 </div>
-                
+
                 <div className="flex justify-between py-2 font-bold">
                   <span>Total</span>
                   <span>OMR {cart.total.toFixed(2)}</span>
                 </div>
-                
+
                 <div className="space-y-4 mt-6">
                   <div className="bg-white p-4 border rounded">
                     <div className="flex items-center mb-2">
@@ -703,7 +680,7 @@ const CheckoutForm = () => {
                       Pay with cash upon delivery.
                     </p>
                   </div>
-                  
+
                   <div className="bg-white p-4 border rounded">
                     <div className="flex items-center mb-2">
                       <input 
@@ -721,11 +698,16 @@ const CheckoutForm = () => {
                       Pay securely using your credit/debit card.
                     </p>
                   </div>
-                  
+
                   <div className="pt-4 text-sm">
                     <p>Your personal data will be used to process your order, support your experience throughout this website.</p>
                   </div>
-                  
+
+                  <div className="payment-methods space-y-4">
+                    <h3 className="text-xl font-bold mb-4">Payment Method</h3>
+                    <ThawaniPayment cart={cart} />
+                  </div>
+
                   <Button 
                     type="submit" 
                     className="w-full py-6 text-base mt-6"
