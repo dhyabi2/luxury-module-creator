@@ -38,10 +38,12 @@ serve(async (req) => {
     items = [], 
     mode = 'payment',
     successUrl = 'https://example.com/success',
-    cancelUrl = 'https://example.com/cancel'
+    cancelUrl = 'https://example.com/cancel',
+    customerDetails = null
   } = reqData;
   
   console.log('[API:create-checkout] Request received with items:', items);
+  console.log('[API:create-checkout] Customer details:', customerDetails);
   
   if (!items || items.length === 0) {
     console.error('[API:create-checkout] No items provided in request');
@@ -70,7 +72,7 @@ serve(async (req) => {
             name: `${item.brand} ${item.name}`,
             images: item.image ? [item.image] : [],
             metadata: {
-              productId: item.id
+              productId: item.productId
             }
           },
           unit_amount: unitAmount
@@ -81,8 +83,8 @@ serve(async (req) => {
     
     console.log('[API:create-checkout] Creating Stripe session with line items:', lineItems);
     
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Build checkout session parameters
+    const sessionParams: any = {
       payment_method_types: ['card'],
       mode: mode,
       line_items: lineItems,
@@ -91,7 +93,30 @@ serve(async (req) => {
       metadata: {
         origin: 'direct_checkout'
       }
-    });
+    };
+    
+    // Add customer details if provided
+    if (customerDetails) {
+      sessionParams.customer_email = customerDetails.email;
+      
+      // Add shipping address if provided
+      if (customerDetails.address) {
+        sessionParams.shipping = {
+          name: customerDetails.name,
+          address: {
+            line1: customerDetails.address.line1,
+            line2: customerDetails.address.line2 || '',
+            city: customerDetails.address.city,
+            state: customerDetails.address.state,
+            country: customerDetails.address.country,
+            postal_code: customerDetails.address.postal_code
+          }
+        };
+      }
+    }
+    
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     console.log('[API:create-checkout] Created Stripe session:', session.id);
     

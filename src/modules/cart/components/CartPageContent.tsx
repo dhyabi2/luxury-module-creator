@@ -1,122 +1,212 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { CartItem as CartItemType, Cart } from '@/types/cart';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Trash2, Plus, Minus, RefreshCw, ShoppingCart } from 'lucide-react';
-import CartItem from './CartItem';
 import { toast } from 'sonner';
+import { Cart } from '@/types/cart';
+import { ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
+import CheckoutHeader from '@/modules/checkout/components/CheckoutHeader';
 
 export const CartPageContent: React.FC = () => {
-  // Direct state management, no hooks
-  const [cart, setCart] = useState<Cart>({
-    items: [],
-    totalItems: 0,
-    subtotal: 0,
-    discount: 0,
-    total: 0
-  });
+  const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [couponCode, setCouponCode] = useState('');
   
-  // Direct API call, no service abstraction
+  // Load cart data directly from localStorage
   useEffect(() => {
-    console.log('Loading cart from local storage');
-    
+    loadCartData();
+  }, []);
+  
+  const loadCartData = () => {
     try {
       const storedCart = localStorage.getItem('cart');
       if (storedCart) {
-        const parsedCart = JSON.parse(storedCart);
-        setCart(parsedCart);
+        setCart(JSON.parse(storedCart));
+      } else {
+        setCart({
+          items: [],
+          totalItems: 0,
+          subtotal: 0,
+          discount: 0,
+          total: 0
+        });
       }
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error loading cart:', error);
-    } finally {
+      console.error('Error loading cart data:', error);
       setIsLoading(false);
     }
-  }, []);
+  };
   
-  // Direct cart update functions, no abstraction
-  const updateCart = (updatedCart: Cart) => {
+  // Update quantity of an item
+  const updateQuantity = (itemId: string, newQuantity: number) => {
+    if (!cart) return;
+    
     try {
+      console.log(`Updating quantity for item ${itemId} to ${newQuantity}`);
+      
+      if (newQuantity <= 0) {
+        removeItem(itemId);
+        return;
+      }
+      
+      const updatedItems = cart.items.map(item => {
+        if (item.id === itemId) {
+          return { ...item, quantity: newQuantity };
+        }
+        return item;
+      });
+      
+      // Recalculate totals
+      const totalItems = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      const subtotal = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const discount = updatedItems.reduce((sum, item) => {
+        if (item.discount) {
+          return sum + ((item.price * item.discount / 100) * item.quantity);
+        }
+        return sum;
+      }, 0);
+      const total = subtotal - discount;
+      
+      const updatedCart = {
+        ...cart,
+        items: updatedItems,
+        totalItems,
+        subtotal,
+        discount,
+        total
+      };
+      
+      // Save to localStorage
       localStorage.setItem('cart', JSON.stringify(updatedCart));
       setCart(updatedCart);
+      
+      // Trigger cart update event
+      window.dispatchEvent(new Event('cartUpdated'));
     } catch (error) {
       console.error('Error updating cart:', error);
+      toast.error('Failed to update cart');
     }
   };
   
+  // Remove an item from cart
   const removeItem = (itemId: string) => {
-    console.log('Removing item from cart:', itemId);
+    if (!cart) return;
     
-    const updatedItems = cart.items.filter(item => item.id !== itemId);
-    const updatedCart = recalculateCart(updatedItems);
-    
-    updateCart(updatedCart);
-    toast.success('Item removed from cart');
-  };
-  
-  const updateQuantity = (itemId: string, quantity: number) => {
-    console.log('Updating quantity for item:', itemId, 'to', quantity);
-    
-    if (quantity <= 0) {
-      removeItem(itemId);
-      return;
+    try {
+      console.log(`Removing item ${itemId} from cart`);
+      
+      const updatedItems = cart.items.filter(item => item.id !== itemId);
+      
+      // Recalculate totals
+      const totalItems = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      const subtotal = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const discount = updatedItems.reduce((sum, item) => {
+        if (item.discount) {
+          return sum + ((item.price * item.discount / 100) * item.quantity);
+        }
+        return sum;
+      }, 0);
+      const total = subtotal - discount;
+      
+      const updatedCart = {
+        ...cart,
+        items: updatedItems,
+        totalItems,
+        subtotal,
+        discount,
+        total
+      };
+      
+      // Save to localStorage
+      localStorage.setItem('cart', JSON.stringify(updatedCart));
+      setCart(updatedCart);
+      
+      // Trigger cart update event
+      window.dispatchEvent(new Event('cartUpdated'));
+      
+      toast.success('Item removed from cart');
+    } catch (error) {
+      console.error('Error removing item from cart:', error);
+      toast.error('Failed to remove item from cart');
     }
-    
-    const updatedItems = cart.items.map(item => 
-      item.id === itemId ? { ...item, quantity } : item
-    );
-    
-    const updatedCart = recalculateCart(updatedItems);
-    updateCart(updatedCart);
   };
   
-  const recalculateCart = (items: CartItemType[]): Cart => {
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const discount = items.reduce((sum, item) => {
-      if (item.discount) {
-        const itemDiscount = (item.price * item.discount / 100) * item.quantity;
-        return sum + itemDiscount;
-      }
-      return sum;
-    }, 0);
-    
-    return {
-      items,
-      totalItems,
-      subtotal,
-      discount,
-      total: subtotal - discount,
-      shipping: { method: 'Free shipping', cost: 0 }
-    };
-  };
-  
+  // Apply coupon code
   const applyCoupon = () => {
+    // This is just a placeholder implementation
+    // In a real application, this would validate the coupon code with the backend
     if (!couponCode.trim()) {
       toast.error('Please enter a coupon code');
       return;
     }
     
-    // Direct API call to apply coupon would go here
-    console.log('Applying coupon:', couponCode);
-    toast('Coupon processing...', {
-      description: 'This is a demonstration without backend integration'
-    });
+    // Example implementation - apply 10% discount for any coupon code
+    if (cart) {
+      const discount = cart.subtotal * 0.1; // 10% discount
+      const updatedCart = {
+        ...cart,
+        discount: cart.discount + discount,
+        total: cart.subtotal - cart.discount - discount
+      };
+      
+      localStorage.setItem('cart', JSON.stringify(updatedCart));
+      setCart(updatedCart);
+      
+      // Trigger cart update event
+      window.dispatchEvent(new Event('cartUpdated'));
+      
+      toast.success(`Coupon ${couponCode} applied successfully!`);
+      setCouponCode('');
+    }
   };
   
-  const updateCartItems = () => {
-    // This would call an API to update the cart on the server
-    console.log('Updating cart items');
+  // Update cart
+  const updateCart = () => {
     toast.success('Cart updated');
+  };
+  
+  // Clear cart
+  const clearCart = () => {
+    const emptyCart = {
+      items: [],
+      totalItems: 0,
+      subtotal: 0,
+      discount: 0,
+      total: 0
+    };
+    
+    localStorage.setItem('cart', JSON.stringify(emptyCart));
+    setCart(emptyCart);
+    
+    // Trigger cart update event
+    window.dispatchEvent(new Event('cartUpdated'));
+    
+    toast.success('Cart cleared');
   };
   
   if (isLoading) {
     return (
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
+      </div>
+    );
+  }
+  
+  if (!cart || cart.items.length === 0) {
+    return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
+        <CheckoutHeader activeStep="cart" cartItemCount={0} />
+        
+        <div className="max-w-md mx-auto text-center">
+          <ShoppingCart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+          <p className="text-gray-600 mb-8">
+            You haven't added any products to your cart yet. Start shopping to fill it up!
+          </p>
+          <Link to="/">
+            <Button>Continue Shopping</Button>
+          </Link>
         </div>
       </div>
     );
@@ -124,204 +214,184 @@ export const CartPageContent: React.FC = () => {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="woocommerce-page-header mb-8">
-        <ul className="flex border-b">
-          <li className="pb-2 px-4 border-b-2 border-brand font-medium">
-            <Link to="/cart" className="text-brand">
-              Shopping Cart <span className="cart-count">({cart.totalItems})</span>
-            </Link>
-          </li>
-          <li className="pb-2 px-4">
-            <Link to="/checkout" className="text-gray-600 hover:text-brand">Checkout</Link>
-          </li>
-          <li className="pb-2 px-4">
-            <Link to="/tracking" className="text-gray-600 hover:text-brand">Order Tracking</Link>
-          </li>
-        </ul>
-      </div>
+      <CheckoutHeader activeStep="cart" cartItemCount={cart.totalItems} />
       
-      <div className="woocommerce-cart-page row flex flex-col lg:flex-row gap-8">
-        <div className="lg:w-2/3">
-          {cart.items.length > 0 ? (
-            <div className="woocommerce-cart-form">
-              <table className="shop_table w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="py-4 px-2 text-left text-sm font-semibold text-gray-700">Product</th>
-                    <th className="py-4 px-2 text-left text-sm font-semibold text-gray-700">Price</th>
-                    <th className="py-4 px-2 text-left text-sm font-semibold text-gray-700">Quantity</th>
-                    <th className="py-4 px-2 text-left text-sm font-semibold text-gray-700">Subtotal</th>
-                    <th className="py-4 px-2 text-left text-sm font-semibold text-gray-700">&nbsp;</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cart.items.map(item => (
-                    <tr key={item.id} className="border-b">
-                      <td className="py-4 px-2">
-                        <div className="flex items-center">
-                          <Link to={`/product/${item.productId}`} className="w-24 h-24 flex-shrink-0 mr-4">
-                            <img 
-                              src={item.image} 
-                              alt={item.name}
-                              className="w-full h-full object-cover rounded-md"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=300&h=300&fit=crop';
-                              }}
-                            />
+      <div className="woocommerce-cart-page grid md:grid-cols-12 gap-8">
+        <div className="md:col-span-8">
+          <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 text-gray-700 text-sm">
+                <tr>
+                  <th className="py-4 px-6 text-left">Product</th>
+                  <th className="py-4 px-4 text-center">Price</th>
+                  <th className="py-4 px-4 text-center">Quantity</th>
+                  <th className="py-4 px-4 text-right">Subtotal</th>
+                  <th className="py-4 px-4 text-center">Remove</th>
+                </tr>
+              </thead>
+              
+              <tbody>
+                {cart.items.map(item => (
+                  <tr key={item.id} className="border-t">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center">
+                        <img 
+                          src={item.image} 
+                          alt={item.name} 
+                          className="w-16 h-16 object-cover rounded mr-4" 
+                        />
+                        <div>
+                          <Link to={`/product/${item.productId}`} className="font-medium hover:text-brand">
+                            {item.brand} - {item.name}
                           </Link>
-                          <div className="product-name">
-                            <Link to={`/product/${item.productId}`} className="font-medium text-gray-800 hover:text-brand">
-                              {item.name}
-                            </Link>
-                            <div className="text-sm text-gray-500">{item.brand}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-2">
-                        <span className="font-medium">OMR {item.price.toFixed(2)}</span>
-                      </td>
-                      <td className="py-4 px-2">
-                        <div className="flex border border-gray-300 rounded w-28">
-                          <button 
-                            type="button" 
-                            className="flex-1 px-2 py-1 text-gray-500 hover:bg-gray-100"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          >
-                            <Minus className="h-4 w-4 mx-auto" />
-                          </button>
-                          <span className="flex-1 px-2 py-1 text-center">
-                            {item.quantity}
-                          </span>
-                          <button 
-                            type="button" 
-                            className="flex-1 px-2 py-1 text-gray-500 hover:bg-gray-100"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-4 w-4 mx-auto" />
-                          </button>
-                        </div>
-                      </td>
-                      <td className="py-4 px-2">
-                        <span className="font-medium">
-                          OMR {(item.price * item.quantity).toFixed(2)}
-                        </span>
-                      </td>
-                      <td className="py-4 px-2">
-                        <button 
-                          onClick={() => removeItem(item.id)}
-                          className="text-red-500 hover:text-red-700"
-                          aria-label="Remove item"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  <tr>
-                    <td colSpan={5} className="py-6">
-                      <div className="bottom-cart flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="coupon flex">
-                          <input 
-                            type="text" 
-                            className="border border-gray-300 rounded-l px-4 py-2 w-48"
-                            value={couponCode}
-                            onChange={(e) => setCouponCode(e.target.value)}
-                            placeholder="Coupon code" 
-                          />
-                          <Button 
-                            onClick={applyCoupon}
-                            className="rounded-l-none"
-                          >
-                            Apply coupon
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Link to="/" className="text-brand hover:underline font-medium">
-                            Continue Shopping
-                          </Link>
-                          <Button 
-                            variant="outline"
-                            onClick={updateCartItems}
-                            className="flex items-center gap-2"
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                            Update cart
-                          </Button>
                         </div>
                       </div>
                     </td>
+                    
+                    <td className="py-4 px-4 text-center">
+                      <span className="text-gray-700">
+                        {item.currency} {item.price.toFixed(2)}
+                      </span>
+                      {item.discount && (
+                        <div className="text-red-500 text-xs mt-1">
+                          -{item.discount}% OFF
+                        </div>
+                      )}
+                    </td>
+                    
+                    <td className="py-4 px-4">
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          className="w-8 h-8 flex items-center justify-center border rounded-l"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        
+                        <input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value);
+                            if (!isNaN(value)) {
+                              updateQuantity(item.id, value);
+                            }
+                          }}
+                          min="1"
+                          className="w-12 h-8 text-center border-t border-b"
+                        />
+                        
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          className="w-8 h-8 flex items-center justify-center border rounded-r"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
+                    
+                    <td className="py-4 px-4 text-right">
+                      <span className="font-medium">
+                        {item.currency} {(item.price * item.quantity).toFixed(2)}
+                      </span>
+                    </td>
+                    
+                    <td className="py-4 px-4 text-center">
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="text-red-500 hover:text-red-700"
+                        aria-label="Remove item"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </td>
                   </tr>
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 px-4 border rounded-lg bg-gray-50">
-              <ShoppingCart className="h-16 w-16 text-gray-300 mb-4" />
-              <h2 className="text-2xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
-              <p className="text-gray-500 mb-8">Looks like you haven't added any products to your cart yet.</p>
-              <Link to="/">
-                <Button className="px-8">Browse Products</Button>
-              </Link>
-            </div>
-          )}
-        </div>
-        
-        {cart.items.length > 0 && (
-          <div className="lg:w-1/3">
-            <div className="cart-collaterals border rounded-lg p-6 bg-gray-50">
-              <h2 className="text-xl font-bold mb-6">Cart totals</h2>
-              
-              <div className="space-y-4">
-                <div className="cart-subtotal flex justify-between pb-4 border-b border-gray-200">
-                  <div className="title font-medium">Subtotal</div>
-                  <div className="font-medium">OMR {cart.subtotal.toFixed(2)}</div>
+                ))}
+              </tbody>
+            </table>
+            
+            <div className="p-6 border-t bg-gray-50">
+              <div className="flex flex-wrap items-center justify-between">
+                <div className="flex space-x-2 mb-4 md:mb-0">
+                  <input
+                    type="text"
+                    placeholder="Coupon code"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    className="border rounded px-4 py-2 text-sm w-40"
+                  />
+                  <Button 
+                    onClick={applyCoupon}
+                    variant="outline" 
+                    size="sm"
+                  >
+                    Apply coupon
+                  </Button>
                 </div>
                 
-                {cart.discount > 0 && (
-                  <div className="cart-discount flex justify-between pb-4 border-b border-gray-200">
-                    <div className="title font-medium">Discount</div>
-                    <div className="font-medium text-red-500">-OMR {cart.discount.toFixed(2)}</div>
-                  </div>
-                )}
-                
-                <div className="shipping-section pb-4 border-b border-gray-200">
-                  <h3 className="font-medium mb-2">Shipping</h3>
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <div>Free shipping</div>
-                    <div>OMR 0.00</div>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Shipping options will be updated during checkout.
-                  </p>
-                  <button className="text-brand text-sm mt-2 hover:underline">
-                    Calculate shipping
-                  </button>
-                </div>
-                
-                <div className="order-total flex justify-between pt-2">
-                  <div className="title font-bold text-lg">Total</div>
-                  <div className="font-bold text-lg">OMR {cart.total.toFixed(2)}</div>
-                </div>
-                
-                <div className="mt-6 space-y-4">
-                  <Link to="/checkout">
-                    <Button className="w-full py-6 text-base">
-                      Proceed to checkout
+                <div className="flex space-x-2">
+                  <Link to="/">
+                    <Button variant="outline">
+                      Continue Shopping
                     </Button>
                   </Link>
-                  
-                  <div className="paypal-buttons-container border border-gray-200 p-2 rounded bg-white">
-                    <div className="text-center text-sm text-gray-500 py-2">
-                      PayPal / Card Payments
-                    </div>
-                  </div>
+                  <Button onClick={updateCart}>
+                    Update cart
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
+        
+        <div className="md:col-span-4">
+          <div className="bg-gray-50 rounded-lg p-6 border">
+            <h2 className="text-xl font-bold mb-4">Cart totals</h2>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between py-3 border-b">
+                <span>Subtotal</span>
+                <span>{cart.items[0]?.currency || 'OMR'} {cart.subtotal.toFixed(2)}</span>
+              </div>
+              
+              {cart.discount > 0 && (
+                <div className="flex justify-between py-3 border-b">
+                  <span>Discount</span>
+                  <span className="text-red-500">-{cart.items[0]?.currency || 'OMR'} {cart.discount.toFixed(2)}</span>
+                </div>
+              )}
+              
+              <div className="flex justify-between py-3 border-b">
+                <span>Shipping</span>
+                <span>Free shipping</span>
+              </div>
+              
+              <div className="flex justify-between py-4">
+                <span className="text-lg font-bold">Total</span>
+                <span className="text-lg font-bold">
+                  {cart.items[0]?.currency || 'OMR'} {cart.total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+            
+            <div className="mt-6 space-y-4">
+              <Link to="/checkout">
+                <Button className="w-full text-base py-6">
+                  Proceed to checkout
+                </Button>
+              </Link>
+              
+              <Button onClick={clearCart} variant="outline" className="w-full">
+                Clear Cart
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
+
+export default CartPageContent;
