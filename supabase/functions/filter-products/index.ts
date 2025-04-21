@@ -134,11 +134,13 @@ serve(async (req) => {
     
     // Apply stock filter - items in stock
     if (params.instock === 'true') {
+      console.log('[API:filter-products] Filtering for in stock items');
       query = query.gt('stock', 0);
     }
     
     // Apply clearance filter - items with discount
     if (params.clearance === 'true') {
+      console.log('[API:filter-products] Filtering for clearance items');
       query = query.gt('discount', 0);
     }
     
