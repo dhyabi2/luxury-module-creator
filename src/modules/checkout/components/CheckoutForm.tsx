@@ -150,49 +150,59 @@ const CheckoutForm = () => {
   };
 
   const processDirectCheckout = () => {
-    console.log('Initializing Thawani checkout process...', {
-      items: cart.items,
-      total: cart.total,
-      customer: billingDetails
-    });
+    const thawaniRequestData = {
+      products: cart.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        unit_amount: Math.round(item.price * 1000) // Convert to baisa
+      })),
+      success_url: window.location.origin + '/checkout/success',
+      cancel_url: window.location.origin + '/checkout/canceled',
+      metadata: {
+        customer_email: billingDetails.email,
+        customer_name: `${billingDetails.firstName} ${billingDetails.lastName}`,
+        order_id: `ORD-${Date.now()}`
+      }
+    };
+    
+    console.log('Initializing Thawani checkout process with data:', JSON.stringify(thawaniRequestData));
 
     fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/create-thawani-session', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        products: cart.items.map(item => ({
-          name: item.name,
-          quantity: item.quantity,
-          unit_amount: Math.round(item.price * 1000) // Convert to baisa
-        })),
-        success_url: window.location.origin + '/checkout/success',
-        cancel_url: window.location.origin + '/checkout/canceled',
-        metadata: {
-          customer_email: billingDetails.email,
-          customer_name: `${billingDetails.firstName} ${billingDetails.lastName}`,
-          order_id: `ORD-${Date.now()}`
-        }
-      })
+      body: JSON.stringify(thawaniRequestData)
     })
     .then(response => {
       console.log('Thawani API Response status:', response.status);
-      return response.json();
+      if (!response.ok) {
+        console.error('Thawani API Response not OK:', response.status);
+      }
+      return response.text().then(text => {
+        try {
+          console.log('Raw response text:', text);
+          return text ? JSON.parse(text) : {};
+        } catch (e) {
+          console.error('Error parsing JSON response:', e);
+          throw new Error('Invalid JSON response from Thawani API');
+        }
+      });
     })
     .then(data => {
-      console.log('Thawani session created:', data);
+      console.log('Thawani session created, full response:', JSON.stringify(data));
       if (data?.data?.session_id) {
         const redirectUrl = `https://uatcheckout.thawani.om/pay/${data.data.session_id}?key=HGvTMLDssJghr9tlN9gr4DVYt0qyBy`;
-        console.log('Redirecting to Thawani:', redirectUrl);
+        console.log('Redirecting to Thawani URL:', redirectUrl);
         window.location.href = redirectUrl;
       } else {
-        console.error('No session ID in response:', data);
-        throw new Error('Failed to create Thawani session');
+        console.error('No session ID in response:', JSON.stringify(data));
+        throw new Error('Failed to create Thawani session: No session ID returned');
       }
     })
     .catch(error => {
       console.error('Error creating Thawani checkout:', error);
+      console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
       throw error;
     });
   };
