@@ -13,6 +13,18 @@ export const applySpecialFilters = (query: any, params: any) => {
     console.log('[API:products] Filtering by sale items');
     query = query.gt('discount', 0);
   }
+
+  // In-stock filter
+  if (params.instock === 'true') {
+    console.log('[API:products] Filtering for in-stock items');
+    query = query.gt('stock', 0);
+  }
+  
+  // Clearance filter
+  if (params.clearance === 'true') {
+    console.log('[API:products] Filtering for clearance items');
+    query = query.gt('discount', 0);
+  }
   
   return query;
 };

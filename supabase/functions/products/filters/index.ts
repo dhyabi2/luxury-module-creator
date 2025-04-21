@@ -40,6 +40,7 @@ export const applyAllFilters = (query: any, params: any) => {
   // Apply gender filter (with special handling using better text search)
   query = applyGenderFilter(query, params);
   
+  // Apply special filters including clearance and instock
   query = applySpecialFilters(query, params);
   
   return query;

@@ -142,6 +142,18 @@ serve(async (req) => {
           }
         }
         
+        // Apply instock filter if present
+        if (params.instock === 'true') {
+          console.log('[API:products] Adding in-stock filter to simplified query');
+          simpleQuery = simpleQuery.gt('stock', 0);
+        }
+        
+        // Apply clearance filter if present
+        if (params.clearance === 'true') {
+          console.log('[API:products] Adding clearance filter to simplified query');
+          simpleQuery = simpleQuery.gt('discount', 0);
+        }
+        
         // Execute simplified count query
         const { count: simpleCount } = await simpleQuery;
         
@@ -178,9 +190,21 @@ serve(async (req) => {
         console.log('[API:products] Trying simplified query for non-watch category');
         
         // Create a very simple query without problematic filters
-        const simpleQuery = supabase.from('products')
+        let simpleQuery = supabase.from('products')
           .select('*', { count: 'exact' })
           .ilike('category', `%${params.category}%`);
+        
+        // Apply instock filter if present
+        if (params.instock === 'true') {
+          console.log('[API:products] Adding in-stock filter to simplified query');
+          simpleQuery = simpleQuery.gt('stock', 0);
+        }
+        
+        // Apply clearance filter if present
+        if (params.clearance === 'true') {
+          console.log('[API:products] Adding clearance filter to simplified query');
+          simpleQuery = simpleQuery.gt('discount', 0);
+        }
         
         // Execute simplified count query
         const { count: simpleCount } = await simpleQuery;

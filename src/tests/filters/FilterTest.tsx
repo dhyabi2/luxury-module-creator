@@ -6,11 +6,9 @@ describe('Product Filtering System', () => {
   const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
 
-  // Test single category filter
-  it('should filter products by single category', async () => {
-    const params = new URLSearchParams();
-    params.append('category', 'watches');
-    
+  // Helper function for making API requests
+  const fetchFilteredProducts = async (params: URLSearchParams) => {
+    console.log(`Testing filter: ${params.toString()}`);
     const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
       headers: {
         "apikey": SUPABASE_KEY,
@@ -19,7 +17,22 @@ describe('Product Filtering System', () => {
       }
     });
     
-    const data = await response.json();
+    if (!response.ok) {
+      console.error('API Error:', response.status, response.statusText);
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+    
+    return response.json();
+  };
+
+  // Test single category filter
+  it('should filter products by single category', async () => {
+    const params = new URLSearchParams();
+    params.append('category', 'watches');
+    
+    const data = await fetchFilteredProducts(params);
+    
+    expect(data.products.length).toBeGreaterThan(0);
     expect(data.products.every((product: any) => 
       product.category.toLowerCase().includes('watches')
     )).toBe(true);
@@ -30,15 +43,9 @@ describe('Product Filtering System', () => {
     const params = new URLSearchParams();
     params.append('category', 'watches,accessories');
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const data = await fetchFilteredProducts(params);
     
-    const data = await response.json();
+    expect(data.products.length).toBeGreaterThan(0);
     expect(data.products.every((product: any) => 
       product.category.toLowerCase().includes('watches') || 
       product.category.toLowerCase().includes('accessories')
@@ -51,15 +58,9 @@ describe('Product Filtering System', () => {
     params.append('minPrice', '100');
     params.append('maxPrice', '500');
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const data = await fetchFilteredProducts(params);
     
-    const data = await response.json();
+    expect(data.products.length).toBeGreaterThan(0);
     expect(data.products.every((product: any) => 
       product.price >= 100 && product.price <= 500
     )).toBe(true);
@@ -70,15 +71,9 @@ describe('Product Filtering System', () => {
     const params = new URLSearchParams();
     params.append('brand', 'Rolex,Omega');
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const data = await fetchFilteredProducts(params);
     
-    const data = await response.json();
+    expect(data.products.length).toBeGreaterThan(0);
     expect(data.products.every((product: any) => 
       ['rolex', 'omega'].includes(product.brand.toLowerCase())
     )).toBe(true);
@@ -90,22 +85,16 @@ describe('Product Filtering System', () => {
     params.append('category', 'watches');
     params.append('brand', 'Rolex');
     params.append('minPrice', '1000');
-    params.append('maxPrice', '5000');
+    params.append('maxPrice', '20000');
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const data = await fetchFilteredProducts(params);
     
-    const data = await response.json();
+    expect(data.products.length).toBeGreaterThan(0);
     expect(data.products.every((product: any) => 
       product.category.toLowerCase().includes('watches') &&
       product.brand.toLowerCase() === 'rolex' &&
       product.price >= 1000 &&
-      product.price <= 5000
+      product.price <= 20000
     )).toBe(true);
   });
 
@@ -114,15 +103,9 @@ describe('Product Filtering System', () => {
     const params = new URLSearchParams();
     params.append('clearance', 'true');
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const data = await fetchFilteredProducts(params);
     
-    const data = await response.json();
+    expect(data.products.length).toBeGreaterThan(0);
     expect(data.products.every((product: any) => 
       product.discount > 0
     )).toBe(true);
@@ -133,15 +116,9 @@ describe('Product Filtering System', () => {
     const params = new URLSearchParams();
     params.append('instock', 'true');
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const data = await fetchFilteredProducts(params);
     
-    const data = await response.json();
+    expect(data.products.length).toBeGreaterThan(0);
     expect(data.products.every((product: any) => 
       product.stock > 0
     )).toBe(true);
@@ -152,22 +129,16 @@ describe('Product Filtering System', () => {
     const params = new URLSearchParams();
     params.append('category', 'watches');
     params.append('minCaseSize', '30');
-    params.append('maxCaseSize', '40');
+    params.append('maxCaseSize', '45');
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const data = await fetchFilteredProducts(params);
     
-    const data = await response.json();
+    expect(data.products.length).toBeGreaterThan(0);
     data.products.forEach((product: any) => {
       if (product.specifications && product.specifications.caseSize) {
         const size = parseInt(product.specifications.caseSize);
         expect(size).toBeGreaterThanOrEqual(30);
-        expect(size).toBeLessThanOrEqual(40);
+        expect(size).toBeLessThanOrEqual(45);
       }
     });
   });
@@ -178,15 +149,9 @@ describe('Product Filtering System', () => {
     params.append('category', 'watches');
     params.append('genderSearch', 'men');
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const data = await fetchFilteredProducts(params);
     
-    const data = await response.json();
+    expect(data.products.length).toBeGreaterThan(0);
     data.products.forEach((product: any) => {
       if (product.specifications && product.specifications.gender) {
         expect(product.specifications.gender.toLowerCase()).toBe('men');
@@ -200,15 +165,8 @@ describe('Product Filtering System', () => {
     params.append('page', '1');
     params.append('pageSize', '8');
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/products?${params.toString()}`, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const data = await fetchFilteredProducts(params);
     
-    const data = await response.json();
     expect(data.products.length).toBeLessThanOrEqual(8);
     expect(data.pagination.currentPage).toBe(1);
   });
