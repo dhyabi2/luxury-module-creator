@@ -11,58 +11,39 @@ const RangeFilter: React.FC<RangeFilterProps> = ({
   currentMax,
   onRangeChange
 }) => {
-  const [minValue, setMinValue] = useState(currentMin);
-  const [maxValue, setMaxValue] = useState(currentMax);
+  // Track both values in a single array for smoother interaction
+  const [values, setValues] = useState<[number, number]>([currentMin, currentMax]);
   
   // Update local state when props change (for example when filter data loads)
   useEffect(() => {
-    setMinValue(currentMin);
-    setMaxValue(currentMax);
+    setValues([currentMin, currentMax]);
   }, [currentMin, currentMax]);
   
-  // Handle minimum value change with debouncing
-  const handleMinChange = (value: number) => {
-    // Ensure min doesn't exceed max
-    const newMin = Math.min(value, maxValue - 1);
-    setMinValue(newMin);
-    // Directly trigger the change to avoid delay
-    onRangeChange(newMin, maxValue);
-  };
-  
-  // Handle maximum value change with debouncing
-  const handleMaxChange = (value: number) => {
-    // Ensure max doesn't go below min
-    const newMax = Math.max(value, minValue + 1);
-    setMaxValue(newMax);
-    // Directly trigger the change to avoid delay
-    onRangeChange(minValue, newMax);
+  // Handle range change with a single slider
+  const handleRangeChange = (newValues: number[]) => {
+    if (newValues.length === 2) {
+      const [newMin, newMax] = newValues as [number, number];
+      setValues([newMin, newMax]);
+      onRangeChange(newMin, newMax);
+    }
   };
   
   return (
     <div className="space-y-3">
       <div className="flex justify-between text-sm text-gray-600">
-        <span>{minValue} {rangeUnit}</span>
-        <span>{maxValue} {rangeUnit}</span>
+        <span>{values[0]} {rangeUnit}</span>
+        <span>{values[1]} {rangeUnit}</span>
       </div>
       
-      <div className="pt-2 pb-6">
+      <div className="py-6">
         <Slider
-          defaultValue={[minValue]}
+          defaultValue={values}
           min={rangeMin}
           max={rangeMax}
           step={1}
-          value={[minValue]}
-          onValueChange={(values) => handleMinChange(values[0])}
+          value={values}
+          onValueChange={handleRangeChange}
           className="mb-4"
-        />
-        
-        <Slider
-          defaultValue={[maxValue]}
-          min={rangeMin}
-          max={rangeMax}
-          step={1}
-          value={[maxValue]}
-          onValueChange={(values) => handleMaxChange(values[0])}
         />
       </div>
     </div>
