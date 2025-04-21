@@ -35,9 +35,10 @@ export const applyCaseSizeFilter = (query: any, params: any) => {
   return query;
 };
 
-// Re-export all other watch filter functions from original file
+// Re-export all other watch filter functions
 export { 
   applyBandFilter, 
   applyCaseColorFilter, 
   applyColorFilter
-} from './filters/watchFilters.ts';
+} from '../filters.ts'; // Fix the import path to point to the correct file
+
