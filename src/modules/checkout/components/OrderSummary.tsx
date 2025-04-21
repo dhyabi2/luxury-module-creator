@@ -8,7 +8,7 @@ interface OrderSummaryProps {
   cart: any;
   paymentMethod: string;
   handlePaymentMethodChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: () => void;
+  onSubmit: (e: React.FormEvent) => void; // Updated type to match the handler
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
