@@ -1,5 +1,6 @@
 
-import { serve } from 'https://deno.fresh.dev/std@v1/http/server.ts';
+// Import the correct Deno standard library HTTP server module
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const THAWANI_API_BASE_URL = 'https://uatcheckout.thawani.om/api/v1';
 const THAWANI_SECRET_KEY = 'rRQ26GcsZzoEhbrP2HZvLYDbn9C9et';
