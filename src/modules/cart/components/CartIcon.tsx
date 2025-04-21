@@ -4,7 +4,7 @@ import { useCart } from '@/contexts/CartContext';
 import { ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export const CartIcon: React.FC = () => {
+export const CartIcon: React.FC = () => { // Ensure named export
   const { cart, openCart } = useCart();
   
   return (

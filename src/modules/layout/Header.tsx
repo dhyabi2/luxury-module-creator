@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import MainNavigation from '../navigation/MainNavigation';
 import MobileMenu from '../navigation/MobileMenu';
 import SearchBar from '../navigation/SearchBar';
-import CartIcon from '../cart/components/CartIcon';
+import { CartIcon } from '../cart/components/CartIcon'; // Changed to named import
 import CurrencySelector from '../currency/CurrencySelector';
 import { Menu, Settings, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
