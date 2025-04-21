@@ -29,9 +29,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [priceRange, setPriceRange] = useState(
     initialFilters.priceRange || { min: 0, max: 1000 }
   );
-  const [caseSizeRange, setCaseSizeRange] = useState(
-    initialFilters.caseSizeRange || { min: 20, max: 45 }
-  );
   
   const selectedCategories = initialFilters.categories || 
     (categoryParam ? [categoryParam] : []);
@@ -62,13 +59,12 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         
         // Direct API call with no intermediaries
         const response = await fetch(`${SUPABASE_URL}/functions/v1/filters${queryString}`, {
-          method: 'POST',
+          method: 'GET',
           headers: {
             "apikey": SUPABASE_KEY,
             "Authorization": `Bearer ${SUPABASE_KEY}`,
             "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ selectedCategories })
+          }
         });
         
         if (!response.ok) {
@@ -87,11 +83,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           // Initialize price range from data
           if (data && data.priceRange) {
             setPriceRange(data.priceRange);
-          }
-          
-          // Initialize case size range from data
-          if (data && data.caseSizeRange) {
-            setCaseSizeRange(data.caseSizeRange);
           }
         }
       } catch (error) {
@@ -114,7 +105,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       const currentFilters = {
         selectedOptions,
         priceRange,
-        caseSizeRange,
         categories: selectedOptions.categories || []
       };
       onFilterChange(currentFilters);
@@ -122,7 +112,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       // Send filter selection to the edge function directly
       sendFilterSelection(currentFilters);
     }
-  }, [selectedOptions, priceRange, caseSizeRange, onFilterChange]);
+  }, [selectedOptions, priceRange, onFilterChange]);
   
   // Function to send filter selection directly to the edge function
   const sendFilterSelection = async (filters: Record<string, any>) => {
@@ -130,33 +120,60 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
       const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
       
-      // Prepare filter data for API
-      const filterData = {
-        brands: filters.selectedOptions.brands?.join(','),
-        categories: filters.selectedOptions.categories?.join(','),
-        genders: filters.selectedOptions.genders?.join(','),
-        bands: filters.selectedOptions.bands?.join(','),
-        caseColors: filters.selectedOptions.caseColors?.join(','),
-        colors: filters.selectedOptions.colors?.join(','),
-        minPrice: filters.priceRange?.min,
-        maxPrice: filters.priceRange?.max,
-        minCaseSize: filters.caseSizeRange?.min,
-        maxCaseSize: filters.caseSizeRange?.max,
-        instock: filters.selectedOptions.instock?.includes('true') ? 'true' : undefined,
-        clearance: filters.selectedOptions.clearance?.includes('true') ? 'true' : undefined
-      };
+      // Prepare query params
+      const queryParams = new URLSearchParams();
       
-      console.log('Sending filter selection to API:', filterData);
+      // Add filter parameters
+      if (filters.selectedOptions?.brands?.length > 0) {
+        queryParams.append('brand', filters.selectedOptions.brands.join(','));
+      }
+      
+      if (filters.selectedOptions?.categories?.length > 0) {
+        queryParams.append('category', filters.selectedOptions.categories.join(','));
+      }
+      
+      if (filters.selectedOptions?.genders?.length > 0) {
+        queryParams.append('gender', filters.selectedOptions.genders.join(','));
+      }
+      
+      if (filters.selectedOptions?.bands?.length > 0) {
+        queryParams.append('band', filters.selectedOptions.bands.join(','));
+      }
+      
+      if (filters.selectedOptions?.caseColors?.length > 0) {
+        queryParams.append('caseColor', filters.selectedOptions.caseColors.join(','));
+      }
+      
+      if (filters.selectedOptions?.colors?.length > 0) {
+        queryParams.append('color', filters.selectedOptions.colors.join(','));
+      }
+      
+      if (filters.priceRange?.min !== undefined) {
+        queryParams.append('minPrice', filters.priceRange.min.toString());
+      }
+      
+      if (filters.priceRange?.max !== undefined) {
+        queryParams.append('maxPrice', filters.priceRange.max.toString());
+      }
+      
+      if (filters.selectedOptions?.instock?.includes('instock')) {
+        queryParams.append('instock', 'true');
+      }
+      
+      if (filters.selectedOptions?.clearance?.includes('clearance')) {
+        queryParams.append('clearance', 'true');
+      }
+      
+      console.log('Sending filter selection to API:', queryParams.toString());
       
       // Send the filter selection to the edge function
-      await fetch(`${SUPABASE_URL}/functions/v1/filter-products`, {
-        method: 'POST',
+      await fetch(`${SUPABASE_URL}/functions/v1/filter-products?${queryParams.toString()}`, {
+        method: 'GET',
         headers: {
           "apikey": SUPABASE_KEY,
           "Authorization": `Bearer ${SUPABASE_KEY}`,
           "Content-Type": "application/json"
-        },
-        body: JSON.stringify(filterData)
+        }
       });
       
       // We don't need to process the response here as the ProductGrid will handle that
@@ -178,11 +195,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     setPriceRange({ min, max });
   };
   
-  // Handle case size range change
-  const handleCaseSizeRangeChange = (min: number, max: number) => {
-    setCaseSizeRange({ min, max });
-  };
-  
   // Clear all filters
   const handleClearFilters = () => {
     setSelectedOptions({});
@@ -192,13 +204,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       setPriceRange(filtersData.priceRange);
     } else if (initialFilters.priceRange) {
       setPriceRange(initialFilters.priceRange);
-    }
-    
-    // Reset case size range to the default or initial data
-    if (filtersData && filtersData.caseSizeRange) {
-      setCaseSizeRange(filtersData.caseSizeRange);
-    } else if (initialFilters.caseSizeRange) {
-      setCaseSizeRange(initialFilters.caseSizeRange);
     }
   };
   
@@ -217,10 +222,8 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         isLoading={isLoading}
         selectedOptions={selectedOptions}
         priceRange={priceRange}
-        caseSizeRange={caseSizeRange}
         handleSelectionChange={handleSelectionChange}
         handlePriceRangeChange={handlePriceRangeChange}
-        handleCaseSizeRangeChange={handleCaseSizeRangeChange}
         categorySpecificBrands={categorySpecificBrands}
         activeCategoryName={activeCategoryName}
       />

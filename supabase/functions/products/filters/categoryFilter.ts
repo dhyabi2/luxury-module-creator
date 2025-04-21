@@ -1,8 +1,8 @@
 
-// Category filter implementation with improved handling
+// Category filter implementation with exact matching for better filtering
 export const applyCategoryFilter = (query: any, params: any) => {
   if (params.category) {
-    const categories = params.category.split(',').map((c: string) => c.trim());
+    const categories = params.category.split(',').map((c: string) => c.trim().toLowerCase());
     console.log(`[API:products] Filtering by categories: ${categories.join(', ')}`);
     
     // If "all" is included or empty, don't filter by category
@@ -11,20 +11,20 @@ export const applyCategoryFilter = (query: any, params: any) => {
       return query;
     }
     
-    // Use exact match for better filtering
+    // Use exact match with lowercase for better filtering
     if (categories.length === 1) {
       console.log(`[API:products] Single category filter: ${categories[0]}`);
-      query = query.eq('category', categories[0].toLowerCase());
+      query = query.eq('category', categories[0]);
     } else {
-      // For multiple categories, use IN operator
+      // For multiple categories, use IN operator with lowercase values
       console.log(`[API:products] Multiple categories filter: ${categories.join(', ')}`);
-      query = query.in('category', categories.map(c => c.toLowerCase()));
+      query = query.in('category', categories);
     }
   }
   
   // Handle the categories param (from FilterSidebar)
   if (params.categories && !params.category) {
-    const categories = params.categories.split(',').map((c: string) => c.trim());
+    const categories = params.categories.split(',').map((c: string) => c.trim().toLowerCase());
     console.log(`[API:products] Filtering by categories param: ${categories.join(', ')}`);
     
     if (categories.includes('all') || categories.length === 0) {
@@ -34,10 +34,10 @@ export const applyCategoryFilter = (query: any, params: any) => {
     
     if (categories.length === 1) {
       console.log(`[API:products] Single categories filter: ${categories[0]}`);
-      query = query.eq('category', categories[0].toLowerCase());
+      query = query.eq('category', categories[0]);
     } else {
       console.log(`[API:products] Multiple categories filter: ${categories.join(', ')}`);
-      query = query.in('category', categories.map(c => c.toLowerCase()));
+      query = query.in('category', categories);
     }
   }
   

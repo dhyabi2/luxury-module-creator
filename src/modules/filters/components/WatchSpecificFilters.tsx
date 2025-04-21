@@ -6,17 +6,13 @@ import { FiltersData } from '@/lib/db/filters/types';
 interface WatchSpecificFiltersProps {
   filtersData: FiltersData;
   selectedOptions: { [key: string]: string[] };
-  caseSizeRange: { min: number; max: number };
   onSelectionChange: (category: string, selected: string[]) => void;
-  onCaseSizeRangeChange: (min: number, max: number) => void;
 }
 
 const WatchSpecificFilters: React.FC<WatchSpecificFiltersProps> = ({
   filtersData,
   selectedOptions,
-  caseSizeRange,
-  onSelectionChange,
-  onCaseSizeRangeChange
+  onSelectionChange
 }) => {
   // Ensure we have default filters if data is missing
   const defaultGenders = [
@@ -30,24 +26,8 @@ const WatchSpecificFilters: React.FC<WatchSpecificFiltersProps> = ({
     ? filtersData.genders 
     : defaultGenders;
   
-  const caseSizeMin = filtersData?.caseSizeRange?.min || 28;
-  const caseSizeMax = filtersData?.caseSizeRange?.max || 46;
-  const caseSizeUnit = filtersData?.caseSizeRange?.unit || 'mm';
-  
   return (
     <div className="space-y-4 sm:space-y-6">
-      <FilterCategory
-        title="Case Size"
-        options={[]}
-        type="range"
-        rangeMin={caseSizeMin}
-        rangeMax={caseSizeMax}
-        rangeUnit={caseSizeUnit}
-        currentMin={caseSizeRange.min}
-        currentMax={caseSizeRange.max}
-        onRangeChange={onCaseSizeRangeChange}
-      />
-      
       <FilterCategory
         title="Gender"
         options={genderOptions || []}

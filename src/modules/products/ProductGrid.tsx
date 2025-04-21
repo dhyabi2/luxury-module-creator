@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import ProductGridHeader from './components/ProductGridHeader';
 import ProductGridLoading from './components/ProductGridLoading';
@@ -90,16 +91,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       console.log('Filtering by price range:', `${filters.priceRange.min}-${filters.priceRange.max}`);
     }
     
-    const hasWatchesCategory = 
-      (filters.selectedOptions?.categories?.some((c: string) => c.toLowerCase() === 'watches')) || 
-      (category && category.toLowerCase() === 'watches');
-
-    if (filters.caseSizeRange && hasWatchesCategory) {
-      urlParams.append('minCaseSize', filters.caseSizeRange.min.toString());
-      urlParams.append('maxCaseSize', filters.caseSizeRange.max.toString());
-      console.log('Filtering by case size range:', `${filters.caseSizeRange.min}-${filters.caseSizeRange.max}`);
-    }
-    
     // Add boolean filters
     if (filters.selectedOptions?.clearance?.length > 0) {
       urlParams.append('clearance', 'true');
@@ -126,38 +117,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
       const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
       
-      // Prepare filter data for the request body
-      const filterData = {
-        gender,
-        brand,
-        category: category.toLowerCase(), // Ensure category is lowercase
-        newArrival: isNewIn ? 'true' : undefined,
-        onSale: isOnSale ? 'true' : undefined,
-        brands: filters.selectedOptions?.brands?.join(','),
-        categories: filters.selectedOptions?.categories?.join(',').toLowerCase(), // Ensure lowercase
-        genders: filters.selectedOptions?.genders?.join(','),
-        bands: filters.selectedOptions?.bands?.join(','),
-        caseColors: filters.selectedOptions?.caseColors?.join(','),
-        colors: filters.selectedOptions?.colors?.join(','),
-        minPrice: filters.priceRange?.min,
-        maxPrice: filters.priceRange?.max,
-        minCaseSize: filters.caseSizeRange?.min,
-        maxCaseSize: filters.caseSizeRange?.max,
-        instock: filters.selectedOptions?.instock?.includes('true') ? 'true' : undefined,
-        clearance: filters.selectedOptions?.clearance?.includes('true') ? 'true' : undefined,
-        page: currentPage,
-        pageSize,
-        sortBy
-      };
-      
       const response = await fetch(`${SUPABASE_URL}/functions/v1/filter-products?${queryString}`, {
-        method: 'POST',
+        method: 'GET',
         headers: {
           "apikey": SUPABASE_KEY,
           "Authorization": `Bearer ${SUPABASE_KEY}`,
           "Content-Type": "application/json"
-        },
-        body: JSON.stringify(filterData)
+        }
       });
       
       if (!response.ok) {

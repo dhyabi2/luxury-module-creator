@@ -11,10 +11,8 @@ interface FilterSidebarContentProps {
   isLoading: boolean;
   selectedOptions: Record<string, string[]>;
   priceRange: { min: number; max: number };
-  caseSizeRange: { min: number; max: number };
   handleSelectionChange: (filterType: string, values: string[]) => void;
   handlePriceRangeChange: (min: number, max: number) => void;
-  handleCaseSizeRangeChange: (min: number, max: number) => void;
   categorySpecificBrands: Record<string, any[]>;
   activeCategoryName: string;
 }
@@ -24,10 +22,8 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
   isLoading,
   selectedOptions,
   priceRange,
-  caseSizeRange,
   handleSelectionChange,
   handlePriceRangeChange,
-  handleCaseSizeRangeChange,
   categorySpecificBrands,
   activeCategoryName
 }) => {
@@ -170,9 +166,7 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
         <WatchSpecificFilters
           filtersData={filtersData}
           selectedOptions={selectedOptions}
-          caseSizeRange={caseSizeRange}
           onSelectionChange={handleSelectionChange}
-          onCaseSizeRangeChange={handleCaseSizeRangeChange}
         />
       )}
     </div>

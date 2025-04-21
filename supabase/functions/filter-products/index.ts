@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
@@ -23,23 +24,9 @@ serve(async (req) => {
     const url = new URL(req.url);
     const params = Object.fromEntries(url.searchParams.entries());
     
-    let requestBody = {};
-    if (req.method === 'POST') {
-      try {
-        const bodyText = await req.text();
-        if (bodyText) {
-          requestBody = JSON.parse(bodyText);
-        }
-      } catch (e) {
-        console.error('[API:filter-products] Error parsing request body:', e);
-      }
-    }
-    
-    // Merge query params and body 
-    const filters = { ...params, ...requestBody };
-    
+    // We will not use any request body payload as requested
     console.log('[API:filter-products] Request method:', req.method);
-    console.log('[API:filter-products] Applying filters:', filters);
+    console.log('[API:filter-products] Applying filters from URL params:', params);
     
     // Create Supabase client with open access
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -47,8 +34,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Extract pagination parameters
-    const page = parseInt(filters.page as string || '1');
-    const pageSize = parseInt(filters.pageSize as string || '8');
+    const page = parseInt(params.page as string || '1');
+    const pageSize = parseInt(params.pageSize as string || '8');
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     
@@ -56,8 +43,8 @@ serve(async (req) => {
     let query = supabase.from('products').select('*', { count: 'exact' });
     
     // Apply brand filter
-    if (filters.brand) {
-      const brands = (filters.brand as string).split(',').map(b => b.trim());
+    if (params.brand) {
+      const brands = (params.brand as string).split(',').map(b => b.trim());
       
       if (!brands.includes('all') && brands.length > 0) {
         if (brands.length === 1) {
@@ -69,7 +56,7 @@ serve(async (req) => {
     }
     
     // Apply category filter - FIXED to use exact matching
-    const categoryParam = filters.category || filters.categories;
+    const categoryParam = params.category || params.categories;
     if (categoryParam) {
       const categories = (categoryParam as string).split(',').map(c => c.trim().toLowerCase());
       console.log(`[API:filter-products] Filtering by categories: ${categories.join(', ')}`);
@@ -86,8 +73,8 @@ serve(async (req) => {
     }
     
     // Apply gender filter
-    if (filters.gender) {
-      const genders = (filters.gender as string).split(',').map(g => g.trim());
+    if (params.gender) {
+      const genders = (params.gender as string).split(',').map(g => g.trim());
       
       if (!genders.includes('all') && genders.length > 0) {
         const textConditions = [];
@@ -100,24 +87,14 @@ serve(async (req) => {
     }
     
     // Apply price range filter
-    if (filters.minPrice && filters.maxPrice) {
-      query = query.gte('price', parseFloat(filters.minPrice as string))
-               .lte('price', parseFloat(filters.maxPrice as string));
-    }
-    
-    // Apply case size filter - only for watches
-    if (filters.minCaseSize && filters.maxCaseSize && 
-        !(filters.category && 
-          ((filters.category as string).toLowerCase().includes('accessories') || 
-           (filters.category as string).toLowerCase().includes('bags') || 
-           (filters.category as string).toLowerCase().includes('perfumes')))) {
-      
-      query = query.or(`specifications->caseSize.gte.${filters.minCaseSize},specifications->caseSize.lte.${filters.maxCaseSize}`);
+    if (params.minPrice && params.maxPrice) {
+      query = query.gte('price', parseFloat(params.minPrice as string))
+               .lte('price', parseFloat(params.maxPrice as string));
     }
     
     // Apply band material filter
-    if (filters.band) {
-      const bands = (filters.band as string).split(',').map(b => b.trim());
+    if (params.band) {
+      const bands = (params.band as string).split(',').map(b => b.trim());
       
       if (!bands.includes('all') && bands.length > 0) {
         const orConditions = bands.map(band => `specifications->strapMaterial.ilike.%${band}%`).join(',');
@@ -126,8 +103,8 @@ serve(async (req) => {
     }
     
     // Apply case color filter
-    if (filters.caseColor) {
-      const caseColors = (filters.caseColor as string).split(',').map(c => c.trim());
+    if (params.caseColor) {
+      const caseColors = (params.caseColor as string).split(',').map(c => c.trim());
       
       if (!caseColors.includes('all') && caseColors.length > 0) {
         const orConditions = caseColors.map(color => `specifications->caseMaterial.ilike.%${color}%`).join(',');
@@ -136,8 +113,8 @@ serve(async (req) => {
     }
     
     // Apply dial/strap color filter
-    if (filters.color) {
-      const colors = (filters.color as string).split(',').map(c => c.trim());
+    if (params.color) {
+      const colors = (params.color as string).split(',').map(c => c.trim());
       
       if (!colors.includes('all') && colors.length > 0) {
         const orConditions = colors.map(color => 
@@ -148,17 +125,17 @@ serve(async (req) => {
     }
     
     // Apply stock filter - items in stock
-    if (filters.instock === 'true') {
+    if (params.instock === 'true') {
       query = query.gt('stock', 0);
     }
     
     // Apply clearance filter - items with discount
-    if (filters.clearance === 'true') {
+    if (params.clearance === 'true') {
       query = query.gt('discount', 0);
     }
     
     // Apply sorting
-    const sortBy = filters.sortBy as string || 'featured';
+    const sortBy = params.sortBy as string || 'featured';
     switch (sortBy) {
       case 'price-low-high':
         query = query.order('price', { ascending: true });
@@ -205,7 +182,7 @@ serve(async (req) => {
         currentPage: page,
         pageSize: pageSize
       },
-      appliedFilters: filters
+      appliedFilters: params
     };
     
     return new Response(
