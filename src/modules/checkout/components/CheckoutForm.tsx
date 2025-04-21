@@ -36,7 +36,7 @@ const CheckoutForm = () => {
     state: '',
     postcode: ''
   });
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentMethod, setPaymentMethod] = useState('thawani');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const countries = [
@@ -141,7 +141,7 @@ const CheckoutForm = () => {
       return;
     }
 
-    if (paymentMethod === 'card') {
+    if (paymentMethod === 'thawani') {
       processDirectCheckout();
     } else {
       processCashOnDelivery();

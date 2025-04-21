@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ interface OrderSummaryProps {
   cart: any;
   paymentMethod: string;
   handlePaymentMethodChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: (e: React.FormEvent) => void; // Updated type to match the handler
+  onSubmit: (e: React.FormEvent) => void;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -71,7 +70,25 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span>OMR {cart.total.toFixed(2)}</span>
           </div>
 
-          <div className="space-y-4 mt-6">
+          <div className="payment-methods space-y-4">
+            <div className="bg-white p-4 border rounded">
+              <div className="flex items-center mb-2">
+                <input 
+                  type="radio" 
+                  id="payment_thawani" 
+                  name="payment_method"
+                  value="thawani"
+                  checked={paymentMethod === 'thawani'}
+                  onChange={handlePaymentMethodChange}
+                  className="mr-2"
+                />
+                <label htmlFor="payment_thawani" className="font-medium">Thawani Pay</label>
+              </div>
+              <p className="text-sm text-gray-600 pl-6">
+                Pay securely using Thawani payment gateway.
+              </p>
+            </div>
+
             <div className="bg-white p-4 border rounded">
               <div className="flex items-center mb-2">
                 <input 
@@ -89,43 +106,18 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 Pay with cash upon delivery.
               </p>
             </div>
-
-            <div className="bg-white p-4 border rounded">
-              <div className="flex items-center mb-2">
-                <input 
-                  type="radio" 
-                  id="payment_card" 
-                  name="payment_method"
-                  value="card"
-                  checked={paymentMethod === 'card'}
-                  onChange={handlePaymentMethodChange}
-                  className="mr-2"
-                />
-                <label htmlFor="payment_card" className="font-medium">Credit Card / Debit Card</label>
-              </div>
-              <p className="text-sm text-gray-600 pl-6">
-                Pay securely using your credit/debit card.
-              </p>
-            </div>
-
-            <div className="pt-4 text-sm">
-              <p>Your personal data will be used to process your order, support your experience throughout this website.</p>
-            </div>
-
-            <div className="payment-methods space-y-4">
-              <h3 className="text-xl font-bold mb-4">Payment Method</h3>
-              <ThawaniPayment cart={cart} />
-            </div>
-
-            <Button 
-              type="submit"
-              className="w-full py-6 text-base mt-6"
-              onClick={onSubmit}
-            >
-              <CreditCard className="w-5 h-5 mr-2" />
-              Place Order
-            </Button>
           </div>
+
+          <ThawaniPayment cart={cart} />
+
+          <Button 
+            type="submit"
+            className="w-full py-6 text-base mt-6"
+            onClick={onSubmit}
+          >
+            <CreditCard className="w-5 h-5 mr-2" />
+            Place Order
+          </Button>
         </div>
       </div>
     </div>
