@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
@@ -62,24 +61,26 @@ serve(async (req) => {
       
       if (!brands.includes('all') && brands.length > 0) {
         if (brands.length === 1) {
-          query = query.ilike('brand', brands[0]);
+          query = query.eq('brand', brands[0]);
         } else {
-          const orConditions = brands.map(brand => `brand.ilike.${brand}`).join(',');
-          query = query.or(orConditions);
+          query = query.in('brand', brands);
         }
       }
     }
     
-    // Apply category filter
-    if (filters.category) {
-      const categories = (filters.category as string).split(',').map(c => c.trim());
+    // Apply category filter - FIXED to use exact matching
+    const categoryParam = filters.category || filters.categories;
+    if (categoryParam) {
+      const categories = (categoryParam as string).split(',').map(c => c.trim().toLowerCase());
+      console.log(`[API:filter-products] Filtering by categories: ${categories.join(', ')}`);
       
       if (!categories.includes('all') && categories.length > 0) {
         if (categories.length === 1) {
-          query = query.ilike('category', `%${categories[0]}%`);
+          console.log(`[API:filter-products] Exact match for category: ${categories[0]}`);
+          query = query.eq('category', categories[0]);
         } else {
-          const orConditions = categories.map(cat => `category.ilike.%${cat}%`).join(',');
-          query = query.or(orConditions);
+          console.log(`[API:filter-products] Multiple categories with IN operator: ${categories}`);
+          query = query.in('category', categories);
         }
       }
     }

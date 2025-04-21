@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import ProductGridHeader from './components/ProductGridHeader';
 import ProductGridLoading from './components/ProductGridLoading';
@@ -58,8 +57,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     }
     
     if (filters.selectedOptions?.categories?.length > 0 && !filters.selectedOptions.categories.includes('all')) {
-      urlParams.append('category', filters.selectedOptions.categories.join(','));
-      console.log('Filtering by categories:', filters.selectedOptions.categories.join(','));
+      // Use the explicit category parameter from categories selection
+      const categoryParam = filters.selectedOptions.categories.join(',').toLowerCase();
+      urlParams.append('category', categoryParam);
+      console.log('Filtering by categories:', categoryParam);
     }
     
     if (filters.selectedOptions?.genders?.length > 0 && !filters.selectedOptions.genders.includes('all')) {
@@ -90,7 +91,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     }
     
     const hasWatchesCategory = 
-      (filters.selectedOptions?.categories?.includes('watches')) || 
+      (filters.selectedOptions?.categories?.some((c: string) => c.toLowerCase() === 'watches')) || 
       (category && category.toLowerCase() === 'watches');
 
     if (filters.caseSizeRange && hasWatchesCategory) {
@@ -129,11 +130,11 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       const filterData = {
         gender,
         brand,
-        category,
+        category: category.toLowerCase(), // Ensure category is lowercase
         newArrival: isNewIn ? 'true' : undefined,
         onSale: isOnSale ? 'true' : undefined,
         brands: filters.selectedOptions?.brands?.join(','),
-        categories: filters.selectedOptions?.categories?.join(','),
+        categories: filters.selectedOptions?.categories?.join(',').toLowerCase(), // Ensure lowercase
         genders: filters.selectedOptions?.genders?.join(','),
         bands: filters.selectedOptions?.bands?.join(','),
         caseColors: filters.selectedOptions?.caseColors?.join(','),
