@@ -11,11 +11,15 @@ export const applyBrandFilter = (query: any, params: any) => {
       return query;
     }
     
+    // Fix for brand filtering
     if (brands.length === 1) {
-      query = query.eq('brand', brands[0]);
+      // For single brand, use exact match (case insensitive)
+      query = query.ilike('brand', brands[0]);
     } else {
-      // Use OR logic for multiple brands
-      query = query.or(brands.map((brand: string) => `brand.eq.${brand}`).join(','));
+      // For multiple brands, build OR conditions
+      // This ensures exact matches for each brand
+      const orConditions = brands.map(brand => `brand.ilike.${brand}`).join(',');
+      query = query.or(orConditions);
     }
   }
   return query;

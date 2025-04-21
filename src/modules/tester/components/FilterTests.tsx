@@ -44,6 +44,8 @@ const FilterTests: React.FC = () => {
       }
       
       const data = await response.json();
+      console.log('Category filter test results:', data);
+      
       const passed = data.products.length > 0 && 
                      data.products.every((product: any) => 
                        product.category.toLowerCase().includes('watches')
@@ -92,6 +94,8 @@ const FilterTests: React.FC = () => {
       }
       
       const data = await response.json();
+      console.log('Price range filter test results:', data);
+      
       const passed = data.products.length > 0 && 
                      data.products.every((product: any) => 
                        product.price >= 100 && product.price <= 500
@@ -138,6 +142,24 @@ const FilterTests: React.FC = () => {
       }
       
       const data = await response.json();
+      console.log('Brand filter test results:', data);
+      
+      // Enhanced logging for brand test failures
+      if (data.products.length === 0) {
+        console.error('Brand filter test failed: No products returned');
+        throw new Error('No products returned for brand filter');
+      }
+      
+      const nonMatchingProducts = data.products.filter((product: any) => 
+        !['rolex', 'omega'].includes(product.brand.toLowerCase())
+      );
+      
+      if (nonMatchingProducts.length > 0) {
+        console.error('Brand filter test failed: Some products have incorrect brands', 
+          nonMatchingProducts.map((p: any) => ({ id: p.id, brand: p.brand }))
+        );
+      }
+      
       const passed = data.products.length > 0 && 
                      data.products.every((product: any) => 
                        ['rolex', 'omega'].includes(product.brand.toLowerCase())
