@@ -1,10 +1,8 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import MainNavigation from './MainNavigation';
-import SecondaryNavigation from './SecondaryNavigation';
-import { X } from 'lucide-react';
-import SearchBar from './SearchBar';
+import { X, ChevronRight, Bug } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -12,108 +10,84 @@ interface MobileMenuProps {
 }
 
 const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
-  useEffect(() => {
-    // Prevent scrolling when menu is open
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-  
   if (!isOpen) return null;
-
+  
   return (
-    <div 
-      className="fixed inset-0 z-50 bg-black bg-opacity-50"
-      onClick={(e) => {
-        // Close menu when clicking overlay
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div className="fixed right-0 top-0 h-full w-[90%] max-w-sm bg-white shadow-xl flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <Link to="/" className="flex-shrink-0" onClick={onClose}>
-            <img src="/logo.svg" alt="Logo" className="h-8 w-auto" />
-          </Link>
-          <button 
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
+      <div className="fixed inset-y-0 left-0 w-full xs:w-80 max-w-full bg-white z-50 overflow-auto">
+        <div className="p-4 border-b flex justify-between items-center">
+          <h2 className="text-xl font-bold">Menu</h2>
+          <Button 
+            variant="ghost" 
+            size="icon" 
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none p-2"
-            aria-label="Close menu"
           >
-            <X className="h-6 w-6" />
-          </button>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-
-        {/* Search */}
-        <div className="p-4 border-b">
-          <SearchBar />
-        </div>
-
-        {/* Navigation items */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="mb-6">
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Main Menu
-            </h3>
-            <div className="bg-gray-50 p-3 rounded-md">
-              <MainNavigation />
-            </div>
-          </div>
-          
+        
+        <div className="divide-y">
+          {/* Main categories */}
           <div>
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Categories
-            </h3>
-            <div className="bg-gray-50 p-3 rounded-md">
-              <SecondaryNavigation />
-            </div>
+            <LinkItem to="/" onClick={onClose}>Home</LinkItem>
+            <LinkItem to="/watches" onClick={onClose}>Watches</LinkItem>
+            <LinkItem to="/bags" onClick={onClose}>Bags</LinkItem>
+            <LinkItem to="/perfumes" onClick={onClose}>Perfumes</LinkItem>
+            <LinkItem to="/jewellery" onClick={onClose}>Jewellery</LinkItem>
+            <LinkItem to="/accessories" onClick={onClose}>Accessories</LinkItem>
           </div>
           
-          <div className="mt-6 pt-6 border-t">
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Quick Links
-            </h3>
-            <ul className="space-y-2">
-              <li>
-                <Link 
-                  to="/sale" 
-                  className="block p-2 hover:bg-gray-100 rounded-md"
-                  onClick={onClose}
-                >
-                  Sale
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/new-in" 
-                  className="block p-2 hover:bg-gray-100 rounded-md"
-                  onClick={onClose}
-                >
-                  New Arrivals
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/brands" 
-                  className="block p-2 hover:bg-gray-100 rounded-md"
-                  onClick={onClose}
-                >
-                  All Brands
-                </Link>
-              </li>
-            </ul>
+          {/* Collections */}
+          <div>
+            <LinkItem to="/new-in" onClick={onClose}>New In</LinkItem>
+            <LinkItem to="/sale" onClick={onClose}>Sale</LinkItem>
+            <LinkItem to="/brands" onClick={onClose}>Brands</LinkItem>
+          </div>
+          
+          {/* Info pages */}
+          <div>
+            <LinkItem to="/about-us" onClick={onClose}>About Us</LinkItem>
+            <LinkItem to="/contact-us" onClick={onClose}>Contact Us</LinkItem>
+            <LinkItem to="/store-locator" onClick={onClose}>Store Locator</LinkItem>
+          </div>
+          
+          {/* Legal pages */}
+          <div>
+            <LinkItem to="/privacy-policy" onClick={onClose}>Privacy Policy</LinkItem>
+            <LinkItem to="/terms-conditions" onClick={onClose}>Terms & Conditions</LinkItem>
+            <LinkItem to="/returns" onClick={onClose}>Returns</LinkItem>
+            <LinkItem to="/shipping-delivery" onClick={onClose}>Shipping & Delivery</LinkItem>
+          </div>
+          
+          {/* Admin & Developer */}
+          <div>
+            <LinkItem to="/admin" onClick={onClose}>Admin</LinkItem>
+            <LinkItem to="/tester" onClick={onClose}>
+              <span className="flex items-center gap-2">
+                <Bug className="h-4 w-4" /> Tester
+              </span>
+            </LinkItem>
           </div>
         </div>
       </div>
     </div>
+  );
+};
+
+const LinkItem: React.FC<{
+  to: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}> = ({ to, onClick, children }) => {
+  return (
+    <Link 
+      to={to} 
+      onClick={onClick}
+      className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+    >
+      <span>{children}</span>
+      <ChevronRight className="h-4 w-4 text-gray-400" />
+    </Link>
   );
 };
 

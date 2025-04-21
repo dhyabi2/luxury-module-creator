@@ -1,87 +1,133 @@
+
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import MainNavigation from '@/modules/navigation/MainNavigation';
-import SecondaryNavigation from '@/modules/navigation/SecondaryNavigation';
-import SearchBar from '@/modules/navigation/SearchBar';
-import MobileMenu from '@/modules/navigation/MobileMenu';
-import { CartIcon } from '@/modules/cart/components/CartIcon';
+import { Link, useLocation } from 'react-router-dom';
+import MainNavigation from '../navigation/MainNavigation';
+import MobileMenu from '../navigation/MobileMenu';
+import SearchBar from '../navigation/SearchBar';
+import CartIcon from '../cart/components/CartIcon';
+import CurrencySelector from '../currency/CurrencySelector';
+import { Menu, Settings, Bug } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import CurrencySelector from '@/modules/currency/CurrencySelector';
-import { useIsMobile } from '@/hooks/use-mobile';
 
-const Header = () => {
+const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [brandName, setBrandName] = useState('MKWatches');
-  const isMobile = useIsMobile();
-
+  const [scrolled, setScrolled] = useState(false);
+  const [logo, setLogo] = useState<string>('/logo.svg');
+  const location = useLocation();
+  
+  // Close mobile menu when changing pages
   useEffect(() => {
-    const fetchStoreName = async () => {
+    setIsMobileMenuOpen(false);
+  }, [location]);
+  
+  // Add scroll event listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  // Fetch logo from settings
+  useEffect(() => {
+    const fetchLogo = async () => {
       try {
         const { data, error } = await supabase
           .from('settings')
-          .select('store_name')
+          .select('logo_url')
           .single();
+          
+        if (error) {
+          console.error('Error fetching logo:', error);
+          return;
+        }
         
-        if (data && data.store_name) {
-          setBrandName(data.store_name);
+        if (data && data.logo_url) {
+          setLogo(data.logo_url);
         }
       } catch (err) {
-        console.error('Failed to fetch store name:', err);
+        console.error('Failed to fetch logo:', err);
       }
     };
     
-    fetchStoreName();
+    fetchLogo();
   }, []);
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
+  
   return (
-    <header className="bg-white/95 shadow-sm fixed w-full top-0 left-0 z-50 text-brand-dark">
-      <div className="container mx-auto px-2 sm:px-4">
-        <div className="flex justify-between h-16 sm:h-20 items-center">
-          <Link to="/" className="flex-shrink-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-brand-dark tracking-wider">
-              {brandName}
-            </h1>
-          </Link>
-          
-          <div className="hidden lg:block flex-1 px-4">
-            <MainNavigation />
+    <header 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300
+                 ${scrolled ? 'shadow-md bg-white/90 backdrop-blur-sm' : 'bg-white'}`}
+    >
+      {/* Top bar */}
+      <div className="hidden md:block border-b">
+        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+          <div className="text-xs text-gray-600">
+            Welcome to our luxury watch store
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link to="/about-us" className="text-xs text-gray-600 hover:text-brand">About Us</Link>
+            <Link to="/contact-us" className="text-xs text-gray-600 hover:text-brand">Contact Us</Link>
+            <Link to="/store-locator" className="text-xs text-gray-600 hover:text-brand">Store Locator</Link>
+            <Link to="/admin" className="text-xs text-gray-600 hover:text-brand">Admin</Link>
+            <Link to="/tester" className="text-xs text-gray-600 hover:text-brand flex items-center gap-1">
+              <Bug className="h-3 w-3" />
+              Tester
+            </Link>
+          </div>
+        </div>
+      </div>
+      
+      {/* Main header */}
+      <div className="border-b">
+        <div className="container mx-auto px-4 flex flex-col">
+          {/* Upper section */}
+          <div className="flex justify-between items-center py-4">
+            <div className="block md:hidden">
+              <Button 
+                variant="ghost" 
+                className="p-1" 
+                aria-label="Toggle menu"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                <Menu className="h-6 w-6 text-brand" />
+              </Button>
+            </div>
+            
+            <Link to="/" className="flex-shrink-0 flex items-center">
+              <img 
+                src={logo} 
+                alt="M&K Watches" 
+                className="h-12 md:h-16 object-contain"
+              />
+            </Link>
+            
+            <div className="flex items-center space-x-2 md:space-x-4">
+              <div className="hidden sm:block">
+                <CurrencySelector />
+              </div>
+              <CartIcon />
+            </div>
           </div>
           
-          <div className="flex items-center gap-1 sm:gap-4">
-            {!isMobile && (
-              <div className="hidden md:block">
+          {/* Lower section */}
+          <div className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="hidden md:block w-3/4">
+                <MainNavigation />
+              </div>
+              <div className="w-full md:w-1/4">
                 <SearchBar />
               </div>
-            )}
-            
-            <CurrencySelector />
-            
-            <CartIcon />
-            
-            <button
-              onClick={toggleMobileMenu}
-              className="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none"
-              aria-label="Open mobile menu"
-            >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
-            </button>
+            </div>
           </div>
         </div>
       </div>
       
-      <div className="hidden lg:block border-t border-gray-100">
-        <div className="container mx-auto px-4">
-          <SecondaryNavigation />
-        </div>
-      </div>
-      
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={toggleMobileMenu} />
+      {/* Mobile menu */}
+      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
     </header>
   );
 };
