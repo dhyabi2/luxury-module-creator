@@ -47,7 +47,8 @@ describe('Thawani Payment Flow', () => {
       data: {
         session_id: 'test_session_123',
         payment_url: 'https://uatcheckout.thawani.om/pay/test_session_123'
-      }
+      },
+      error: null // Add the error property to match FunctionsResponse type
     };
 
     // Mock the Supabase edge function call
@@ -95,6 +96,13 @@ describe('Thawani Payment Flow', () => {
   it('should log create-thawani-session response', async () => {
     const consoleSpy = vi.spyOn(console, 'log');
     
+    const mockResponse = {
+      data: { session_id: 'test_session_log' },
+      error: null
+    };
+    
+    vi.spyOn(supabase.functions, 'invoke').mockResolvedValue(mockResponse);
+    
     const response = await supabase.functions.invoke('create-thawani-session', {
       body: {
         products: mockCart.items.map(item => ({
@@ -113,6 +121,14 @@ describe('Thawani Payment Flow', () => {
 
   it('should handle direct checkout process', async () => {
     const mockProduct = mockCart.items[0];
+    
+    // Mock fetch response
+    global.fetch = vi.fn().mockImplementation(() => 
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ session_id: 'test_checkout_session' })
+      })
+    );
     
     const checkoutResponse = await fetch('https://kkdldvrceqdcgclnvixt.supabase.co/functions/v1/create-checkout', {
       method: 'POST',
