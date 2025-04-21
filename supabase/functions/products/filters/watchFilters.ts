@@ -16,20 +16,21 @@ export const applyCaseSizeFilter = (query: any, params: any) => {
     try {
       // Since case size could be stored as string (with "mm" suffix) or number,
       // we need a more flexible approach
-      const specCondition = `specifications->>'caseSize'`;
+      const minSize = parseFloat(params.minCaseSize);
+      const maxSize = parseFloat(params.maxCaseSize);
       
       // Extract numeric part for comparison (removes 'mm' if present)
       // This is a more reliable approach to filter by numeric value regardless of format
       query = query.or(`
-        (${specCondition}::text ~ '^[0-9]+(\\.[0-9]+)?') AND 
-        (regexp_replace(${specCondition}::text, '[^0-9\\.]', '', 'g')::numeric >= ${params.minCaseSize}) AND
-        (regexp_replace(${specCondition}::text, '[^0-9\\.]', '', 'g')::numeric <= ${params.maxCaseSize})
+        (specifications->>'caseSize' ~ '^[0-9]+(\\.[0-9]+)?(mm)?$') AND 
+        (CAST(regexp_replace(specifications->>'caseSize', '[^0-9\\.]', '', 'g') AS numeric) >= ${minSize}) AND
+        (CAST(regexp_replace(specifications->>'caseSize', '[^0-9\\.]', '', 'g') AS numeric) <= ${maxSize})
       `);
       
-      console.log('[API:products] Applied improved case size filter');
+      console.log('[API:products] Applied improved case size filter with regex extraction');
     } catch (error) {
       console.error('[API:products] Error applying case size filter:', error);
-      // Log the error but continue without filtering if there's an issue
+      // Continue without filtering if there's an issue
     }
   }
   return query;
@@ -40,5 +41,4 @@ export {
   applyBandFilter, 
   applyCaseColorFilter, 
   applyColorFilter
-} from '../filters.ts'; // Fix the import path to point to the correct file
-
+} from '../filters.ts'; // Fix the import path

@@ -35,7 +35,7 @@ export const applyGenderFilter = (query: any, params: any) => {
       return query;
     }
     
-    const watchesCategory = params.category && params.category.includes('watches');
+    const watchesCategory = params.category && params.category.toLowerCase().includes('watches');
     
     if (genders.length > 0 && watchesCategory) {
       console.log('[API:products] Using optimized text search for watches + gender combination');

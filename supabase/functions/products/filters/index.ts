@@ -21,7 +21,7 @@ export const applyAllFilters = (query: any, params: any) => {
   query = applyPriceFilter(query, params);
   
   // Check for watch-specific category
-  const isWatchCategory = params.category && params.category.includes('watches');
+  const isWatchCategory = params.category && params.category.toLowerCase().includes('watches');
   const isNonWatchCategory = params.category && 
     (params.category.toLowerCase().includes('accessories') || 
      params.category.toLowerCase().includes('bags') || 
