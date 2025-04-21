@@ -70,7 +70,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       
       <ViewDetailsButton isHovered={isHovered} productId={product.id} />
       <WishlistButton productId={product.id} />
-      <AddToCartButton productId={product.id} />
+      <AddToCartButton product={product} />
     </Card>
   );
 };
