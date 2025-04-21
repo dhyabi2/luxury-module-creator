@@ -111,7 +111,7 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
       <FilterCategory
         title="Price Range"
         type="range"
-        options={[]} /* Added empty options array to fix TypeScript error */
+        options={[]}
         rangeMin={priceRange?.min || 0}
         rangeMax={priceRange?.max || 1000}
         rangeUnit={priceRangeUnit}
@@ -119,6 +119,28 @@ const FilterSidebarContent: React.FC<FilterSidebarContentProps> = ({
         currentMax={priceRange?.max || 1000}
         onRangeChange={handlePriceRangeChange}
         initialExpanded={true}
+      />
+      
+      {/* Clearance filter */}
+      <FilterCategory
+        title="Clearance"
+        type="checkbox"
+        options={[{ id: 'clearance', name: 'On Clearance' }]}
+        selectedOptions={selectedOptions.clearance || []}
+        onSelectionChange={(values) => handleSelectionChange('clearance', values)}
+        initialExpanded={true}
+        showAllOption={false}
+      />
+
+      {/* In Stock filter */}
+      <FilterCategory
+        title="Availability"
+        type="checkbox"
+        options={[{ id: 'instock', name: 'In Stock' }]}
+        selectedOptions={selectedOptions.instock || []}
+        onSelectionChange={(values) => handleSelectionChange('instock', values)}
+        initialExpanded={true}
+        showAllOption={false}
       />
       
       {/* Brands filter */}

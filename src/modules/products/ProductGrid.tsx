@@ -35,23 +35,19 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   const [totalCount, setTotalCount] = useState<number>(0);
   const [sortBy, setSortBy] = useState<string>('featured');
 
-  // Load products when dependencies change
   useEffect(() => {
     const loadProducts = async () => {
       setLoading(true);
       console.log('Loading products with filters:', filters);
       
-      // Build query params
       const urlParams = new URLSearchParams();
       
-      // Add page navigation filters
       if (gender) urlParams.append('gender', gender);
       if (brand) urlParams.append('brand', brand);
       if (category) urlParams.append('category', category);
       if (isNewIn) urlParams.append('isNewIn', 'true');
       if (isOnSale) urlParams.append('isOnSale', 'true');
       
-      // Add user-selected filters (using OR logic within each category)
       if (filters.brands && filters.brands.length > 0 && !filters.brands.includes('all')) {
         urlParams.append('brand', filters.brands.join(','));
         console.log('Filtering by brands:', filters.brands.join(','));
@@ -88,19 +84,26 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         console.log('Filtering by price range:', `${filters.priceRange.min}-${filters.priceRange.max}`);
       }
       
-      // Check if watches is in the selected categories
       const hasWatchesCategory = 
         (filters.categories && filters.categories.includes('watches')) || 
         (category && category.toLowerCase() === 'watches');
 
-      // Only include case size if watches category is selected
       if (filters.caseSizeRange && hasWatchesCategory) {
         urlParams.append('minCaseSize', filters.caseSizeRange.min.toString());
         urlParams.append('maxCaseSize', filters.caseSizeRange.max.toString());
         console.log('Filtering by case size range:', `${filters.caseSizeRange.min}-${filters.caseSizeRange.max}`);
       }
       
-      // Add pagination and sorting
+      if (filters.clearance && filters.clearance.length > 0) {
+        urlParams.append('clearance', 'true');
+        console.log('Filtering by clearance items');
+      }
+      
+      if (filters.instock && filters.instock.length > 0) {
+        urlParams.append('instock', 'true');
+        console.log('Filtering by in stock items');
+      }
+      
       urlParams.append('page', currentPage.toString());
       urlParams.append('pageSize', pageSize.toString());
       urlParams.append('sortBy', sortBy);
@@ -111,22 +114,17 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       try {
         console.log('Fetching products with query params:', queryString);
         
-        // Make direct API call with completely unrestricted access
         const SUPABASE_URL = "https://kkdldvrceqdcgclnvixt.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrZGxkdnJjZXFkY2djbG52aXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwODY2MzAsImV4cCI6MjA1NjY2MjYzMH0.wOKSvpQhUEqYlxR9qK-1BWhicCU_CRiU7eA2-nKa4Fo";
         
-        // Use a simpler URL for watches + gender combination to avoid SQL join issues
         let finalUrl = `${SUPABASE_URL}/functions/v1/products?${queryString}`;
         
-        // Fix for watches + gender filter issue - use a specialized endpoint format
         if (hasWatchesCategory && filters.genders && filters.genders.length > 0 && !filters.genders.includes('all')) {
           console.log('Using modified query format for watches + gender combination');
           
-          // Remove gender from URL parameters to rebuild it in a different format
           const newUrlParams = new URLSearchParams(urlParams.toString());
           newUrlParams.delete('gender');
           
-          // Add gender back but in a text search format that the API can handle better
           finalUrl = `${SUPABASE_URL}/functions/v1/products?${newUrlParams.toString()}&genderSearch=${filters.genders.join(',')}`;
           console.log('Modified URL:', finalUrl);
         }
@@ -143,13 +141,11 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         if (!response.ok) {
           console.error('Failed to fetch products:', response.status, response.statusText);
           
-          // If we get a 500 error, try a simpler fallback request with fewer filters
           if (response.status === 500) {
             console.log('Trying fallback request with fewer filters');
             
             const fallbackParams = new URLSearchParams();
             
-            // Only keep essential parameters
             if (hasWatchesCategory) {
               fallbackParams.append('category', 'watches');
             } else if (category) {
@@ -158,12 +154,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
               fallbackParams.append('category', filters.categories.join(','));
             }
             
-            // Keep brand filter as it's important
             if (filters.brands && filters.brands.length > 0 && !filters.brands.includes('all')) {
               fallbackParams.append('brand', filters.brands.join(','));
             }
             
-            // Add pagination and sorting
             fallbackParams.append('page', currentPage.toString());
             fallbackParams.append('pageSize', pageSize.toString());
             fallbackParams.append('sortBy', sortBy);
@@ -218,13 +212,12 @@ const ProductGrid: React.FC<ProductGridProps> = ({
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSortChange = (sortValue: string) => {
     setSortBy(sortValue);
-    setCurrentPage(1); // Reset to first page when sorting changes
+    setCurrentPage(1);
   };
 
   if (loading && products.length === 0) {

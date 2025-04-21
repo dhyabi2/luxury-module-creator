@@ -1,4 +1,3 @@
-
 // Apply brand filter
 export const applyBrandFilter = (query: any, params: any) => {
   if (params.brand) {
@@ -201,21 +200,21 @@ export const applyColorFilter = (query: any, params: any) => {
   return query;
 };
 
-// Apply special filters (new arrivals, sale)
-export const applySpecialFilters = (query: any, params: any) => {
-  // New arrivals filter
-  if (params.isNewIn === 'true') {
-    console.log('[API:products] Filtering by new arrivals');
-    // Simulate new items by getting latest IDs
-    query = query.order('id', { ascending: false }).limit(50);
+// Apply stock filter
+export const applyStockFilter = (query: any, params: any) => {
+  if (params.instock === 'true') {
+    console.log('[API:products] Filtering for in stock items');
+    query = query.gt('stock', 0);
   }
-  
-  // Sale items filter
-  if (params.isOnSale === 'true') {
-    console.log('[API:products] Filtering by sale items');
+  return query;
+};
+
+// Apply clearance filter
+export const applyClearanceFilter = (query: any, params: any) => {
+  if (params.clearance === 'true') {
+    console.log('[API:products] Filtering for clearance items');
     query = query.gt('discount', 0);
   }
-  
   return query;
 };
 
@@ -226,6 +225,8 @@ export const applyAllFilters = (query: any, params: any) => {
   query = applyBrandFilter(query, params);
   query = applyCategoryFilter(query, params);
   query = applyPriceFilter(query, params);
+  query = applyStockFilter(query, params);
+  query = applyClearanceFilter(query, params);
   
   // Check for watch-specific category
   const isWatchCategory = params.category && params.category.includes('watches');
