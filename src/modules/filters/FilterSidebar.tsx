@@ -49,7 +49,19 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   };
 
   if (isLoading || !filtersData) {
-    return <FilterSidebarContent filtersData={null} isLoading={true} />;
+    // Provide default values for all required props when in loading state
+    return (
+      <FilterSidebarContent 
+        filtersData={null} 
+        isLoading={true} 
+        selectedOptions={{}}
+        priceRange={{ min: 0, max: 1000 }}
+        handleSelectionChange={() => {}}
+        handlePriceRangeChange={() => {}}
+        categorySpecificBrands={{}}
+        activeCategoryName=""
+      />
+    );
   }
 
   return (
@@ -70,4 +82,3 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 };
 
 export default FilterSidebar;
-
