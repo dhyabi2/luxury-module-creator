@@ -25,6 +25,9 @@ import NotFound from './pages/NotFound';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import CheckoutCanceled from './pages/CheckoutCanceled';
 import Tester from './pages/Tester';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import OrderTracking from './pages/OrderTracking';
 
 import { CartProvider } from '@/contexts/CartContext';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
@@ -60,6 +63,9 @@ function App() {
               <Route path="/shipping-delivery" element={<ShippingDelivery />} />
               <Route path="/checkout/success" element={<CheckoutSuccess />} />
               <Route path="/checkout/canceled" element={<CheckoutCanceled />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/tracking" element={<OrderTracking />} />
               <Route path="/tester" element={<Tester />} />
               <Route path="*" element={<NotFound />} />
               

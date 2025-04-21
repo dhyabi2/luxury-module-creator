@@ -3,60 +3,72 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
+import { Product } from '@/types/api';
 
 interface AddToCartButtonProps {
-  productId: string;
+  product: Product;
+  quantity?: number;
 }
 
-const AddToCartButton: React.FC<AddToCartButtonProps> = ({ productId }) => {
+const AddToCartButton: React.FC<AddToCartButtonProps> = ({ product, quantity = 1 }) => {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Direct API call without hooks - call the cart function
+    console.log('Adding to cart:', product, 'Quantity:', quantity);
+    
+    // Direct data manipulation without abstraction
     try {
-      // Direct data manipulation without abstraction
-      let cart = localStorage.getItem('cart');
-      const cartData = cart ? JSON.parse(cart) : { items: [], totalItems: 0 };
+      const storedCart = localStorage.getItem('cart');
+      const cart = storedCart ? JSON.parse(storedCart) : { 
+        items: [], 
+        totalItems: 0,
+        subtotal: 0,
+        discount: 0,
+        total: 0
+      };
       
       // Check if product exists in cart
-      const existingProductIndex = cartData.items.findIndex((item: any) => item.productId === productId);
+      const existingProductIndex = cart.items.findIndex((item: any) => item.productId === product.id);
       
       if (existingProductIndex >= 0) {
         // Increment quantity
-        cartData.items[existingProductIndex].quantity += 1;
+        cart.items[existingProductIndex].quantity += quantity;
       } else {
-        // Add new item with placeholder data
-        cartData.items.push({
+        // Add new item
+        cart.items.push({
           id: Date.now().toString(),
-          productId: productId,
-          quantity: 1,
-          // Actual product data would be fetched in a real implementation
-          // but for now we just log and use placeholder
-          name: "Product",
-          price: 0
+          productId: product.id,
+          name: product.name,
+          brand: product.brand,
+          price: product.price,
+          quantity: quantity,
+          image: product.image,
+          currency: product.currency,
+          discount: product.discount
         });
       }
       
-      // Update total items count
-      cartData.totalItems = cartData.items.reduce((total: number, item: any) => total + item.quantity, 0);
+      // Recalculate totals
+      cart.totalItems = cart.items.reduce((total: number, item: any) => total + item.quantity, 0);
+      cart.subtotal = cart.items.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
+      cart.discount = cart.items.reduce((total: number, item: any) => {
+        if (item.discount) {
+          return total + ((item.price * item.discount / 100) * item.quantity);
+        }
+        return total;
+      }, 0);
+      cart.total = cart.subtotal - cart.discount;
       
       // Save to localStorage
-      localStorage.setItem('cart', JSON.stringify(cartData));
+      localStorage.setItem('cart', JSON.stringify(cart));
       
-      console.log(`Added product ${productId} to cart`, cartData);
-      
-      // Show toast notification
       toast.success('Added to Cart', {
-        description: `Product ID: ${productId} has been added to your cart`
+        description: `${product.name} has been added to your cart`
       });
     } catch (error) {
-      console.error(`Error adding product ${productId} to cart:`, error);
-      
-      // Show error toast
-      toast.error('Failed to add to cart', {
-        description: 'There was an error adding this product to your cart'
-      });
+      console.error('Error adding product to cart:', error);
+      toast.error('Failed to add to cart');
     }
   };
   

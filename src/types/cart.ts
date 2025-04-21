@@ -11,6 +11,7 @@ export interface CartItem {
   image: string;
   currency: string;
   discount?: number;
+  subtotal?: number;
 }
 
 export interface Cart {
@@ -19,4 +20,8 @@ export interface Cart {
   subtotal: number;
   discount: number;
   total: number;
+  shipping?: {
+    method: string;
+    cost: number;
+  };
 }
